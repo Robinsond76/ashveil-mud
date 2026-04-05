@@ -117,7 +117,7 @@ Feature development follows a phase workflow:
 |---|-------|--------|------|------|
 | 1 | World Clock & Environment | ✅ COMPLETED | `docs/superpowers/specs/phase-01-world-clock-environment.md` | — |
 | 2 | Survival Stats | ✅ COMPLETED | `docs/superpowers/specs/phase-02-survival-stats.md` | `docs/superpowers/plans/phase-02-survival-stats.md` |
-| 3 | Utility Skills & Mana Rework | 🔲 NOT STARTED | `docs/superpowers/specs/phase-03-utility-skills-mana.md` | `docs/superpowers/plans/phase-03-utility-skills-mana.md` |
+| 3 | Utility Skills & Mana Rework | ✅ COMPLETED | `docs/superpowers/specs/phase-03-utility-skills-mana.md` | `docs/superpowers/plans/phase-03-utility-skills-mana.md` |
 | 4 | Food & Consumables | 🔲 NOT STARTED | `docs/superpowers/specs/phase-04-food-consumables.md` | `docs/superpowers/plans/phase-04-food-consumables.md` |
 | 5 | Inventory & Weight | 🔲 NOT STARTED | `docs/superpowers/specs/phase-05-inventory-weight.md` | `docs/superpowers/plans/phase-05-inventory-weight.md` |
 | 6 | Horses & Mounts | 🔲 NOT STARTED | `docs/superpowers/specs/phase-06-horses-mounts.md` | `docs/superpowers/plans/phase-06-horses-mounts.md` |

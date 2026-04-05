@@ -150,10 +150,10 @@ def test_drink_water_flask_restores_thirst():
     s = GameSession(send_fn=_send, world=_stub_world(), class_defs={}, clock=None)
     s.player = Character(name="Hero", class_type="warrior")
     s.player.thirst = 30.0
-    s.player.inventory = ["water_flask"]
+    s.player.inventory = ["waterskin"]
     s.state = State.NAVIGATION
 
-    asyncio.get_event_loop().run_until_complete(s.handle_input("DRINK water_flask"))
+    asyncio.get_event_loop().run_until_complete(s.handle_input("DRINK waterskin"))
     assert s.player.thirst > 30.0
 
 
@@ -163,11 +163,11 @@ def test_drink_removes_item_from_inventory():
 
     s = GameSession(send_fn=_send, world=_stub_world(), class_defs={}, clock=None)
     s.player = Character(name="Hero", class_type="warrior")
-    s.player.inventory = ["water_flask"]
+    s.player.inventory = ["waterskin"]
     s.state = State.NAVIGATION
 
-    asyncio.get_event_loop().run_until_complete(s.handle_input("DRINK water_flask"))
-    assert "water_flask" not in s.player.inventory
+    asyncio.get_event_loop().run_until_complete(s.handle_input("DRINK waterskin"))
+    assert "waterskin" not in s.player.inventory
 
 
 # ── Phase F: LOOK shows warning at stamina 0 ─────────────────────────────────

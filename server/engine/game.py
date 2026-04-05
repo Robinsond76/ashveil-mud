@@ -41,7 +41,7 @@ from server.engine.items import (
 from server.engine.npc import NPC, spawn_npc
 from server.engine.persistence import init_db, load_player, save_player
 from server.engine.skills import (
-    can_learn, get_skill, render_skill_tree,
+    can_learn, get_skill, render_skill_tree, render_skills_section,
 )
 from server.engine.strategy import (
     add_strategy, clear_strategies, list_strategies, remove_strategy,
@@ -114,6 +114,11 @@ class GameSession:
 
         # Sitting flag for passive stamina recovery
         self._sitting: bool = False
+
+        # Cart state
+        self._cart_present: bool = False
+        self._cart_room_id: str | None = None
+        self._cart_inventory: list[str] = []
 
         # Weather/clock callback ref (stored for unsubscribe)
         self._weather_cb = None
@@ -194,18 +199,20 @@ class GameSession:
         """Decrement hunger and thirst for every party member by one game-minute's drain."""
         members = [self.player] + list(self.party)
         for m in members:
-            hunger_drain = m.hunger_drain_rate()
-            thirst_drain = m.thirst_drain_rate(temp_label)
+            hunger_drain = m.hunger_drain_rate(self.clock)
+            thirst_drain = m.thirst_drain_rate(temp_label, self.clock)
             m.hunger = max(0.0, m.hunger - hunger_drain)
             m.thirst = max(0.0, m.thirst - thirst_drain)
 
     def _sitting_stamina_tick(self) -> None:
-        """Restore +1 stamina per game-minute while sitting (out of combat)."""
+        """Restore stamina per game-minute while sitting (out of combat).
+        Base: +1/min. With energised buff: +1.5/min."""
         if not self._sitting:
             return
         members = [self.player] + list(self.party)
         for m in members:
-            m.stamina = min(m.max_stamina, m.stamina + 1.0)
+            recovery = 1.5 if (self.clock and "energised" in m.get_active_buffs(self.clock)) else 1.0
+            m.stamina = min(m.max_stamina, m.stamina + recovery)
 
     def _carried_light(self) -> float:
         """
@@ -250,6 +257,16 @@ class GameSession:
             return 1.0
         return self.clock.effective_light(room.room_type, self._carried_light())
 
+    # ── Cart helpers ──────────────────────────────────────────────────────────
+
+    def _party_has_cart(self) -> bool:
+        """Return True if any party member (including player) has travellers_cart."""
+        members = ([self.player] if self.player else []) + list(self.party)
+        for m in members:
+            if "travellers_cart" in m.inventory:
+                return True
+        return False
+
     # ═══════════════════════════════════════════════════════════════════
     # Entry point
     # ═══════════════════════════════════════════════════════════════════
@@ -284,7 +301,11 @@ class GameSession:
         elif self.state == State.STRATEGY:
             await self._handle_strategy(text)
         elif self.state == State.COMBAT:
-            await self._send("  Combat is in progress. Your strategies are running...")
+            _upper_parts = text.strip().upper().split(maxsplit=1)
+            if _upper_parts and _upper_parts[0] == "USE":
+                await self._send("  You cannot use utility skills while in combat.\n")
+            else:
+                await self._send("  Combat is in progress. Your strategies are running...")
 
     # ═══════════════════════════════════════════════════════════════════
     # CONNECT
@@ -645,7 +666,7 @@ class GameSession:
 
         # Inventory management
         if cmd == "INVENTORY" or cmd == "INV" or cmd == "I":
-            await self._do_inventory()
+            await self._do_inventory(args)
             return
         if cmd == "EQUIP":
             await self._do_equip(args)
@@ -660,6 +681,18 @@ class GameSession:
             item_arg = args.lstrip("UP").strip() if args.upper().startswith("UP") else args
             await self._do_pick_up(item_arg.strip())
             return
+        if cmd == "GIVE":
+            await self._do_give(args)
+            return
+        if cmd == "LOAD" and args.upper().startswith("CART"):
+            await self._do_load_cart(args[4:].strip())
+            return
+        if cmd == "STASH":
+            await self._do_load_cart(args)
+            return
+        if cmd == "UNLOAD" and args.upper().startswith("CART"):
+            await self._do_unload_cart(args[4:].strip())
+            return
 
         # Character info
         if cmd == "STATS" or cmd == "STAT":
@@ -670,10 +703,11 @@ class GameSession:
             return
         if cmd == "SKILLS":
             await self._send(
-                render_skill_tree(
+                render_skills_section(
                     self.player.class_type,
                     self.player.unlocked_skills,
                     self.player.skill_points,
+                    args.lower().strip(),
                 ) + "\n"
             )
             return
@@ -721,10 +755,18 @@ class GameSession:
         if cmd == "DRINK":
             await self._do_drink(args)
             return
+        if cmd == "BUFFS":
+            await self._do_buffs()
+            return
 
         # Combat (arena)
         if cmd == "ATTACK":
             await self._do_attack(args)
+            return
+
+        # Utility skills
+        if cmd == "USE":
+            await self._handle_use_skill(args.lower().strip())
             return
 
         # Save
@@ -774,11 +816,28 @@ class GameSession:
                 "  You are too exhausted to move. Rest to recover your stamina.\n"
             )
             return
-        # Drain 2 stamina from all party members per move
+        # Drain stamina from all party members per move (fortified buff reduces by 30%)
         if self.player:
             members = [self.player] + list(self.party)
             for m in members:
-                m.stamina = max(0.0, m.stamina - 2.0)
+                drain = 2.0
+                if self.clock and "fortified" in m.get_active_buffs(self.clock):
+                    drain *= 0.7
+                m.stamina = max(0.0, m.stamina - drain)
+        # Cart detach / reattach logic
+        dest_room = self.world.get_room(dest_id)
+        if dest_room:
+            dest_type = dest_room.room_type
+            if dest_type in ("indoor", "underground") and self._cart_present:
+                self._cart_present = False
+                self._cart_room_id = self.current_room_id
+                await self._send(
+                    f"  Your cart remains outside at {room.id.replace('_', ' ').title()}.\n"
+                )
+            elif dest_type == "outdoor" and self._cart_room_id is not None:
+                self._cart_present = True
+                self._cart_room_id = None
+                await self._send("  Your cart catches up with the party.\n")
         self.current_room_id = dest_id
         await self._do_look()
 
@@ -871,21 +930,72 @@ class GameSession:
 
     # ── Inventory ─────────────────────────────────────────────────────────────
 
-    async def _do_inventory(self) -> None:
-        lines = []
-        if not self.player.inventory:
-            lines.append("  (empty)")
-        else:
-            counts: dict[str, int] = {}
-            for i in self.player.inventory:
-                counts[i] = counts.get(i, 0) + 1
-            for item_id, count in counts.items():
+    def _party_inventory_view(self) -> list[tuple[str, str, str]]:
+        """Return (holder_name, item_id, item_name) for all party inventories."""
+        result: list[tuple[str, str, str]] = []
+        members = ([self.player] if self.player else []) + list(self.party)
+        for m in members:
+            for item_id in m.inventory:
                 item = get_item(item_id)
                 name = item.name if item else item_id
-                lines.append(f"  x{count}  {name}")
+                result.append((m.name, item_id, name))
+        # Sort: weapons first, then armor, consumables, misc
+        type_order = {"weapon": 0, "armor": 1, "consumable": 2}
+        result.sort(key=lambda t: type_order.get(
+            (get_item(t[1]).type if get_item(t[1]) else "misc"), 3
+        ))
+        return result
+
+    async def _do_inventory(self, args: str = "") -> None:
+        args_stripped = args.strip()
+        args_upper = args_stripped.upper()
+
+        # INV CART
+        if args_upper == "CART":
+            if not self._cart_inventory:
+                await self._send(_box("CART", ["  (empty)"]))
+            else:
+                lines = []
+                for item_id in self._cart_inventory:
+                    item = get_item(item_id)
+                    lines.append(f"  {item.name if item else item_id}")
+                await self._send(_box("CART", [""] + lines))
+            return
+
+        # INVENTORY <member>
+        if args_stripped:
+            target_name = args_stripped.lower()
+            members = ([self.player] if self.player else []) + list(self.party)
+            target = next(
+                (m for m in members if m.name.lower() == target_name), None
+            )
+            if not target:
+                await self._send(f"  '{args_stripped}' is not in your party.\n")
+                return
+            lines = []
+            if not target.inventory:
+                lines.append("  (empty)")
+            else:
+                counts: dict[str, int] = {}
+                for i in target.inventory:
+                    counts[i] = counts.get(i, 0) + 1
+                for item_id, count in counts.items():
+                    item = get_item(item_id)
+                    lines.append(f"  x{count}  {item.name if item else item_id}")
+            await self._send(_box(f"INVENTORY — {target.name}", [""] + lines))
+            return
+
+        # Unified party view
+        party_items = self._party_inventory_view()
+        lines: list[str] = []
+        if not party_items:
+            lines.append("  (empty)")
+        else:
+            for holder, item_id, item_name in party_items:
+                lines.append(f"  {item_name:<30} [{holder}]")
 
         lines.append("")
-        lines.append("  EQUIPPED:")
+        lines.append("  EQUIPPED (player):")
         for slot in EQUIPMENT_SLOTS:
             eid = self.player.equipment.get(slot)
             item = get_item(eid) if eid else None
@@ -954,10 +1064,117 @@ class GameSession:
             item = get_item(item_id)
             if item and item_name in item.name.lower():
                 room.item_ids.remove(item_id)
-                self.player.inventory.append(item_id)
+                ok = await self._auto_assign_item_with_message(item_id)
+                if not ok:
+                    room.item_ids.append(item_id)
+                    return
                 await self._send(f"  You pick up {item.name}.\n")
                 return
         await self._send(f"  You don't see '{args}' here.\n")
+
+    def _auto_assign_item(self, item_id: str) -> bool:
+        """Place item_id into the first party member with available slots.
+        Falls back to cart if present. Returns True on success."""
+        members = ([self.player] if self.player else []) + list(self.party)
+        candidates = [m for m in members if len(m.inventory) < m.carry_slots]
+        if candidates:
+            choice = random.choice(candidates)
+            choice.inventory.append(item_id)
+            return True
+        # Fall back to cart
+        if self._cart_present:
+            self._cart_inventory.append(item_id)
+            return True
+        return False
+
+    async def _auto_assign_item_with_message(self, item_id: str) -> bool:
+        """Like _auto_assign_item but sends an over-encumbered message on failure."""
+        ok = self._auto_assign_item(item_id)
+        if not ok:
+            await self._send("  Your party is over-encumbered. Drop something first.\n")
+        return ok
+
+    async def _do_give(self, args: str) -> None:
+        """GIVE <item> TO <member>"""
+        lower = args.lower()
+        if " to " not in lower:
+            await self._send("  Usage: GIVE <item> TO <member>\n")
+            return
+        idx = lower.index(" to ")
+        item_part = args[:idx].strip()
+        target_name = args[idx + 4:].strip()
+
+        # Find the item in any party member's inventory
+        members = ([self.player] if self.player else []) + list(self.party)
+        source = None
+        found_id = None
+        for m in members:
+            for item_id in m.inventory:
+                item = get_item(item_id)
+                if item and item_part.lower() in item.name.lower():
+                    source = m
+                    found_id = item_id
+                    break
+            if source:
+                break
+
+        if not source or not found_id:
+            await self._send(f"  '{item_part}' not found in party inventory.\n")
+            return
+
+        # Find target member
+        target = next(
+            (m for m in members if m.name.lower() == target_name.lower()), None
+        )
+        if not target:
+            await self._send(f"  '{target_name}' is not in your party.\n")
+            return
+
+        if len(target.inventory) >= target.carry_slots:
+            await self._send(f"  {target.name} doesn't have room for that.\n")
+            return
+
+        source.inventory.remove(found_id)
+        target.inventory.append(found_id)
+        item_obj = get_item(found_id)
+        await self._send(
+            f"  {item_obj.name if item_obj else found_id} transferred to {target.name}.\n"
+        )
+
+    async def _do_load_cart(self, args: str) -> None:
+        """LOAD CART <item> / STASH <item> — move item from party to _cart_inventory."""
+        if not self._cart_present:
+            await self._send("  Your cart is not here.\n")
+            return
+        item_name = args.strip().lower()
+        members = ([self.player] if self.player else []) + list(self.party)
+        for m in members:
+            for item_id in m.inventory:
+                item = get_item(item_id)
+                if item and item_name in item.name.lower():
+                    m.inventory.remove(item_id)
+                    self._cart_inventory.append(item_id)
+                    await self._send(f"  {item.name} stashed in the cart.\n")
+                    return
+        await self._send(f"  '{args.strip()}' not found in party inventory.\n")
+
+    async def _do_unload_cart(self, args: str) -> None:
+        """UNLOAD CART <item> — move item from _cart_inventory to party via auto-assign."""
+        if not self._cart_present:
+            await self._send("  Your cart is not here.\n")
+            return
+        item_name = args.strip().lower()
+        for item_id in self._cart_inventory:
+            item = get_item(item_id)
+            if item and item_name in item.name.lower():
+                self._cart_inventory.remove(item_id)
+                ok = await self._auto_assign_item_with_message(item_id)
+                if not ok:
+                    self._cart_inventory.append(item_id)
+                    return
+                await self._send(f"  {item.name} unloaded from cart.\n")
+                return
+        await self._send(f"  '{args.strip()}' not found in cart.\n")
 
     # ── Skills & Modifiers ────────────────────────────────────────────────────
 
@@ -1040,23 +1257,36 @@ class GameSession:
         if not item_name:
             await self._send("  Eat what? Usage: EAT <item>\n")
             return
-        # Find item in inventory by name or id
-        for item_id in list(self.player.inventory):
-            item = get_item(item_id)
-            if not item:
-                continue
-            if item_name in item.name.lower() or item_name == item_id.lower():
-                if item.type not in ("food",):
-                    if item.effect_type not in ("restore_hunger", "restore_hunger_thirst"):
+        members = [self.player] + list(self.party)
+        for carrier in members:
+            for item_id in list(carrier.inventory):
+                item = get_item(item_id)
+                if not item:
+                    continue
+                if item_name in item.name.lower() or item_name == item_id.lower():
+                    if item.effect_type != "food":
                         await self._send(f"  You can't eat {item.name}.\n")
                         return
-                self.player.inventory.remove(item_id)
-                hunger_gain = item.effect_params.get("amount", item.effect_params.get("hunger", 0))
-                thirst_gain = item.effect_params.get("thirst", 0)
-                self.player.hunger  = min(self.player.max_hunger,  self.player.hunger  + hunger_gain)
-                self.player.thirst  = min(self.player.max_thirst,  self.player.thirst  + thirst_gain)
-                await self._send(f"  You eat the {item.name}. (Hunger +{hunger_gain})\n")
-                return
+                    carrier.inventory.remove(item_id)
+                    hunger_gain = item.effect_params.get("hunger", 0)
+                    thirst_gain = item.effect_params.get("thirst", 0)
+                    carrier.hunger = min(carrier.max_hunger, carrier.hunger + hunger_gain)
+                    carrier.thirst = min(carrier.max_thirst, carrier.thirst + thirst_gain)
+                    # Apply buff to all party members
+                    buff = item.effect_params.get("buff")
+                    if buff and self.clock:
+                        duration = item.effect_params.get("buff_duration", 0)
+                        for m in members:
+                            m.apply_food_buff(buff, duration, self.clock)
+                    msg = f"  You eat the {item.name}."
+                    if hunger_gain:
+                        msg += f" (Hunger +{hunger_gain})"
+                    if thirst_gain:
+                        msg += f" (Thirst +{thirst_gain})"
+                    if buff:
+                        msg += f" [{buff} buff applied!]"
+                    await self._send(msg + "\n")
+                    return
         await self._send(f"  You don't have '{item_name}' in your inventory.\n")
 
     async def _do_drink(self, args: str) -> None:
@@ -1064,29 +1294,55 @@ class GameSession:
         if not item_name:
             await self._send("  Drink what? Usage: DRINK <item>\n")
             return
-        for item_id in list(self.player.inventory):
-            item = get_item(item_id)
-            if not item:
-                continue
-            if item_name in item.name.lower() or item_name == item_id.lower():
-                if item.type not in ("drink",) and item.effect_type not in (
-                    "restore_thirst", "restore_hunger_thirst"
-                ):
-                    await self._send(f"  You can't drink {item.name}.\n")
+        members = [self.player] + list(self.party)
+        for carrier in members:
+            for item_id in list(carrier.inventory):
+                item = get_item(item_id)
+                if not item:
+                    continue
+                if item_name in item.name.lower() or item_name == item_id.lower():
+                    # Accept food-type items (some drinks have hunger 0 / thirst > 0)
+                    if item.effect_type != "food":
+                        await self._send(f"  You can't drink {item.name}.\n")
+                        return
+                    thirst_gain = item.effect_params.get("thirst", 0)
+                    if thirst_gain == 0:
+                        await self._send(f"  {item.name} doesn't restore thirst.\n")
+                        return
+                    carrier.inventory.remove(item_id)
+                    hunger_gain = item.effect_params.get("hunger", 0)
+                    carrier.thirst = min(carrier.max_thirst, carrier.thirst + thirst_gain)
+                    if hunger_gain:
+                        carrier.hunger = min(carrier.max_hunger, carrier.hunger + hunger_gain)
+                    buff = item.effect_params.get("buff")
+                    if buff and self.clock:
+                        duration = item.effect_params.get("buff_duration", 0)
+                        for m in members:
+                            m.apply_food_buff(buff, duration, self.clock)
+                    msg = f"  You drink the {item.name}. (Thirst +{thirst_gain})"
+                    if buff:
+                        msg += f" [{buff} buff applied!]"
+                    await self._send(msg + "\n")
                     return
-                if item.effect_type not in ("restore_thirst", "restore_hunger_thirst"):
-                    await self._send(f"  {item.name} doesn't restore thirst.\n")
-                    return
-                self.player.inventory.remove(item_id)
-                thirst_gain = item.effect_params.get("amount", item.effect_params.get("thirst", 0))
-                hunger_gain = item.effect_params.get("hunger", 0)
-                self.player.thirst  = min(self.player.max_thirst,  self.player.thirst  + thirst_gain)
-                self.player.hunger  = min(self.player.max_hunger,  self.player.hunger  + hunger_gain)
-                await self._send(f"  You drink the {item.name}. (Thirst +{thirst_gain})\n")
-                return
         await self._send(f"  You don't have '{item_name}' in your inventory.\n")
 
+    async def _do_buffs(self) -> None:
+        if not self.clock:
+            await self._send("  No active buffs.\n")
+            return
+        members = [self.player] + list(self.party)
+        lines: list[str] = []
+        for m in members:
+            active = m.get_active_buffs(self.clock)
+            for buff_name in active:
+                remaining = m.active_buffs[buff_name] - self.clock.total_minutes
+                lines.append(f"  {m.name}: {buff_name} ({remaining} min remaining)")
+        if not lines:
+            await self._send("  No active buffs.\n")
+        else:
+            await self._send(_box("ACTIVE BUFFS", lines))
 
+    async def _do_talk(self, args: str) -> None:
         name = args.lower().strip()
         room = self.world.get_room(self.current_room_id)
         if not room:
@@ -1177,7 +1433,11 @@ class GameSession:
         elif self.state == State.STRATEGY:
             await self._handle_strategy(text)
         elif self.state == State.COMBAT:
-            await self._send("  Combat is in progress. Your strategies are running...\n")
+            _upper_parts = text.strip().upper().split(maxsplit=1)
+            if _upper_parts and _upper_parts[0] == "USE":
+                await self._send("  You cannot use utility skills while in combat.\n")
+            else:
+                await self._send("  Combat is in progress. Your strategies are running...\n")
 
     # ── Combat ────────────────────────────────────────────────────────────────
 
@@ -1405,6 +1665,10 @@ class GameSession:
 
         if cmd == "HELP":
             await self._enter_campfire()
+            return
+
+        if cmd == "USE":
+            await self._send("  You can only use utility skills while exploring (NAVIGATION).\n")
             return
 
         await self._send(f"  Unknown campfire command '{text}'. Type HELP.\n")
@@ -1754,6 +2018,111 @@ class GameSession:
                 self._lit_sources[item_id] = expiry
                 return
         await self._send(f"  No light source named '{args}' found in party inventory.\n")
+
+    # ═══════════════════════════════════════════════════════════════════
+    # UTILITY SKILLS (USE command)
+    # ═══════════════════════════════════════════════════════════════════
+
+    async def _handle_use_skill(self, skill_id: str) -> None:
+        skill = get_skill(skill_id)
+        if skill is None:
+            await self._send(f"  Unknown skill '{skill_id}'. Type SKILLS UTILITY for a list.\n")
+            return
+
+        if skill_id not in self.player.unlocked_skills:
+            await self._send(
+                f"  You haven't unlocked '{skill.name}'. Use SKILLS to see your skill tree.\n"
+            )
+            return
+
+        if skill.use_context != "utility":
+            await self._send(
+                f"  '{skill.name}' is a combat skill — use it via your strategy in battle.\n"
+            )
+            return
+
+        if skill.mp_cost > 0 and self.player.mp < skill.mp_cost:
+            await self._send(
+                f"  Not enough mana. '{skill.name}' costs {skill.mp_cost} MP "
+                f"(you have {self.player.mp}).\n"
+            )
+            return
+
+        if skill.stamina_cost > 0 and self.player.stamina < skill.stamina_cost:
+            await self._send(
+                f"  Not enough stamina. '{skill.name}' costs {skill.stamina_cost} "
+                f"(you have {int(self.player.stamina)}).\n"
+            )
+            return
+
+        if skill.required_items:
+            party_inv: list[str] = list(self.player.inventory)
+            for npc in self.party:
+                party_inv.extend(npc.inventory)
+            for item_id in skill.required_items:
+                if item_id not in party_inv:
+                    await self._send(
+                        f"  You need a {item_id} to use '{skill.name}'.\n"
+                    )
+                    return
+
+        # Deduct costs
+        self.player.mp -= skill.mp_cost
+        self.player.stamina -= skill.stamina_cost
+
+        # Consume item if needed
+        if skill.consumes_item and skill.required_items:
+            for item_id in skill.required_items:
+                if item_id in self.player.inventory:
+                    self.player.inventory.remove(item_id)
+                    break
+                else:
+                    for npc in self.party:
+                        if item_id in npc.inventory:
+                            npc.inventory.remove(item_id)
+                            break
+
+        room = self.world.get_room(self.current_room_id)
+        await self._execute_utility_effect(skill, room)
+
+    async def _execute_utility_effect(self, skill, room) -> None:
+        effect = skill.effect_type
+
+        if effect == "unlock_door":
+            await self._send(
+                "  You probe the lock carefully... but there are no locked exits here.\n"
+            )
+
+        elif effect == "reveal_traps":
+            await self._send("  You scan the room carefully. You detect no hidden traps.\n")
+
+        elif effect == "provide_light":
+            base = self.clock.game_minutes_elapsed if self.clock else 0
+            self._arcane_light_until = base + 120
+            await self._send(
+                "  Arcane light fills the room, illuminating everything clearly for 120 game-minutes.\n"
+            )
+
+        elif effect == "identify_item":
+            await self._send("  You sense the arcane properties of the items around you.\n")
+
+        elif effect == "bless_camp":
+            self._bless_camp_active = True
+            await self._send(
+                "  You bless the camp. Your next rest will reduce hunger drain by 50%.\n"
+            )
+
+        elif effect == "purify_food":
+            await self._send("  You purify the food in your pack.\n")
+
+        elif effect == "fortify_party":
+            self._fortify_active = True
+            await self._send(
+                "  You bolster the party's defenses. Incoming damage will be reduced until your next battle.\n"
+            )
+
+        else:
+            await self._send(f"  You use {skill.name}.\n")
 
     # ═══════════════════════════════════════════════════════════════════
     # HELP

@@ -135,12 +135,39 @@ class Character:
     # -1 means "auto-assign based on class"
     grid_row: int = -1
     grid_col: int = -1
+
+    # Active food buffs: buff_name → expiry game-minute (clock.total_minutes)
+    active_buffs: dict[str, int] = field(default_factory=dict)
     # ── Derived properties ───────────────────────────────────────────────────
 
     @property
+    def carry_slots(self) -> int:
+        base = 5
+        back_id = self.equipment.get("back")
+        if back_id:
+            item = get_item(back_id)
+            if item:
+                base += item.stats.get("slot_bonus", 0)
+        return base
+
+    @property
+    def carry_weight_cap(self) -> int:
+        base = 20
+        back_id = self.equipment.get("back")
+        if back_id:
+            item = get_item(back_id)
+            if item:
+                base += item.stats.get("weight_bonus", 0)
+        return base
+
+    @property
     def effective_speed(self) -> int:
-        weight = total_equipped_weight(self.equipment)
-        speed = self.AGI - math.floor(weight / WEIGHT_DIVISOR)
+        equipped_w = total_equipped_weight(self.equipment)
+        carried_w = sum(
+            (get_item(iid).weight if get_item(iid) else 0)
+            for iid in self.inventory
+        )
+        speed = self.AGI - math.floor((equipped_w + carried_w) / WEIGHT_DIVISOR)
         return max(1, speed)
 
     @property
@@ -167,7 +194,7 @@ class Character:
         level = self.modifiers.get(prof_key, 0)
         return level * MODIFIER_BONUS_PER_LEVEL
 
-    def spell_intensity_bonus(self, school: str) -> float:
+    def spell_intensity_bonus(self, school: str, clock=None) -> float:
         """Multiplicative bonus (e.g. 0.10 = +10%) for a spell school."""
         key = f"{school}_intensity"
         level = self.modifiers.get(key, 0)
@@ -175,10 +202,16 @@ class Character:
         if key not in MODIFIER_CATALOGUE:
             key = f"{school}_power"
         level = self.modifiers.get(key, level)
-        return level * MODIFIER_BONUS_PER_LEVEL
+        base = level * MODIFIER_BONUS_PER_LEVEL
+        if clock is not None and "focused" in self.get_active_buffs(clock):
+            base += 0.1
+        return base
 
-    def dodge_bonus(self) -> float:
-        return self.modifiers.get("dodge_mastery", 0) * MODIFIER_BONUS_PER_LEVEL
+    def dodge_bonus(self, clock=None) -> float:
+        base = self.modifiers.get("dodge_mastery", 0) * MODIFIER_BONUS_PER_LEVEL
+        if clock is not None and "alertness" in self.get_active_buffs(clock):
+            base += 0.15
+        return base
 
     def block_bonus(self) -> float:
         base = 0.0
@@ -224,14 +257,30 @@ class Character:
 
     # ── Survival drain helpers ───────────────────────────────────────────────
 
-    def hunger_drain_rate(self) -> float:
+    def hunger_drain_rate(self, clock=None) -> float:
         """Base hunger drain per game-minute tick."""
-        return 0.1
+        base = 0.1
+        if clock is not None and "satiated" in self.get_active_buffs(clock):
+            base *= 0.6
+        return base
 
-    def thirst_drain_rate(self, temp_label: str) -> float:
+    def thirst_drain_rate(self, temp_label: str, clock=None) -> float:
         """Thirst drain per game-minute tick, scaled by temperature label."""
-        base = 0.15
-        return base * _THIRST_MULTIPLIERS.get(temp_label, 1.0)
+        base = 0.15 * _THIRST_MULTIPLIERS.get(temp_label, 1.0)
+        if clock is not None and "quenched" in self.get_active_buffs(clock):
+            base *= 0.6
+        return base
+
+    # ── Food buff helpers ────────────────────────────────────────────────────
+
+    def apply_food_buff(self, buff_name: str, duration_minutes: int, clock) -> None:
+        """Set or replace buff expiry. New buff overwrites old of same type."""
+        self.active_buffs[buff_name] = clock.total_minutes + duration_minutes
+
+    def get_active_buffs(self, clock) -> list[str]:
+        """Return list of buff names whose expiry is strictly greater than clock.total_minutes."""
+        now = clock.total_minutes
+        return [name for name, expiry in self.active_buffs.items() if expiry > now]
 
     def restore_mp(self, amount: int) -> int:
         before = self.mp
@@ -290,6 +339,7 @@ class Character:
             "strategies": self.strategies,
             "grid_row": self.grid_row,
             "grid_col": self.grid_col,
+            "active_buffs": self.active_buffs,
         }
 
     @classmethod
@@ -323,6 +373,7 @@ class Character:
         c.strategies = data.get("strategies", [])
         c.grid_row = data.get("grid_row", -1)
         c.grid_col = data.get("grid_col", -1)
+        c.active_buffs = data.get("active_buffs", {})
         return c
 
     def stats_summary(self) -> str:

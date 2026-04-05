@@ -48,5 +48,33 @@
     "cooldown_ticks": 10,
     "effect_type": "damage",
     "effect_params": { "multiplier": 3.0, "damage_type": "physical", "poison_bonus_multiplier": 1.5 }
+  },
+  {
+    "id": "lockpick",
+    "name": "Lockpick",
+    "description": "Use a lockpick to open a locked door or chest in the current room.",
+    "class_type": "thief",
+    "mp_cost": 0,
+    "stamina_cost": 5,
+    "cooldown_ticks": 0,
+    "use_context": "utility",
+    "effect_type": "unlock_door",
+    "required_items": ["lockpick"],
+    "consumes_item": false,
+    "effect_params": {}
+  },
+  {
+    "id": "detect_traps",
+    "name": "Detect Traps",
+    "description": "Reveal any hidden traps in the current room.",
+    "class_type": "thief",
+    "mp_cost": 10,
+    "stamina_cost": 0,
+    "cooldown_ticks": 0,
+    "use_context": "utility",
+    "effect_type": "reveal_traps",
+    "required_items": [],
+    "consumes_item": false,
+    "effect_params": {}
   }
 ]

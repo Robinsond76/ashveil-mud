@@ -57,13 +57,37 @@ docs/
 |---|-------|--------|-----------|
 | 1 | World Clock & Environment | ✅ COMPLETED | [phase-01-world-clock-environment.md](docs/superpowers/specs/phase-01-world-clock-environment.md) |
 | 2 | Survival Stats | ✅ COMPLETED | [phase-02-survival-stats.md](docs/superpowers/specs/phase-02-survival-stats.md) |
-| 3 | Utility Skills & Mana Rework | 🔲 NOT STARTED | [phase-03-utility-skills-mana.md](docs/superpowers/specs/phase-03-utility-skills-mana.md) |
+| 3 | Utility Skills & Mana Rework | ✅ COMPLETED | [phase-03-utility-skills-mana.md](docs/superpowers/specs/phase-03-utility-skills-mana.md) |
 | 4 | Food & Consumables | 🔲 NOT STARTED | [phase-04-food-consumables.md](docs/superpowers/specs/phase-04-food-consumables.md) |
 | 5 | Inventory & Weight Overhaul | 🔲 NOT STARTED | [phase-05-inventory-weight.md](docs/superpowers/specs/phase-05-inventory-weight.md) |
 | 6 | Horses & Mounts | 🔲 NOT STARTED | [phase-06-horses-mounts.md](docs/superpowers/specs/phase-06-horses-mounts.md) |
 | 7 | Wizard & Spell Overhaul | 🔲 NOT STARTED | [phase-07-wizard-spell-overhaul.md](docs/superpowers/specs/phase-07-wizard-spell-overhaul.md) |
 | 8 | Help System Overhaul | 🔲 NOT STARTED | [phase-08-help-system.md](docs/superpowers/specs/phase-08-help-system.md) |
 | 9 | Multiplayer Foundations | 🔲 NOT STARTED | [phase-09-multiplayer-foundations.md](docs/superpowers/specs/phase-09-multiplayer-foundations.md) |
+
+---
+
+## Phase 3 — What Was Built
+
+### Modified Files
+- `server/engine/skills.py` — `Skill` dataclass gets 4 new optional fields: `use_context` (default `"combat"`), `stamina_cost` (default `0`), `required_items` (default `[]`), `consumes_item` (default `False`). Added `get_utility_skills()`, `get_combat_skills()` filter helpers. Added `render_skills_section()`, `_render_combat_section()`, `_render_utility_section()` for filtered SKILLS display.
+- `server/engine/game.py` — `USE <skill_id>` command in NAVIGATION state (`_handle_use_skill` + `_execute_utility_effect`). SKILLS command now accepts `UTILITY`/`COMBAT` filter arg (bare SKILLS shows both sections with headers). USE blocked with clear message in COMBAT/CAMPFIRE states. Added `_fortify_active`, `_bless_camp_active`, `_arcane_light_until` session flags.
+- `server/data/skills/thief_skills.json` — Added `lockpick` (5 stamina, requires lockpick item) and `detect_traps` (10 MP) utility skills.
+- `server/data/skills/mage_skills.json` — Added `arcane_light` (15 MP, provide_light 120 game-min) and `identify` (20 MP) utility skills.
+- `server/data/skills/cleric_skills.json` — Added `bless_camp` (25 MP, sets bless flag) and `purify_food` (10 MP, requires food item) utility skills.
+- `server/data/skills/warrior_skills.json` — Added `fortify` (10 stamina, sets fortify flag, -10% party damage) utility skill.
+- `server/data/items/misc.json` — Added `lockpick` (stackable, weight 0, value 5) and `thieves_tools` (reusable, weight 1, value 25).
+
+### Mana Rework
+- REST at campfire already restored full MP (no change needed).
+- Confirmed no passive MP regen in out-of-combat tick — tests verify this.
+- Mana potions continue to work as instant MP restores in combat.
+
+### Key Design Decisions (Phase 3)
+- **Utility skills are NOT in the class skill_tree** (classes.json). They exist only in the skill JSON files and players unlock them separately via `unlocked_skills` dict.
+- **USE command validates**: state == NAVIGATION, skill exists, skill is unlocked, use_context == "utility", MP/stamina sufficient, required items present in party inventory (any member's inv counts).
+- **Effect flags** (`_fortify_active`, `_bless_camp_active`, `_arcane_light_until`) are set as dynamic session attributes — no dataclass field needed.
+- **SKILLS bare** shows both COMBAT (tree-based) and UTILITY (registry-based) sections with clear headers.
 
 ---
 

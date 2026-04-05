@@ -77,7 +77,7 @@ def all_items() -> dict[str, Item]:
 
 # ── Equipment helpers ────────────────────────────────────────────────────────
 
-EQUIPMENT_SLOTS = ("weapon", "offhand", "head", "body", "hands", "feet")
+EQUIPMENT_SLOTS = ("weapon", "offhand", "head", "body", "hands", "feet", "back")
 
 
 def total_equipped_weight(equipment: dict[str, str | None]) -> int:

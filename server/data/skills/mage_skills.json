@@ -58,5 +58,33 @@
     "cooldown_ticks": 12,
     "effect_type": "damage_aoe",
     "effect_params": { "base_damage": 50, "damage_type": "fire" }
+  },
+  {
+    "id": "arcane_light",
+    "name": "Arcane Light",
+    "description": "Suffuses the area with magical radiance, providing 80% light level for 120 game-minutes.",
+    "class_type": "mage",
+    "mp_cost": 15,
+    "stamina_cost": 0,
+    "cooldown_ticks": 0,
+    "use_context": "utility",
+    "effect_type": "provide_light",
+    "required_items": [],
+    "consumes_item": false,
+    "effect_params": { "light_level": 0.8, "duration_minutes": 120 }
+  },
+  {
+    "id": "identify",
+    "name": "Identify",
+    "description": "Reveal the full stats of an unidentified item in the party's inventory.",
+    "class_type": "mage",
+    "mp_cost": 20,
+    "stamina_cost": 0,
+    "cooldown_ticks": 0,
+    "use_context": "utility",
+    "effect_type": "identify_item",
+    "required_items": [],
+    "consumes_item": false,
+    "effect_params": {}
   }
 ]

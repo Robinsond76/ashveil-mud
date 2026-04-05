@@ -21,6 +21,10 @@ class Skill:
     cooldown_ticks: int
     effect_type: str
     effect_params: dict[str, Any] = field(default_factory=dict)
+    use_context: str = "combat"
+    stamina_cost: int = 0
+    required_items: list[str] = field(default_factory=list)
+    consumes_item: bool = False
 
     def short_desc(self) -> str:
         return f"{self.name} (MP:{self.mp_cost}, CD:{self.cooldown_ticks}t) — {self.description}"
@@ -57,6 +61,10 @@ def load_skills(data_dir: str) -> None:
                 cooldown_ticks=raw.get("cooldown_ticks", 3),
                 effect_type=raw["effect_type"],
                 effect_params=raw.get("effect_params", {}),
+                use_context=raw.get("use_context", "combat"),
+                stamina_cost=raw.get("stamina_cost", 0),
+                required_items=raw.get("required_items", []),
+                consumes_item=raw.get("consumes_item", False),
             )
             _SKILL_REGISTRY[skill.id] = skill
 
@@ -81,6 +89,88 @@ def get_skill(skill_id: str) -> Skill | None:
 
 def get_skill_tree(class_type: str) -> list[SkillTreeNode]:
     return _SKILL_TREES.get(class_type, [])
+
+
+def get_utility_skills(class_type: str) -> list[Skill]:
+    return [s for s in _SKILL_REGISTRY.values()
+            if s.class_type == class_type and s.use_context == "utility"]
+
+
+def get_combat_skills(class_type: str) -> list[Skill]:
+    return [s for s in _SKILL_REGISTRY.values()
+            if s.class_type == class_type and s.use_context == "combat"]
+
+
+def render_skills_section(
+    class_type: str,
+    unlocked: dict[str, int],
+    skill_points: int,
+    context: str = "",
+) -> str:
+    context = context.strip().lower()
+    if context == "utility":
+        return _render_utility_section(class_type, unlocked)
+    elif context == "combat":
+        return _render_combat_section(class_type, unlocked, skill_points)
+    else:
+        return (
+            _render_combat_section(class_type, unlocked, skill_points)
+            + "\n"
+            + _render_utility_section(class_type, unlocked)
+        )
+
+
+def _render_combat_section(
+    class_type: str,
+    unlocked: dict[str, int],
+    skill_points: int,
+) -> str:
+    tree = get_skill_tree(class_type)
+    if not tree:
+        return "  No combat skills found."
+    lines = [
+        "  ── COMBAT SKILLS ──────────────────────────────────────",
+        f"  Skill Points available: {skill_points}",
+        "",
+    ]
+    for node in tree:
+        skill = get_skill(node.skill_id)
+        if skill is None:
+            continue
+        status = "[LEARNED]" if node.skill_id in unlocked else "[ LOCKED ]"
+        lines.append(f"  {status} {skill.name} (cost: {node.unlock_cost} pt)")
+        lines.append(f"           {skill.description}")
+        if node.prerequisites:
+            lines.append(f"           Requires: {', '.join(node.prerequisites)}")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def _render_utility_section(
+    class_type: str,
+    unlocked: dict[str, int],
+) -> str:
+    skills = get_utility_skills(class_type)
+    lines = [
+        "  ── UTILITY SKILLS ──────────────────────────────────────",
+        "",
+    ]
+    if not skills:
+        lines.append("  No utility skills available for your class.")
+    else:
+        for skill in skills:
+            status = "[LEARNED]" if skill.id in unlocked else "[ LOCKED ]"
+            cost_parts: list[str] = []
+            if skill.mp_cost > 0:
+                cost_parts.append(f"MP:{skill.mp_cost}")
+            if skill.stamina_cost > 0:
+                cost_parts.append(f"Stamina:{skill.stamina_cost}")
+            cost_str = ", ".join(cost_parts) if cost_parts else "Free"
+            lines.append(f"  {status} {skill.name} ({cost_str}) — {skill.description}")
+            if skill.required_items:
+                lines.append(f"           Requires: {', '.join(skill.required_items)}")
+            lines.append("")
+    return "\n".join(lines)
 
 
 def can_learn(

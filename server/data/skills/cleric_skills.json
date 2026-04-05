@@ -58,5 +58,33 @@
     "cooldown_ticks": 10,
     "effect_type": "damage",
     "effect_params": { "base_damage": 60, "damage_type": "holy" }
+  },
+  {
+    "id": "bless_camp",
+    "name": "Bless Camp",
+    "description": "Invoke a divine blessing that reduces hunger drain by 50% during the next rest period.",
+    "class_type": "cleric",
+    "mp_cost": 25,
+    "stamina_cost": 0,
+    "cooldown_ticks": 0,
+    "use_context": "utility",
+    "effect_type": "bless_camp",
+    "required_items": [],
+    "consumes_item": false,
+    "effect_params": {}
+  },
+  {
+    "id": "purify_food",
+    "name": "Purify Food",
+    "description": "Purify a spoiled food item in the party's inventory, making it safe to eat.",
+    "class_type": "cleric",
+    "mp_cost": 10,
+    "stamina_cost": 0,
+    "cooldown_ticks": 0,
+    "use_context": "utility",
+    "effect_type": "purify_food",
+    "required_items": [],
+    "consumes_item": false,
+    "effect_params": {}
   }
 ]

@@ -37,5 +37,63 @@
     },
     "weight": 1,
     "value": 8
+  },
+  {
+    "id": "lockpick",
+    "name": "Lockpick",
+    "description": "A slender steel pick used to manipulate lock tumblers. Stackable.",
+    "type": "misc",
+    "stackable": true,
+    "weight": 0,
+    "value": 5
+  },
+  {
+    "id": "thieves_tools",
+    "name": "Thieves' Tools",
+    "description": "A compact leather case containing picks, tension wrenches, and a small hook. Reusable with higher success chance than a plain lockpick.",
+    "type": "misc",
+    "stackable": false,
+    "weight": 1,
+    "value": 25
+  },
+  {
+    "id": "small_backpack",
+    "name": "Small Backpack",
+    "description": "A simple leather pack worn across the back. Adds 8 carry slots and 30 units of weight capacity.",
+    "type": "armor",
+    "slot": "back",
+    "stats": {
+      "defense": 0,
+      "slot_bonus": 8,
+      "weight_bonus": 30
+    },
+    "weight": 2,
+    "value": 40
+  },
+  {
+    "id": "large_backpack",
+    "name": "Large Backpack",
+    "description": "A sturdy canvas pack with multiple compartments. Adds 12 carry slots and 50 units of weight capacity.",
+    "type": "armor",
+    "slot": "back",
+    "stats": {
+      "defense": 0,
+      "slot_bonus": 12,
+      "weight_bonus": 50
+    },
+    "weight": 4,
+    "value": 80
+  },
+  {
+    "id": "travellers_cart",
+    "name": "Traveller's Cart",
+    "description": "A sturdy wooden cart that follows the party outdoors. Cannot enter buildings or underground areas. Adds 40 slots and 200 units of weight capacity.",
+    "type": "misc",
+    "stats": {
+      "slot_bonus": 40,
+      "weight_bonus": 200
+    },
+    "weight": 0,
+    "value": 150
   }
 ]

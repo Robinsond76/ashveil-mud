@@ -63,9 +63,9 @@
     "id": "hard_bread",
     "name": "Hard Bread",
     "description": "Dense, dry bread that keeps for weeks. Restores 30 hunger.",
-    "type": "food",
-    "effect_type": "restore_hunger",
-    "effect_params": { "amount": 30 },
+    "type": "consumable",
+    "effect_type": "food",
+    "effect_params": { "hunger": 30, "thirst": 0 },
     "weight": 1,
     "value": 5
   },
@@ -73,40 +73,80 @@
     "id": "dried_meat",
     "name": "Dried Meat",
     "description": "Salted strips of cured meat. Restores 50 hunger.",
-    "type": "food",
-    "effect_type": "restore_hunger",
-    "effect_params": { "amount": 50 },
+    "type": "consumable",
+    "effect_type": "food",
+    "effect_params": { "hunger": 50, "thirst": 0 },
     "weight": 1,
     "value": 8
   },
   {
-    "id": "rations",
-    "name": "Rations",
+    "id": "ration_pack",
+    "name": "Travel Rations",
     "description": "A day's worth of mixed provisions. Restores 40 hunger and 20 thirst.",
-    "type": "food",
-    "effect_type": "restore_hunger_thirst",
+    "type": "consumable",
+    "effect_type": "food",
     "effect_params": { "hunger": 40, "thirst": 20 },
     "weight": 2,
     "value": 12
   },
   {
-    "id": "water_flask",
-    "name": "Water Flask",
-    "description": "A small flask of clean water. Restores 40 thirst.",
-    "type": "drink",
-    "effect_type": "restore_thirst",
-    "effect_params": { "amount": 40 },
-    "weight": 1,
-    "value": 5
-  },
-  {
     "id": "waterskin",
     "name": "Waterskin",
     "description": "A large skin of water. Restores 80 thirst.",
-    "type": "drink",
-    "effect_type": "restore_thirst",
-    "effect_params": { "amount": 80 },
+    "type": "consumable",
+    "effect_type": "food",
+    "effect_params": { "hunger": 0, "thirst": 80 },
     "weight": 2,
     "value": 10
+  },
+  {
+    "id": "hearty_stew",
+    "name": "Hearty Stew",
+    "description": "A thick, filling stew made from forest game and root vegetables.",
+    "type": "consumable",
+    "effect_type": "food",
+    "effect_params": { "hunger": 70, "thirst": 30, "buff": "fortified", "buff_duration": 120 },
+    "weight": 2,
+    "value": 18
+  },
+  {
+    "id": "forest_berries",
+    "name": "Forest Berries",
+    "description": "Sweet wild berries with a strange sharpening effect on the senses.",
+    "type": "consumable",
+    "effect_type": "food",
+    "effect_params": { "hunger": 20, "thirst": 15, "buff": "alertness", "buff_duration": 60 },
+    "weight": 1,
+    "value": 10
+  },
+  {
+    "id": "adventure_bread",
+    "name": "Spiced Bread",
+    "description": "Heavily spiced trail bread that curbs hunger for a long time.",
+    "type": "consumable",
+    "effect_type": "food",
+    "effect_params": { "hunger": 45, "thirst": 0, "buff": "satiated", "buff_duration": 180 },
+    "weight": 1,
+    "value": 14
+  },
+  {
+    "id": "mountain_tea",
+    "name": "Mountain Tea",
+    "description": "A fragrant herbal brew that sharpens the mind before a battle.",
+    "type": "consumable",
+    "effect_type": "food",
+    "effect_params": { "hunger": 0, "thirst": 50, "buff": "focused", "buff_duration": 60 },
+    "weight": 1,
+    "value": 16
+  },
+  {
+    "id": "warrior_chow",
+    "name": "Warrior's Chow",
+    "description": "A dense, energy-packed meal favoured by soldiers on the march.",
+    "type": "consumable",
+    "effect_type": "food",
+    "effect_params": { "hunger": 60, "thirst": 10, "buff": "energised", "buff_duration": 90 },
+    "weight": 2,
+    "value": 20
   }
 ]

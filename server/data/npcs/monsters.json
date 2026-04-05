@@ -11,7 +11,8 @@
     "modifiers": { "dagger_prof": 1 },
     "loot_table": [
       { "item_id": "health_potion", "chance": 20 },
-      { "item_id": "iron_dagger", "chance": 10 }
+      { "item_id": "iron_dagger", "chance": 10 },
+      { "item_id": "ration_pack", "chance": 30 }
     ],
     "xp_reward": 25,
     "gold_range": [2, 8],
