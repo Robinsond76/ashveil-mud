@@ -5,6 +5,7 @@
     "description": "A simple robe offering almost no protection, but light as a feather.",
     "type": "armor",
     "slot": "body",
+    "armor_type": "cloth",
     "stats": { "defense": 2 },
     "weight": 2,
     "value": 15
@@ -15,6 +16,7 @@
     "description": "Supple leather that offers decent protection without hindering movement.",
     "type": "armor",
     "slot": "body",
+    "armor_type": "leather",
     "stats": { "defense": 6 },
     "weight": 6,
     "value": 60
@@ -25,6 +27,7 @@
     "description": "Interlocking rings of iron. Solid protection but somewhat heavy.",
     "type": "armor",
     "slot": "body",
+    "armor_type": "chain",
     "stats": { "defense": 12 },
     "weight": 14,
     "value": 180
@@ -35,6 +38,7 @@
     "description": "Full steel plate. Exceptional protection at the cost of significant weight.",
     "type": "armor",
     "slot": "body",
+    "armor_type": "plate",
     "stats": { "defense": 20 },
     "weight": 24,
     "value": 400

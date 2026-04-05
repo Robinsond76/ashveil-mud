@@ -56,6 +56,7 @@
     "type": "weapon",
     "weapon_type": "staff",
     "stats": { "damage_min": 3, "damage_max": 7, "magic_bonus": 5 },
+    "spell_power_bonus": 5,
     "weight": 4,
     "value": 60
   },
@@ -66,8 +67,33 @@
     "type": "weapon",
     "weapon_type": "staff",
     "stats": { "damage_min": 5, "damage_max": 10, "magic_bonus": 15 },
+    "spell_power_bonus": 15,
     "weight": 5,
     "value": 200
+  },
+  {
+    "id": "apprentice_staff",
+    "name": "Apprentice Staff",
+    "description": "A slender wooden staff carried by novice mages.",
+    "type": "weapon",
+    "weapon_type": "staff",
+    "class_requirement": "mage",
+    "stats": { "damage_min": 2, "damage_max": 6 },
+    "spell_power_bonus": 5,
+    "weight": 4,
+    "value": 40
+  },
+  {
+    "id": "oaken_staff",
+    "name": "Oaken Staff",
+    "description": "A sturdy oak staff reinforced with silver runes.",
+    "type": "weapon",
+    "weapon_type": "staff",
+    "class_requirement": "mage",
+    "stats": { "damage_min": 3, "damage_max": 8 },
+    "spell_power_bonus": 10,
+    "weight": 5,
+    "value": 100
   },
   {
     "id": "iron_dagger",

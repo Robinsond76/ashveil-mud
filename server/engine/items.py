@@ -25,6 +25,9 @@ class Item:
     slot: str | None = None          # head, body, hands, feet, weapon, offhand
     effect_type: str | None = None   # for consumables
     effect_params: dict[str, Any] = field(default_factory=dict)
+    armor_type: str | None = None    # cloth, leather, chain, plate (body armor)
+    spell_power_bonus: int = 0       # staff/spellbook bonus to spell power
+    grants_spells: list[str] = field(default_factory=list)  # spellbook granted spells
 
     def short_desc(self) -> str:
         parts = [self.name]
@@ -63,6 +66,9 @@ def load_items(data_dir: str) -> None:
                 slot=raw.get("slot"),
                 effect_type=raw.get("effect_type"),
                 effect_params=raw.get("effect_params", {}),
+                armor_type=raw.get("armor_type"),
+                spell_power_bonus=raw.get("spell_power_bonus", 0),
+                grants_spells=raw.get("grants_spells", []),
             )
             _ITEM_REGISTRY[item.id] = item
 

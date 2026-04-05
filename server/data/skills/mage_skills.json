@@ -1,13 +1,50 @@
 [
   {
-    "id": "fireball",
-    "name": "Fireball",
-    "description": "Hurls a ball of fire at one enemy, dealing fire damage.",
+    "id": "arcane_bolt",
+    "name": "Arcane Bolt",
+    "description": "A quick burst of raw arcane energy. Deals minor magic damage instantly.",
     "class_type": "mage",
-    "mp_cost": 12,
+    "mp_cost": 5,
+    "cooldown_ticks": 2,
+    "effect_type": "damage",
+    "effect_params": {
+      "base_damage": 10,
+      "damage_type": "arcane"
+    },
+    "cast_time_seconds": 0,
+    "target_type": "single",
+    "damage_type": "arcane",
+    "spell_power_scale": 1.0,
+    "cast_messages": [
+      "{name} flicks a bolt of arcane energy!",
+      "{name} flicks a bolt of arcane energy!",
+      "{name} flicks a bolt of arcane energy!",
+      "{name} releases an arcane bolt!"
+    ]
+  },
+  {
+    "id": "magic_missile",
+    "name": "Magic Missile",
+    "description": "A seeker-bolt of pure magic. Deals magic damage and never misses.",
+    "class_type": "mage",
+    "mp_cost": 8,
     "cooldown_ticks": 3,
     "effect_type": "damage",
-    "effect_params": { "base_damage": 25, "damage_type": "fire" }
+    "effect_params": {
+      "base_damage": 16,
+      "damage_type": "arcane",
+      "guaranteed_hit": true
+    },
+    "cast_time_seconds": 3,
+    "target_type": "single",
+    "damage_type": "arcane",
+    "spell_power_scale": 1.0,
+    "cast_messages": [
+      "{name} begins forming a seeker-missile...",
+      "{name} continues forming a seeker-missile...",
+      "{name} locks onto the target!",
+      "A magic missile streaks toward its mark!"
+    ]
   },
   {
     "id": "frost_bolt",
@@ -17,52 +54,121 @@
     "mp_cost": 10,
     "cooldown_ticks": 3,
     "effect_type": "damage_status",
-    "effect_params": { "base_damage": 18, "damage_type": "frost", "status": "slow", "duration_ticks": 2 }
+    "effect_params": {
+      "base_damage": 18,
+      "damage_type": "frost",
+      "status": "slow",
+      "duration_ticks": 2
+    },
+    "cast_time_seconds": 6,
+    "target_type": "single",
+    "damage_type": "frost",
+    "spell_power_scale": 1.0,
+    "cast_messages": [
+      "{name} inhales sharply, frost forming on their lips.",
+      "{name} draws icy energy into their hands.",
+      "{name} takes aim with a crackling bolt of ice!",
+      "A shard of frost streaks through the air!"
+    ]
+  },
+  {
+    "id": "fireball",
+    "name": "Fireball",
+    "description": "Calls down a sphere of fire engulfing a 2x2 section of the battlefield.",
+    "class_type": "mage",
+    "mp_cost": 18,
+    "cooldown_ticks": 5,
+    "effect_type": "damage_aoe",
+    "effect_params": {
+      "base_damage": 25,
+      "damage_type": "fire"
+    },
+    "cast_time_seconds": 9,
+    "target_type": "grid_2x2",
+    "damage_type": "fire",
+    "spell_power_scale": 0.5,
+    "cast_messages": [
+      "{name} begins tracing a sigil in the air.",
+      "{name} breathes deeply, heat shimmering around their hands.",
+      "{name} screams the word of ignition!",
+      "A fireball detonates across the battlefield!"
+    ]
+  },
+  {
+    "id": "chain_lightning",
+    "name": "Chain Lightning",
+    "description": "Lightning arcs between all enemies dealing lightning damage.",
+    "class_type": "mage",
+    "mp_cost": 22,
+    "cooldown_ticks": 4,
+    "effect_type": "damage_aoe",
+    "effect_params": {
+      "base_damage": 20,
+      "damage_type": "lightning"
+    },
+    "cast_time_seconds": 6,
+    "target_type": "all_enemies",
+    "damage_type": "lightning",
+    "spell_power_scale": 0.7,
+    "cast_messages": [
+      "{name} raises a hand, static crackling in the air.",
+      "{name} calls the storm down...",
+      "{name} extends both arms, lightning dancing between their fingers!",
+      "Chain lightning arcs across the battlefield!"
+    ]
   },
   {
     "id": "arcane_shield",
     "name": "Arcane Shield",
     "description": "Absorbs the next hit taken for 4 ticks.",
     "class_type": "mage",
-    "mp_cost": 15,
+    "mp_cost": 12,
     "cooldown_ticks": 8,
     "effect_type": "status_apply",
-    "effect_params": { "status": "arcane_shield", "duration_ticks": 4, "target_scope": "self" }
+    "effect_params": {
+      "status": "arcane_shield",
+      "duration_ticks": 4,
+      "target_scope": "self"
+    },
+    "cast_time_seconds": 3,
+    "target_type": "self",
+    "damage_type": "arcane",
+    "spell_power_scale": 1.0,
+    "cast_messages": [
+      "{name} begins weaving a protective barrier.",
+      "{name} continues weaving a protective barrier.",
+      "{name} completes the barrier runes!",
+      "An arcane shield shimmers around {name}!"
+    ]
   },
   {
-    "id": "chain_lightning",
-    "name": "Chain Lightning",
-    "description": "Lightning arcs between up to 3 enemies dealing lightning damage.",
+    "id": "blink",
+    "name": "Blink",
+    "description": "Teleports a short distance, granting 50% dodge chance on the next attack.",
     "class_type": "mage",
-    "mp_cost": 18,
+    "mp_cost": 8,
     "cooldown_ticks": 4,
-    "effect_type": "damage_chain",
-    "effect_params": { "base_damage": 20, "damage_type": "lightning", "chain_count": 3 }
-  },
-  {
-    "id": "blizzard",
-    "name": "Blizzard",
-    "description": "Blankets all enemies in ice dealing frost damage and applying Slow.",
-    "class_type": "mage",
-    "mp_cost": 22,
-    "cooldown_ticks": 6,
-    "effect_type": "damage_aoe",
-    "effect_params": { "base_damage": 15, "damage_type": "frost", "status": "slow", "duration_ticks": 2 }
-  },
-  {
-    "id": "meteor",
-    "name": "Meteor",
-    "description": "Calls down a meteor for massive fire damage to all enemies.",
-    "class_type": "mage",
-    "mp_cost": 40,
-    "cooldown_ticks": 12,
-    "effect_type": "damage_aoe",
-    "effect_params": { "base_damage": 50, "damage_type": "fire" }
+    "effect_type": "status_apply",
+    "effect_params": {
+      "status": "blink_dodge",
+      "duration_ticks": 1,
+      "target_scope": "self"
+    },
+    "cast_time_seconds": 0,
+    "target_type": "self",
+    "damage_type": "arcane",
+    "spell_power_scale": 1.0,
+    "cast_messages": [
+      "{name} blinks!",
+      "{name} blinks!",
+      "{name} blinks!",
+      "{name} blinks in a flash of light!"
+    ]
   },
   {
     "id": "arcane_light",
     "name": "Arcane Light",
-    "description": "Suffuses the area with magical radiance, providing 80% light level for 120 game-minutes.",
+    "description": "Suffuses the area with magical radiance.",
     "class_type": "mage",
     "mp_cost": 15,
     "stamina_cost": 0,
@@ -71,12 +177,20 @@
     "effect_type": "provide_light",
     "required_items": [],
     "consumes_item": false,
-    "effect_params": { "light_level": 0.8, "duration_minutes": 120 }
+    "effect_params": {
+      "light_level": 0.8,
+      "duration_minutes": 120
+    },
+    "cast_time_seconds": 0,
+    "target_type": "single",
+    "damage_type": "arcane",
+    "spell_power_scale": 1.0,
+    "cast_messages": []
   },
   {
     "id": "identify",
     "name": "Identify",
-    "description": "Reveal the full stats of an unidentified item in the party's inventory.",
+    "description": "Reveal the full stats of an unidentified item.",
     "class_type": "mage",
     "mp_cost": 20,
     "stamina_cost": 0,
@@ -85,6 +199,11 @@
     "effect_type": "identify_item",
     "required_items": [],
     "consumes_item": false,
-    "effect_params": {}
+    "effect_params": {},
+    "cast_time_seconds": 0,
+    "target_type": "single",
+    "damage_type": "arcane",
+    "spell_power_scale": 1.0,
+    "cast_messages": []
   }
 ]
