@@ -120,6 +120,11 @@ class GameSession:
         self._cart_room_id: str | None = None
         self._cart_inventory: list[str] = []
 
+        # Mount state
+        self._mounted: bool = False
+        self._horses_outside: bool = False
+        self._was_mounted: bool = False
+
         # Weather/clock callback ref (stored for unsubscribe)
         self._weather_cb = None
 
@@ -266,6 +271,29 @@ class GameSession:
             if "travellers_cart" in m.inventory:
                 return True
         return False
+
+    # ── Mount helpers ─────────────────────────────────────────────────────────
+
+    def _horse_count(self) -> int:
+        """Count items with type == 'mount' across all party member inventories."""
+        members = ([self.player] if self.player else []) + list(self.party)
+        count = 0
+        for m in members:
+            for item_id in m.inventory:
+                item = get_item(item_id)
+                if item and item.type == "mount":
+                    count += 1
+        return count
+
+    def _stamina_multiplier(self) -> float:
+        """Return stamina drain multiplier based on horse-to-party ratio.
+        Returns 1.0 when not mounted or no horses."""
+        if not self._mounted:
+            return 1.0
+        horse_count = self._horse_count()
+        party_size = max(1, 1 + len(self.party))  # player + npcs
+        ratio = min(1.0, horse_count / party_size)
+        return 1.0 - (0.60 * ratio)
 
     # ═══════════════════════════════════════════════════════════════════
     # Entry point
@@ -795,6 +823,17 @@ class GameSession:
             await self._do_light_source(args, extinguish=True)
             return
 
+        # Mount commands
+        if cmd == "RIDE":
+            await self._do_ride()
+            return
+        if cmd == "DISMOUNT":
+            await self._do_dismount()
+            return
+        if cmd == "HORSES":
+            await self._do_horses()
+            return
+
         if cmd == "HELP":
             await self._send_help(args)
             return
@@ -816,11 +855,12 @@ class GameSession:
                 "  You are too exhausted to move. Rest to recover your stamina.\n"
             )
             return
-        # Drain stamina from all party members per move (fortified buff reduces by 30%)
+        # Drain stamina from all party members per move (fortified buff reduces by 30%; horses reduce further)
         if self.player:
             members = [self.player] + list(self.party)
+            mount_mult = self._stamina_multiplier()
             for m in members:
-                drain = 2.0
+                drain = 2.0 * mount_mult
                 if self.clock and "fortified" in m.get_active_buffs(self.clock):
                     drain *= 0.7
                 m.stamina = max(0.0, m.stamina - drain)
@@ -838,6 +878,17 @@ class GameSession:
                 self._cart_present = True
                 self._cart_room_id = None
                 await self._send("  Your cart catches up with the party.\n")
+            # Horse detach / reattach logic
+            if dest_type in ("indoor", "underground") and self._mounted:
+                self._mounted = False
+                self._horses_outside = True
+                await self._send(
+                    f"  Your horses wait outside at {room.id.replace('_', ' ').title()}.\n"
+                )
+            elif dest_type == "outdoor" and self._horses_outside:
+                self._horses_outside = False
+                self._mounted = True
+                await self._send("  Your horses fall back into step with the party.\n")
         self.current_room_id = dest_id
         await self._do_look()
 
@@ -1176,6 +1227,35 @@ class GameSession:
                 return
         await self._send(f"  '{args.strip()}' not found in cart.\n")
 
+    # ── Mount commands ────────────────────────────────────────────────────────
+
+    async def _do_ride(self) -> None:
+        """RIDE — mount up if horses are available and current room is outdoor."""
+        if self._horse_count() == 0:
+            await self._send("  You don't have any horses.\n")
+            return
+        room = self.world.get_room(self.current_room_id)
+        if room and room.room_type != "outdoor":
+            await self._send("  You can only mount up outdoors.\n")
+            return
+        self._mounted = True
+        await self._send("  The party mounts up and prepares to ride.\n")
+
+    async def _do_dismount(self) -> None:
+        """DISMOUNT — dismount the party."""
+        self._mounted = False
+        await self._send("  The party dismounts.\n")
+
+    async def _do_horses(self) -> None:
+        """HORSES — show horse count, party size, and current stamina drain reduction."""
+        horse_count = self._horse_count()
+        party_size = 1 + len(self.party)
+        ratio = min(1.0, horse_count / max(1, party_size)) if self._mounted else 0.0
+        reduction_pct = round(0.60 * ratio * 100)
+        await self._send(
+            f"  Horses: {horse_count} | Party: {party_size} | Stamina drain: -{reduction_pct}%\n"
+        )
+
     # ── Skills & Modifiers ────────────────────────────────────────────────────
 
     async def _do_learn(self, skill_id: str) -> None:
@@ -1511,6 +1591,12 @@ class GameSession:
         self._current_encounter_group = encounter_group
         self.state = State.COMBAT
 
+        # Auto-dismount when combat begins
+        if self._mounted:
+            self._was_mounted = True
+            self._mounted = False
+            await self._send("  The party dismounts as combat begins.\n")
+
         async def on_combat_end(state: CombatState, summary: list[str]) -> None:
             await self._send("\n".join(summary))
             if state == CombatState.VICTORY:
@@ -1536,6 +1622,13 @@ class GameSession:
 
     async def _end_combat_victory(self) -> None:
         self.state = State.NAVIGATION
+        # Auto-remount after victory if in outdoor room
+        if self._was_mounted:
+            room = self.world.get_room(self.current_room_id)
+            if room and room.room_type == "outdoor":
+                self._mounted = True
+                await self._send("  The party remounts and continues on.\n")
+            self._was_mounted = False
         await self._do_look()
 
     async def _end_combat_defeat(self) -> None:
