@@ -69,6 +69,671 @@ def _box(title: str, lines: list[str]) -> str:
     return "\n".join(out)
 
 
+# ── Help topic registry ───────────────────────────────────────────────────────
+
+_HELP_TOPICS: dict[str, str] = {
+    # ── Navigation ────────────────────────────────────────────────────────────
+    "LOOK": _box("HELP: LOOK", [
+        "  Show the current room description, items, and exits.",
+        "  Usage: LOOK  (or L)",
+        "  Examples:",
+        "    LOOK",
+        "    L",
+        "  See also: NORTH, SOUTH, EAST, WEST",
+    ]),
+    "L": _box("HELP: LOOK (L)", [
+        "  Show the current room description, items, and exits.",
+        "  Usage: LOOK  (or L)",
+        "  Examples:",
+        "    LOOK",
+        "    L",
+        "  See also: NORTH, SOUTH, EAST, WEST",
+    ]),
+    "NORTH": _box("HELP: NORTH / SOUTH / EAST / WEST", [
+        "  Move your party in the given direction.",
+        "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
+        "  Details:",
+        "    Moving costs 2 stamina per step.",
+        "    Stamina 0 blocks movement until you rest.",
+        "    Horses reduce stamina drain (HELP HORSES).",
+        "  See also: LOOK, STAMINA, HORSES",
+    ]),
+    "SOUTH": _box("HELP: NORTH / SOUTH / EAST / WEST", [
+        "  Move your party in the given direction.",
+        "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
+        "  Details:",
+        "    Moving costs 2 stamina per step.",
+        "    Stamina 0 blocks movement until you rest.",
+        "    Horses reduce stamina drain (HELP HORSES).",
+        "  See also: LOOK, STAMINA, HORSES",
+    ]),
+    "EAST": _box("HELP: NORTH / SOUTH / EAST / WEST", [
+        "  Move your party in the given direction.",
+        "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
+        "  Details:",
+        "    Moving costs 2 stamina per step.",
+        "    Stamina 0 blocks movement until you rest.",
+        "    Horses reduce stamina drain (HELP HORSES).",
+        "  See also: LOOK, STAMINA, HORSES",
+    ]),
+    "WEST": _box("HELP: NORTH / SOUTH / EAST / WEST", [
+        "  Move your party in the given direction.",
+        "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
+        "  Details:",
+        "    Moving costs 2 stamina per step.",
+        "    Stamina 0 blocks movement until you rest.",
+        "    Horses reduce stamina drain (HELP HORSES).",
+        "  See also: LOOK, STAMINA, HORSES",
+    ]),
+    "MOVE": _box("HELP: NORTH / SOUTH / EAST / WEST", [
+        "  Move your party in the given direction.",
+        "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
+        "  Details:",
+        "    Moving costs 2 stamina per step.",
+        "    Stamina 0 blocks movement until you rest.",
+        "    Horses reduce stamina drain (HELP HORSES).",
+        "  See also: LOOK, STAMINA, HORSES",
+    ]),
+    "INV": _box("HELP: INV / INVENTORY", [
+        "  List all items carried by the party.",
+        "  Usage: INV  (or INVENTORY)",
+        "  Examples:",
+        "    INV",
+        "    INVENTORY",
+        "  See also: EQUIP, UNEQUIP, DROP, TAKE, WEIGHT",
+    ]),
+    "INVENTORY": _box("HELP: INV / INVENTORY", [
+        "  List all items carried by the party.",
+        "  Usage: INV  (or INVENTORY)",
+        "  Examples:",
+        "    INV",
+        "    INVENTORY",
+        "  See also: EQUIP, UNEQUIP, DROP, TAKE, WEIGHT",
+    ]),
+    "EQUIP": _box("HELP: EQUIP", [
+        "  Equip an item on a party member.",
+        "  Usage: EQUIP <member> <item>",
+        "  Examples:",
+        "    EQUIP Hero iron_sword",
+        "    EQUIP Mira leather_armor",
+        "  Details:",
+        "    Equipping replaces whatever is in that slot.",
+        "    Mages suffer spell power penalties for heavy armor.",
+        "  See also: UNEQUIP, INV, WIZARD",
+    ]),
+    "UNEQUIP": _box("HELP: UNEQUIP", [
+        "  Remove an equipped item from a slot.",
+        "  Usage: UNEQUIP <member> <slot>",
+        "  Examples:",
+        "    UNEQUIP Hero weapon",
+        "    UNEQUIP Mira body",
+        "  Details:",
+        "    Slots: weapon, body, head, hands, feet, back",
+        "  See also: EQUIP, INV",
+    ]),
+    "DROP": _box("HELP: DROP", [
+        "  Drop an item from your inventory into the room.",
+        "  Usage: DROP <item>",
+        "  Examples:",
+        "    DROP torch",
+        "    DROP iron_sword",
+        "  Details:",
+        "    Dropped items remain in the room until picked up.",
+        "  See also: TAKE, INV",
+    ]),
+    "TAKE": _box("HELP: TAKE / PICK", [
+        "  Pick up an item from the current room.",
+        "  Usage: TAKE <item>  (or PICK <item>)",
+        "  Examples:",
+        "    TAKE torch",
+        "    PICK gold_coin",
+        "  Details:",
+        "    Check carry weight first — overloading slows movement.",
+        "  See also: DROP, INV, WEIGHT",
+    ]),
+    "PICK": _box("HELP: TAKE / PICK", [
+        "  Pick up an item from the current room.",
+        "  Usage: TAKE <item>  (or PICK <item>)",
+        "  Examples:",
+        "    TAKE torch",
+        "    PICK gold_coin",
+        "  Details:",
+        "    Check carry weight first — overloading slows movement.",
+        "  See also: DROP, INV, WEIGHT",
+    ]),
+    "STATS": _box("HELP: STATS", [
+        "  Show your character's statistics and attributes.",
+        "  Usage: STATS",
+        "  Details:",
+        "    Shows STR, DEX, INT, WIS, CON and derived values.",
+        "    Also shows HP, MP, XP, level, and equipped gear.",
+        "  See also: SKILLS, STATUS, MODIFIERS",
+    ]),
+    "SKILLS": _box("HELP: SKILLS", [
+        "  Show known skills and their effects.",
+        "  Usage: SKILLS [COMBAT | UTILITY]",
+        "  Examples:",
+        "    SKILLS           — show all skills",
+        "    SKILLS COMBAT    — show only combat skills",
+        "    SKILLS UTILITY   — show only utility skills",
+        "  See also: STATS, LEARN",
+    ]),
+    "ATTACK": _box("HELP: ATTACK", [
+        "  Engage in combat with hostile creatures in the room.",
+        "  Usage: ATTACK [group]",
+        "  Examples:",
+        "    ATTACK           — target the first hostile group",
+        "    ATTACK A         — target group A (Gauntlet arena)",
+        "  Details:",
+        "    Combat is automatic — your party fights by strategy.",
+        "    Cannot attack in pitch black conditions.",
+        "  Type HELP COMBAT for more on the combat system.",
+        "  See also: COMBAT, STRATEGY, LIGHT",
+    ]),
+    "CAMP": _box("HELP: CAMP", [
+        "  Enter campfire mode to rest and manage your party.",
+        "  Usage: CAMP  (or CAMPFIRE)",
+        "  Details:",
+        "    At camp you can: REST, PARTY, STRATEGY, LEARN skills.",
+        "    Type LEAVE to return to exploring.",
+        "  See also: REST, PARTY, STRATEGY",
+    ]),
+    "STATUS": _box("HELP: STATUS", [
+        "  Show party survival stats: hunger, thirst, and stamina.",
+        "  Usage: STATUS",
+        "  Details:",
+        "    Survival bars drain over time and affect performance.",
+        "    Use EAT and DRINK to restore hunger and thirst.",
+        "    Use REST or SIT to recover stamina.",
+        "  See also: HUNGER, THIRST, STAMINA, SURVIVAL",
+    ]),
+    "SIT": _box("HELP: SIT / STAND", [
+        "  Begin or end passive stamina recovery.",
+        "  Usage: SIT   — sit down to slowly recover stamina",
+        "         STAND — stand up and stop recovering",
+        "  Details:",
+        "    Sitting recovers stamina outside of combat.",
+        "    You cannot move while sitting.",
+        "    Full REST at campfire recovers much faster.",
+        "  See also: STAMINA, REST",
+    ]),
+    "STAND": _box("HELP: SIT / STAND", [
+        "  Begin or end passive stamina recovery.",
+        "  Usage: SIT   — sit down to slowly recover stamina",
+        "         STAND — stand up and stop recovering",
+        "  Details:",
+        "    Sitting recovers stamina outside of combat.",
+        "    You cannot move while sitting.",
+        "    Full REST at campfire recovers much faster.",
+        "  See also: STAMINA, REST",
+    ]),
+    # ── Environment ───────────────────────────────────────────────────────────
+    "TIME": _box("HELP: TIME", [
+        "  Show the current in-game time, day number, and moon phase.",
+        "  Usage: TIME",
+        "  Details:",
+        "    Time of day affects outdoor visibility (dawn/day/dusk/night).",
+        "    Moon phase determines brightness on clear nights.",
+        "  See also: WEATHER, LIGHT, ENVDETAILS",
+    ]),
+    "WEATHER": _box("HELP: WEATHER", [
+        "  Show the current weather and temperature label.",
+        "  Usage: WEATHER",
+        "  Details:",
+        "    Weather only affects outdoor and indoor rooms.",
+        "    Underground rooms are always the same temperature.",
+        "    Weather changes gradually — a warning appears before it shifts.",
+        "  See also: TIME, LIGHT, ENVDETAILS",
+    ]),
+    "LIGHT": _box("HELP: LIGHT", [
+        "  Show current lighting conditions and active light sources.",
+        "  Usage: LIGHT  (or LIGHTING)",
+        "  Details:",
+        "    Light levels affect combat accuracy and dodge chance.",
+        "    Pitch black rooms forbid player-initiated combat.",
+        "    Use LIT <item> to light a torch or lantern.",
+        "    Use EXTINGUISH <item> to put one out.",
+        "  See also: LIT, EXTINGUISH, ENVDETAILS, COMBAT",
+    ]),
+    "LIGHTING": _box("HELP: LIGHT", [
+        "  Show current lighting conditions and active light sources.",
+        "  Usage: LIGHT  (or LIGHTING)",
+        "  Details:",
+        "    Light levels affect combat accuracy and dodge chance.",
+        "    Pitch black rooms forbid player-initiated combat.",
+        "    Use LIT <item> to light a torch or lantern.",
+        "    Use EXTINGUISH <item> to put one out.",
+        "  See also: LIT, EXTINGUISH, ENVDETAILS, COMBAT",
+    ]),
+    "ENVDETAILS": _box("HELP: ENVDETAILS", [
+        "  Display full numeric environmental information.",
+        "  Usage: ENVDETAILS  (or ENV)",
+        "  Details:",
+        "    Shows exact temperature, light percentages, moon phase, fuel remaining.",
+        "  See also: TIME, WEATHER, LIGHT",
+    ]),
+    "ENV": _box("HELP: ENVDETAILS", [
+        "  Display full numeric environmental information.",
+        "  Usage: ENVDETAILS  (or ENV)",
+        "  Details:",
+        "    Shows exact temperature, light percentages, moon phase, fuel remaining.",
+        "  See also: TIME, WEATHER, LIGHT",
+    ]),
+    "LIT": _box("HELP: LIT / EXTINGUISH", [
+        "  Light a torch or lantern from your inventory.",
+        "  Usage: LIT <item>",
+        "  Examples:",
+        "    LIT TORCH",
+        "    LIT LANTERN",
+        "  Details:",
+        "    Torches burn for 60 game-minutes then go out automatically.",
+        "    Lanterns require an Oil Flask to fill; they burn for 90 game-minutes.",
+        "    ENVDETAILS shows fuel remaining.",
+        "  See also: EXTINGUISH, LIGHT, ENVDETAILS",
+    ]),
+    "EXTINGUISH": _box("HELP: LIT / EXTINGUISH", [
+        "  Put out a lit light source.",
+        "  Usage: EXTINGUISH <item>  (or DOUSE <item>)",
+        "  Examples:",
+        "    EXTINGUISH TORCH",
+        "    DOUSE LANTERN",
+        "  Details:",
+        "    Extinguishing preserves remaining fuel.",
+        "  See also: LIT, LIGHT",
+    ]),
+    "DOUSE": _box("HELP: LIT / EXTINGUISH", [
+        "  Put out a lit light source.",
+        "  Usage: EXTINGUISH <item>  (or DOUSE <item>)",
+        "  Examples:",
+        "    EXTINGUISH TORCH",
+        "    DOUSE LANTERN",
+        "  Details:",
+        "    Extinguishing preserves remaining fuel.",
+        "  See also: LIT, LIGHT",
+    ]),
+    # ── Combat ────────────────────────────────────────────────────────────────
+    "COMBAT": _box("HELP: COMBAT", [
+        "  Combat is real-time and automatic. Your party acts on strategy rules.",
+        "  Details:",
+        "    Configure strategies at any campfire with STRATEGY <name> <tactic>.",
+        "    Lighting affects accuracy and dodge chance:",
+        "      Well-lit (80-100%) — no penalty",
+        "      Good (60-80%)      — slight penalty",
+        "      Dim (40-60%)       — moderate penalty",
+        "      Dark (20-40%)      — heavy penalty",
+        "      Very dark (5-20%)  — severe penalty",
+        "      Pitch black (<5%)  — combat forbidden (your side)",
+        "    Some creatures have Darkvision and ignore darkness penalties.",
+        "  See also: ATTACK, FLEE, STRATEGY, LIGHT",
+    ]),
+    "FLEE": _box("HELP: FLEE", [
+        "  Attempt to escape from combat.",
+        "  Usage: FLEE",
+        "  Details:",
+        "    Fleeing costs 5 stamina.",
+        "    Low stamina reduces your chance of fleeing successfully.",
+        "    High DEX and SUPPORT/FLEE strategy improve flee odds.",
+        "  See also: COMBAT, STRATEGY, STAMINA",
+    ]),
+    "STRATEGY": _box("HELP: STRATEGY", [
+        "  Set a combat tactic for a party member or enemy.",
+        "  Usage: STRATEGY <name> <tactic>",
+        "  Tactics:",
+        "    AGGRESSIVE — maximize damage output",
+        "    DEFENSIVE  — reduce incoming damage, lower output",
+        "    SUPPORT    — prioritize healing and buffs",
+        "    FLEE       — attempt to flee on their turn",
+        "  Examples:",
+        "    STRATEGY Hero AGGRESSIVE",
+        "    STRATEGY Mira DEFENSIVE",
+        "  See also: COMBAT, FLEE",
+    ]),
+    "STRATEGIES": _box("HELP: STRATEGY", [
+        "  Set a combat tactic for a party member or enemy.",
+        "  Usage: STRATEGY <name> <tactic>",
+        "  Tactics:",
+        "    AGGRESSIVE — maximize damage output",
+        "    DEFENSIVE  — reduce incoming damage, lower output",
+        "    SUPPORT    — prioritize healing and buffs",
+        "    FLEE       — attempt to flee on their turn",
+        "  Examples:",
+        "    STRATEGY Hero AGGRESSIVE",
+        "    STRATEGY Mira DEFENSIVE",
+        "  See also: COMBAT, FLEE",
+    ]),
+    "CAST": _box("HELP: CAST", [
+        "  Cast a spell (mages only).",
+        "  Usage: CAST <spell_id>",
+        "  Examples:",
+        "    CAST fireball",
+        "    CAST frost_bolt",
+        "  Details:",
+        "    Casting costs MP and may take multiple ticks (cast time).",
+        "    Being hit while casting may interrupt the spell.",
+        "    Type HELP <spell_id> for details on a specific spell.",
+        "  See also: SPELLS, WIZARD, CASTING",
+    ]),
+    # ── Campfire ──────────────────────────────────────────────────────────────
+    "REST": _box("HELP: REST", [
+        "  Rest the party at campfire to recover HP, MP, and stamina.",
+        "  Usage: REST  (used in CAMPFIRE mode)",
+        "  Details:",
+        "    REST recovers full HP, MP, and stamina over time.",
+        "    Bless Camp (cleric skill) boosts HP recovery rate.",
+        "    Enter campfire mode with CAMP from NAVIGATION.",
+        "  See also: CAMP, STAMINA, SIT",
+    ]),
+    "PARTY": _box("HELP: PARTY", [
+        "  Show all party member status: HP, MP, survival stats.",
+        "  Usage: PARTY",
+        "  Details:",
+        "    PARTY works in NAVIGATION and CAMPFIRE states.",
+        "    Shows survival aggregate row (hunger, thirst, stamina).",
+        "  See also: STATUS, STATS",
+    ]),
+    # ── Survival ──────────────────────────────────────────────────────────────
+    "HUNGER": _box("HELP: HUNGER", [
+        "  Hunger drains over time and penalizes combat when critically low.",
+        "  Details:",
+        "    Hunger drains at a base rate each game tick.",
+        "    At low hunger, your survival multiplier reduces damage dealt.",
+        "    Use EAT <food> to restore hunger.",
+        "  See also: THIRST, STAMINA, SURVIVAL, STATUS",
+    ]),
+    "THIRST": _box("HELP: THIRST", [
+        "  Thirst drains faster in hot weather and penalizes combat.",
+        "  Details:",
+        "    Thirst drain rate scales with temperature (HELP WEATHER).",
+        "    At low thirst, your survival multiplier reduces damage dealt.",
+        "    Use DRINK <item> to restore thirst.",
+        "  See also: HUNGER, STAMINA, SURVIVAL, STATUS",
+    ]),
+    "STAMINA": _box("HELP: STAMINA", [
+        "  Stamina is consumed by movement and fleeing combat.",
+        "  Details:",
+        "    Each move costs 2 stamina (reduced by horses).",
+        "    At stamina 0, movement is blocked.",
+        "    FLEE costs 5 stamina.",
+        "    Recovering: SIT to rest in place; REST at campfire for full recovery.",
+        "  See also: HUNGER, THIRST, SURVIVAL, SIT, REST, HORSES",
+    ]),
+    "SURVIVAL": _box("HELP: SURVIVAL", [
+        "  Overview of the three survival stats: Hunger, Thirst, Stamina.",
+        "  Details:",
+        "    Hunger — drains per tick; EAT to restore",
+        "    Thirst — drains faster in heat; DRINK to restore",
+        "    Stamina — drains on movement and FLEE; REST to restore",
+        "    When Hunger or Thirst is critically low, combat damage is reduced.",
+        "    Stamina 0 blocks movement entirely.",
+        "  See also: HUNGER, THIRST, STAMINA, STATUS",
+    ]),
+    # ── Weight ────────────────────────────────────────────────────────────────
+    "WEIGHT": _box("HELP: WEIGHT", [
+        "  Carry weight affects movement stamina drain.",
+        "  Details:",
+        "    Your carry capacity is based on STR.",
+        "    Carrying over the threshold increases stamina drain per step.",
+        "    Check your current load with INV.",
+        "  See also: INV, BACKPACK, CART, STAMINA",
+    ]),
+    "BACKPACK": _box("HELP: BACKPACK", [
+        "  The backpack occupies the 'back' equipment slot.",
+        "  Details:",
+        "    Equip a backpack to increase carry capacity.",
+        "    Usage: EQUIP <member> backpack",
+        "  See also: EQUIP, WEIGHT, INV",
+    ]),
+    "CART": _box("HELP: CART", [
+        "  A cart carries extra gear but is outdoor-only.",
+        "  Details:",
+        "    Load items into the cart with STASH <item>.",
+        "    Retrieve items with UNLOAD <item>.",
+        "    Cart items are inaccessible indoors or underground.",
+        "  See also: STASH, UNLOAD, WEIGHT",
+    ]),
+    "GIVE": _box("HELP: GIVE", [
+        "  Transfer an item between party members.",
+        "  Usage: GIVE <item> <member>",
+        "  Examples:",
+        "    GIVE torch Mira",
+        "    GIVE hard_bread Hero",
+        "  See also: INV, EQUIP",
+    ]),
+    "STASH": _box("HELP: STASH / LOAD", [
+        "  Load an item into the party cart.",
+        "  Usage: STASH <item>  (or LOAD <item>)",
+        "  Details:",
+        "    Cart is only accessible outdoors.",
+        "    Use UNLOAD to retrieve items from the cart.",
+        "  See also: CART, UNLOAD, WEIGHT",
+    ]),
+    "LOAD": _box("HELP: STASH / LOAD", [
+        "  Load an item into the party cart.",
+        "  Usage: STASH <item>  (or LOAD <item>)",
+        "  Details:",
+        "    Cart is only accessible outdoors.",
+        "    Use UNLOAD to retrieve items from the cart.",
+        "  See also: CART, UNLOAD, WEIGHT",
+    ]),
+    "UNLOAD": _box("HELP: UNLOAD", [
+        "  Retrieve an item from the party cart.",
+        "  Usage: UNLOAD <item>",
+        "  Details:",
+        "    Cart is only accessible outdoors.",
+        "  See also: CART, STASH, WEIGHT",
+    ]),
+    # ── Mounts ────────────────────────────────────────────────────────────────
+    "RIDE": _box("HELP: RIDE", [
+        "  Mount the party's horses to reduce stamina drain while travelling.",
+        "  Usage: RIDE",
+        "  Details:",
+        "    Requires at least one horse in the party's inventory.",
+        "    Only works outdoors — horses wait outside indoor/underground rooms.",
+        "    Stamina drain reduction scales with horse-to-party ratio.",
+        "  See also: DISMOUNT, HORSES, STAMINA",
+    ]),
+    "DISMOUNT": _box("HELP: DISMOUNT", [
+        "  Dismount the party's horses.",
+        "  Usage: DISMOUNT",
+        "  Details:",
+        "    Horses wait in the last outdoor room and rejoin on return.",
+        "  See also: RIDE, HORSES",
+    ]),
+    "HORSES": _box("HELP: HORSES / MOUNTS", [
+        "  Show party horse count and stamina reduction.",
+        "  Usage: HORSES  (or MOUNTS)",
+        "  Details:",
+        "    Stamina drain formula: 1 - (0.60 × horses / party_size)",
+        "    Full mounted party (1 horse each) → 60% stamina reduction.",
+        "  See also: RIDE, DISMOUNT, STAMINA",
+    ]),
+    "MOUNTS": _box("HELP: HORSES / MOUNTS", [
+        "  Show party horse count and stamina reduction.",
+        "  Usage: HORSES  (or MOUNTS)",
+        "  Details:",
+        "    Stamina drain formula: 1 - (0.60 × horses / party_size)",
+        "    Full mounted party (1 horse each) → 60% stamina reduction.",
+        "  See also: RIDE, DISMOUNT, STAMINA",
+    ]),
+    # ── Wizard ────────────────────────────────────────────────────────────────
+    "WIZARD": _box("HELP: WIZARD (MAGE CLASS)", [
+        "  The Mage class is a powerful glass cannon — high burst, fragile body.",
+        "  Details:",
+        "    Spells deal scaling damage based on INT and spell_power_modifier.",
+        "    Wearing heavy armor reduces spell power (leather -10%, chain -30%, plate 0%).",
+        "    Mages deal only 1 melee damage without a staff.",
+        "    At 0 MP, mages can only DODGE — they cannot attack.",
+        "    Staves preserve spell power and provide normal melee damage.",
+        "  See also: SPELLS, CASTING, CAST, EQUIP",
+    ]),
+    "SPELLS": _box("HELP: SPELLS", [
+        "  List of available mage spells with mana cost and cast time.",
+        "  Spells:",
+        "    ARCANE_BOLT     — quick single-target bolt (low MP)",
+        "    MAGIC_MISSILE   — homing missile, moderate MP",
+        "    FROST_BOLT      — single target, slowing effect",
+        "    FIREBALL        — AoE fire damage",
+        "    CHAIN_LIGHTNING — AoE lightning jumping between targets",
+        "    ARCANE_SHIELD   — temporary damage reduction buff",
+        "    BLINK           — teleport to avoid hits",
+        "    ARCANE_LIGHT    — conjure magical light source",
+        "    IDENTIFY        — reveal hidden item properties",
+        "  Type HELP <spell_id> for details on any spell.",
+        "  See also: CAST, CASTING, WIZARD",
+    ]),
+    "CASTING": _box("HELP: CASTING", [
+        "  Cast times, interruption, and cancellation.",
+        "  Details:",
+        "    Some spells have a cast time (multiple ticks to complete).",
+        "    Being hit while casting may interrupt the spell (wasting the cast).",
+        "    High concentration resistance reduces interruption chance.",
+        "    Cast: CAST <spell_id>",
+        "  See also: CAST, SPELLS, WIZARD",
+    ]),
+    # ── Per-spell entries ─────────────────────────────────────────────────────
+    "ARCANE_BOLT": _box("HELP: ARCANE_BOLT", [
+        "  A quick bolt of arcane energy. Low cost, instant cast.",
+        "  Usage: CAST arcane_bolt",
+        "  Details:",
+        "    Single target. Damage scales with INT.",
+        "    Cast time: instant.",
+        "  See also: SPELLS, CASTING, WIZARD",
+    ]),
+    "MAGIC_MISSILE": _box("HELP: MAGIC_MISSILE", [
+        "  A homing missile of magical force. Never misses.",
+        "  Usage: CAST magic_missile",
+        "  Details:",
+        "    Single target. Always hits (ignores dodge).",
+        "    Damage scales with INT.",
+        "  See also: SPELLS, CASTING, WIZARD",
+    ]),
+    "FROST_BOLT": _box("HELP: FROST_BOLT", [
+        "  A bolt of freezing ice that chills the target.",
+        "  Usage: CAST frost_bolt",
+        "  Details:",
+        "    Single target. Moderate MP cost.",
+        "    Can reduce target movement / speed in future phases.",
+        "  See also: SPELLS, CASTING, WIZARD",
+    ]),
+    "FIREBALL": _box("HELP: FIREBALL", [
+        "  A ball of fire that explodes on impact, hitting all nearby enemies.",
+        "  Usage: CAST fireball",
+        "  Details:",
+        "    AoE spell — damages all enemies in the target group.",
+        "    High MP cost. Cast time: 1 tick.",
+        "    Damage scales with INT and spell_power_modifier.",
+        "  See also: SPELLS, CASTING, WIZARD, CHAIN_LIGHTNING",
+    ]),
+    "CHAIN_LIGHTNING": _box("HELP: CHAIN_LIGHTNING", [
+        "  Lightning arcs between multiple enemies.",
+        "  Usage: CAST chain_lightning",
+        "  Details:",
+        "    AoE spell — jumps between all enemies in range.",
+        "    High MP cost. Damage scales with INT.",
+        "  See also: SPELLS, CASTING, WIZARD, FIREBALL",
+    ]),
+    "ARCANE_SHIELD": _box("HELP: ARCANE_SHIELD", [
+        "  Conjure a magical barrier that absorbs damage.",
+        "  Usage: CAST arcane_shield",
+        "  Details:",
+        "    Buff — reduces incoming damage for the caster.",
+        "    Duration: several ticks.",
+        "  See also: SPELLS, CASTING, WIZARD",
+    ]),
+    "BLINK": _box("HELP: BLINK", [
+        "  Teleport a short distance to avoid an attack.",
+        "  Usage: CAST blink",
+        "  Details:",
+        "    Utility spell — provides a dodge chance boost.",
+        "    Instant cast.",
+        "  See also: SPELLS, CASTING, WIZARD",
+    ]),
+    "ARCANE_LIGHT": _box("HELP: ARCANE_LIGHT", [
+        "  Conjure magical light, illuminating the area.",
+        "  Usage: CAST arcane_light  (or USE arcane_light out of combat)",
+        "  Details:",
+        "    Provides light for 120 game-minutes.",
+        "    Useful alternative to torches — requires no item.",
+        "    Costs 15 MP.",
+        "  See also: SPELLS, LIT, LIGHT, WIZARD",
+    ]),
+    "IDENTIFY": _box("HELP: IDENTIFY", [
+        "  Reveal the hidden properties of an item.",
+        "  Usage: USE identify  (utility skill, out of combat)",
+        "  Details:",
+        "    Costs 20 MP.",
+        "    Use on unknown or magical items to learn their stats.",
+        "  See also: SPELLS, SKILLS, WIZARD",
+    ]),
+}
+
+
+def _help_for_state(state) -> str:
+    if state.value in ("connect", "creation"):
+        return _box("HELP", [
+            "  You are creating a character. Available choices:",
+            "",
+            "    HELP RACES    — learn about available races",
+            "    HELP CLASSES  — learn about available classes",
+            "",
+            "  Type your responses as prompted.",
+        ])
+    elif state.value == "navigation":
+        return _box("HELP", [
+            "  You are exploring Ashveil. Available commands:",
+            "",
+            "    Movement     NORTH / N, SOUTH / S, EAST / E, WEST / W",
+            "    Look         LOOK / L",
+            "    Inventory    INV / INVENTORY, EQUIP, UNEQUIP, DROP, TAKE",
+            "    Character    STATS, SKILLS, STATUS",
+            "    Combat       ATTACK <target>",
+            "    Environment  TIME, WEATHER, LIGHT, ENVDETAILS / ENV",
+            "    Lighting     LIT <item>, EXTINGUISH / DOUSE",
+            "    Camping      CAMP (enter campfire mode)",
+            "",
+            "  Type HELP <command> for details on any command.",
+        ])
+    elif state.value == "campfire":
+        return _box("HELP", [
+            "  You are resting at camp. Available commands:",
+            "",
+            "    REST             Rest the party (recovers HP, MP, stamina)",
+            "    PARTY            Show party status",
+            "    STRATEGY <name>  Set a combatant's strategy",
+            "    LEAVE            Break camp and return to exploring",
+            "",
+            "  Type HELP <command> for details on any command.",
+        ])
+    elif state.value == "strategy":
+        return _box("HELP", [
+            "  You are setting combat strategies. Available commands:",
+            "",
+            "    STRATEGY <name> <tactic>   Set strategy for a party member",
+            "    DONE                       Confirm strategies and return",
+            "",
+            "    Tactics: AGGRESSIVE, DEFENSIVE, SUPPORT, FLEE",
+            "    Type HELP STRATEGY for full details.",
+        ])
+    elif state.value == "combat":
+        return _box("HELP", [
+            "  You are in combat. Available commands:",
+            "",
+            "    ATTACK <target>  Attack the named enemy",
+            "    CAST <spell>     Cast a spell (mage only)",
+            "    USE <item>       Use a consumable item",
+            "    FLEE             Attempt to flee combat",
+            "    PARTY            Show party HP/MP status",
+            "",
+            "  Battles are tick-based. Your strategy runs automatically.",
+            "  Type HELP COMBAT for full details.",
+        ])
+    else:
+        return _box("HELP", [
+            "  Type HELP <command> for details on any command.",
+            "  Type HELP for a list of available commands.",
+        ])
+
+
 class GameSession:
     def __init__(
         self,
@@ -330,7 +995,10 @@ class GameSession:
             await self._handle_strategy(text)
         elif self.state == State.COMBAT:
             _upper_parts = text.strip().upper().split(maxsplit=1)
-            if _upper_parts and _upper_parts[0] == "USE":
+            if _upper_parts and _upper_parts[0] == "HELP":
+                _topic = _upper_parts[1] if len(_upper_parts) > 1 else ""
+                await self._send_help(_topic)
+            elif _upper_parts and _upper_parts[0] == "USE":
                 await self._send("  You cannot use utility skills while in combat.\n")
             else:
                 await self._send("  Combat is in progress. Your strategies are running...")
@@ -340,6 +1008,9 @@ class GameSession:
     # ═══════════════════════════════════════════════════════════════════
 
     async def _handle_connect(self, name: str) -> None:
+        if name.strip().upper() in ("HELP", "?"):
+            await self._send_help("")
+            return
         if not name.isalpha() or len(name) < 2 or len(name) > 20:
             await self._send("  Name must be 2–20 letters only. Try again:\n> ")
             return
@@ -369,17 +1040,17 @@ class GameSession:
         await self._send(_box("CHARACTER CREATION — Choose Class", lines[1:]))
 
     async def _handle_creation(self, text: str) -> None:
+        upper = text.strip().upper()
+        if upper in ("HELP", "?"):
+            await self._send_help("")
+            return
+
         step = self._creation_step
 
         if step == "class":
             upper = text.strip().upper()
             if upper in ("HELP", "?"):
-                await self._send(
-                    "  Commands:\n"
-                    "    WARRIOR / MAGE / THIEF / CLERIC  — choose your class\n"
-                    "    QUIT  — exit the game\n"
-                    "> "
-                )
+                await self._send_help("")
                 return
             cls = text.strip().lower()
             if cls not in self.class_defs:
@@ -558,7 +1229,14 @@ class GameSession:
 
     async def _handle_strategy(self, text: str) -> None:
         upper = text.strip().upper()
+        parts = upper.split(maxsplit=1)
         char = self._strategy_target
+
+        # Help
+        if parts[0] in ("HELP", "?"):
+            topic = parts[1] if len(parts) > 1 else ""
+            await self._send_help(topic)
+            return
 
         # Exit strategy editor
         if upper in ("DONE", "BACK", "EXIT", "START"):
@@ -1514,7 +2192,10 @@ class GameSession:
             await self._handle_strategy(text)
         elif self.state == State.COMBAT:
             _upper_parts = text.strip().upper().split(maxsplit=1)
-            if _upper_parts and _upper_parts[0] == "USE":
+            if _upper_parts and _upper_parts[0] == "HELP":
+                _topic = _upper_parts[1] if len(_upper_parts) > 1 else ""
+                await self._send_help(_topic)
+            elif _upper_parts and _upper_parts[0] == "USE":
                 await self._send("  You cannot use utility skills while in combat.\n")
             else:
                 await self._send("  Combat is in progress. Your strategies are running...\n")
@@ -1757,7 +2438,7 @@ class GameSession:
             return
 
         if cmd == "HELP":
-            await self._enter_campfire()
+            await self._send_help(args)
             return
 
         if cmd == "USE":
@@ -2224,103 +2905,11 @@ class GameSession:
     async def _send_help(self, topic: str = "") -> None:
         topic = topic.strip().upper()
 
-        if topic == "TIME":
-            await self._send(
-                _box("HELP: TIME", [
-                    "  Shows the current in-game time, day number, and moon phase.",
-                    "  Usage: TIME",
-                    "  The time of day affects outdoor visibility (dawn/day/dusk/night).",
-                    "  Moon phase determines how bright it is on clear nights.",
-                ])
-            )
-        elif topic == "WEATHER":
-            await self._send(
-                _box("HELP: WEATHER", [
-                    "  Shows the current weather and temperature label.",
-                    "  Usage: WEATHER",
-                    "  Weather only affects outdoor and indoor rooms.",
-                    "  Underground rooms are always the same temperature.",
-                    "  Weather changes gradually \u2014 you will see a warning before it shifts.",
-                ])
-            )
-        elif topic in ("LIGHT", "LIGHTING"):
-            await self._send(
-                _box("HELP: LIGHT", [
-                    "  Shows current lighting conditions and active light sources.",
-                    "  Usage: LIGHT",
-                    "  Light levels affect combat: dim rooms reduce accuracy.",
-                    "  Pitch black rooms forbid player-initiated combat.",
-                    "  Use LIT <item> to light a torch or lantern.",
-                    "  Use EXTINGUISH <item> to put one out.",
-                ])
-            )
-        elif topic in ("LIT", "EXTINGUISH", "DOUSE"):
-            await self._send(
-                _box("HELP: LIT / EXTINGUISH", [
-                    "  LIT <item>        \u2014 Light a torch or lantern from your inventory.",
-                    "  EXTINGUISH <item> \u2014 Put out a light source.",
-                    "  Examples:",
-                    "    LIT TORCH",
-                    "    LIT LANTERN",
-                    "    EXTINGUISH TORCH",
-                    "  Torches burn for 60 game-minutes then go out automatically.",
-                    "  Lanterns require an Oil Flask to fill; they burn for 90 game-minutes.",
-                    "  ENVDETAILS shows how much fuel is remaining.",
-                ])
-            )
-        elif topic in ("ENVDETAILS", "ENV"):
-            await self._send(
-                _box("HELP: ENVDETAILS", [
-                    "  Displays full numeric environmental information.",
-                    "  Usage: ENVDETAILS  (or ENV)",
-                    "  Shows exact temperature, light percentages, moon phase light, etc.",
-                ])
-            )
-        elif topic == "ATTACK":
-            await self._send(
-                _box("HELP: ATTACK", [
-                    "  Engage in combat with hostile creatures in the room.",
-                    "  Usage: ATTACK [group]",
-                    "  In the Gauntlet arena, specify a group letter: ATTACK A",
-                    "  In normal rooms, ATTACK targets the first hostile group.",
-                    "  Combat is automatic \u2014 your party fights using configured strategies.",
-                    "  Type HELP COMBAT for more on the combat system.",
-                    "  Note: Cannot attack in pitch black conditions.",
-                ])
-            )
-        elif topic == "COMBAT":
-            await self._send(
-                _box("HELP: COMBAT", [
-                    "  Combat is real-time and automatic. Your party acts on strategy rules.",
-                    "  Configure strategies at any CAMPFIRE with MANAGE <name>.",
-                    "  Lighting affects accuracy and dodge chance:",
-                    "    Well-lit (80-100%) \u2014 no penalty",
-                    "    Good light (60-80%) \u2014 slight penalty",
-                    "    Dim (40-60%)        \u2014 moderate penalty",
-                    "    Dark (20-40%)       \u2014 heavy penalty",
-                    "    Very dark (5-20%)   \u2014 severe penalty",
-                    "    Pitch black (<5%)   \u2014 combat forbidden (player side)",
-                    "  Use LIT TORCH or LIT LANTERN to provide light before fighting.",
-                    "  Some creatures (undead, predators) have Darkvision and ignore",
-                    "  lighting penalties \u2014 they can attack you even in total darkness.",
-                ])
-            )
+        if not topic:
+            await self._send(_help_for_state(self.state))
+        elif topic in _HELP_TOPICS:
+            await self._send(_HELP_TOPICS[topic])
         else:
             await self._send(
-                _box("COMMANDS", [
-                    "  Movement    : N, S, E, W, U, D  or  GO <dir>",
-                    "  Look        : LOOK, EXAMINE <thing>",
-                    "  Inventory   : INVENTORY, EQUIP <item>, UNEQUIP <slot>",
-                    "                DROP <item>, PICK UP <item>",
-                    "  Character   : STATS, GOLD, SKILLS, LEARN <skill>",
-                    "                MODIFIERS, UPGRADE <modifier>",
-                    "  Party       : PARTY, TALK <npc>, DISMISS <npc>",
-                    "  Campfire    : CAMPFIRE or REST",
-                    "  Combat      : ATTACK [group]",
-                    "  Environment : TIME, WEATHER, LIGHT, ENVDETAILS",
-                    "                LIT <item>, EXTINGUISH <item>",
-                    "  Other       : SAVE, HELP [topic]",
-                    "",
-                    "  Type HELP <topic> for details, e.g. HELP COMBAT or HELP LIGHT",
-                ])
+                f"  No help found for '{topic}'. Type HELP to see available commands."
             )
