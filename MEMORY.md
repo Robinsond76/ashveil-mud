@@ -11,7 +11,7 @@
 | 5 | Inventory & Weight Overhaul | ✅ COMPLETED |
 | 6 | Horses & Mounts | ✅ COMPLETED |
 | 7 | Wizard & Spell Overhaul | ✅ COMPLETED |
-| 8 | Help System Overhaul | 🔲 NOT STARTED |
+| 8 | Help System Overhaul | ✅ COMPLETED |
 | 9 | Multiplayer Foundations | 🔲 NOT STARTED |
 
 ---
