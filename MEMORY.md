@@ -58,9 +58,9 @@ docs/
 | 1 | World Clock & Environment | ✅ COMPLETED | [phase-01-world-clock-environment.md](docs/superpowers/specs/phase-01-world-clock-environment.md) |
 | 2 | Survival Stats | ✅ COMPLETED | [phase-02-survival-stats.md](docs/superpowers/specs/phase-02-survival-stats.md) |
 | 3 | Utility Skills & Mana Rework | ✅ COMPLETED | [phase-03-utility-skills-mana.md](docs/superpowers/specs/phase-03-utility-skills-mana.md) |
-| 4 | Food & Consumables | 🔲 NOT STARTED | [phase-04-food-consumables.md](docs/superpowers/specs/phase-04-food-consumables.md) |
-| 5 | Inventory & Weight Overhaul | 🔲 NOT STARTED | [phase-05-inventory-weight.md](docs/superpowers/specs/phase-05-inventory-weight.md) |
-| 6 | Horses & Mounts | 🔲 NOT STARTED | [phase-06-horses-mounts.md](docs/superpowers/specs/phase-06-horses-mounts.md) |
+| 4 | Food & Consumables | ✅ COMPLETED | [phase-04-food-consumables.md](docs/superpowers/specs/phase-04-food-consumables.md) |
+| 5 | Inventory & Weight Overhaul | ✅ COMPLETED | [phase-05-inventory-weight.md](docs/superpowers/specs/phase-05-inventory-weight.md) |
+| 6 | Horses & Mounts | ✅ COMPLETED | [phase-06-horses-mounts.md](docs/superpowers/specs/phase-06-horses-mounts.md) |
 | 7 | Wizard & Spell Overhaul | 🔲 NOT STARTED | [phase-07-wizard-spell-overhaul.md](docs/superpowers/specs/phase-07-wizard-spell-overhaul.md) |
 | 8 | Help System Overhaul | 🔲 NOT STARTED | [phase-08-help-system.md](docs/superpowers/specs/phase-08-help-system.md) |
 | 9 | Multiplayer Foundations | 🔲 NOT STARTED | [phase-09-multiplayer-foundations.md](docs/superpowers/specs/phase-09-multiplayer-foundations.md) |
@@ -88,6 +88,25 @@ docs/
 - **USE command validates**: state == NAVIGATION, skill exists, skill is unlocked, use_context == "utility", MP/stamina sufficient, required items present in party inventory (any member's inv counts).
 - **Effect flags** (`_fortify_active`, `_bless_camp_active`, `_arcane_light_until`) are set as dynamic session attributes — no dataclass field needed.
 - **SKILLS bare** shows both COMBAT (tree-based) and UTILITY (registry-based) sections with clear headers.
+
+---
+
+## Phase 6 — What Was Built
+
+### Modified Files
+- `server/data/items/misc.json` — Added `horse` item (`type="mount"`, `effect_type="mount"`, `stamina_reduction=0.60`, `outdoor_only=true`, `weight=0`, `value=200`)
+- `server/engine/game.py` — Added `_mounted`, `_horses_outside`, `_was_mounted` state fields to `GameSession.__init__`; `_horse_count()` counts all mount-type items across party inventories; `_stamina_multiplier()` computes `1.0 - (0.60 * min(1, horses/party_size))` when mounted; `_do_move()` applies multiplier to stamina drain and handles auto-detach/reattach; `_start_combat()` auto-dismounts on combat start; `_end_combat_victory()` auto-remounts when in outdoor room; `RIDE`, `DISMOUNT`, `HORSES` commands added to `_handle_navigation()`
+
+### New Files
+- `tests/test_phase06_horses_mounts.py` — 51 new tests (271 total, all passing)
+
+### Key Design Decisions
+- **Stamina multiplier formula**: `ratio = min(1.0, horses / party_size)` → `multiplier = 1.0 - 0.60 * ratio`. Applied per move, stacks with `fortified` buff (both multiply drain).
+- **Auto-detach**: Any transition to `indoor` or `underground` while `_mounted=True` sets `_mounted=False` and `_horses_outside=True`; prints "Your horses wait outside at [room]."
+- **Auto-reattach**: Any transition to `outdoor` while `_horses_outside=True` resets both flags and prints "Your horses fall back into step."
+- **Pre-combat mount memory**: `_was_mounted` stores pre-combat state; cleared after victory regardless of room type (to avoid stale state).
+- **RIDE error guard**: Requires `_horse_count() > 0` and `room_type == "outdoor"`; DISMOUNT always succeeds.
+- **HORSES output format**: `"Horses: N | Party: N | Stamina drain: -N%"` (reduction shows 0% if dismounted).
 
 ---
 
@@ -134,11 +153,11 @@ docs/
 
 ## Next Steps (Recommended Order)
 
-1. **Phase 3 — Utility Skills & Mana Rework**: Mana only recovers via rest (not ticks). `USE <skill>` command for out-of-combat utility skills (lockpick, arcane light, detect traps). Skill JSON gets `use_context` field.
+1. **Phase 7 — Wizard & Spell Overhaul**: Channeled spell system, armor restrictions, AoE grid targeting, zero-MP dodge-only state.
 
-2. **Phase 4 — Food & Consumables**: Food items with buff effects (alertness, fortified, quenched, etc.). `Character.active_buffs` dict. Buff duration ticks down on world clock.
+2. **Phase 8 — Help System**: Full contextual `HELP` per `State`, topic registry, formatting standard.
 
-3. **Phase 5 — Inventory & Weight**: Party-wide inventory display. Backpack slot rules. Weight system with thresholds. Cart (outdoor-only vehicle for extra capacity).
+3. **Phase 9 — Multiplayer**: Session registry, room occupancy, presence broadcasts, `SAY`/`EMOTE`, shared item state.
 
 ---
 
@@ -165,15 +184,6 @@ docs/
 - Survival multiplier is static at combat-start (computed once when `CombatSession` is created)
 - `_sitting_stamina_tick()` only fires when `_sitting=True` AND not in combat (checked in clock callback)
 - EAT/DRINK look items up by partial name match against inventory (tolerant UX)
-
-
-5. **Phase 6 — Horses**: Mount system, stamina reduction formula, auto-detach on indoor/underground entry.
-
-6. **Phase 7 — Wizard Overhaul**: Channeled spell system, armor restrictions, AoE grid targeting, zero-MP dodge-only state.
-
-7. **Phase 8 — Help System**: Full contextual `HELP` per `State`, topic registry, formatting standard.
-
-8. **Phase 9 — Multiplayer**: Session registry, room occupancy, presence broadcasts, `SAY`/`EMOTE`, shared item state.
 
 ---
 
