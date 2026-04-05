@@ -95,5 +95,18 @@
     },
     "weight": 0,
     "value": 150
+  },
+  {
+    "id": "horse",
+    "name": "Horse",
+    "description": "A sturdy riding horse. Reduces travel stamina drain and stays outside buildings and caves.",
+    "type": "mount",
+    "effect_type": "mount",
+    "effect_params": {
+      "stamina_reduction": 0.60,
+      "outdoor_only": true
+    },
+    "weight": 0,
+    "value": 200
   }
 ]
