@@ -128,6 +128,8 @@ class Combatant:
     row: int = 0                  # 0 = FRONT, 1 = BACK
     col: int = 0                  # 0-2 column in the grid
     _next_action_bonus: float = 0.0  # seconds shaved off next sleep (battle_cry etc.)
+    _channeling: asyncio.Task | None = field(default=None)  # in-progress channeling task
+    _channeling_spell_mp: int = 0    # mana cost of spell being channeled (for refund)
 
     def reset_cooldown(self) -> None:
         self.cooldown = self.character.action_interval
@@ -281,6 +283,75 @@ class CombatSession:
             front = [c for c in alive if c.row == FRONT_ROW]
             return front if front else alive
         return reachable
+
+    # ── AoE grid targeting ────────────────────────────────────────────────────
+
+    @staticmethod
+    def _resolve_aoe_targets(
+        target_type: str,
+        row: int,
+        col: int,
+        combatants: list["Combatant"],
+        name: str | None = None,
+    ) -> list["Combatant"]:
+        alive = [c for c in combatants if c.is_alive]
+        if target_type == "all_enemies":
+            return alive
+        if target_type == "single":
+            if name:
+                return [c for c in alive if c.name.lower() == name.lower()]
+            return alive[:1]
+        if target_type == "grid_1x1":
+            return [c for c in alive if c.row == row and c.col == col]
+        if target_type == "grid_1x2":
+            return [c for c in alive if c.row == row and col <= c.col <= col + 1]
+        if target_type == "grid_2x2":
+            return [c for c in alive if row <= c.row <= row + 1 and col <= c.col <= col + 1]
+        return alive
+
+    # ── Damage application (with concentration check) ─────────────────────────
+
+    def _apply_damage(
+        self,
+        target: "Combatant",
+        amount: int,
+        log: list[str],
+    ) -> int:
+        actual = target.character.take_damage(amount)
+        if target._channeling is not None and not target._channeling.done():
+            int_val = getattr(target.character, "INT", 10)
+            int_modifier = (int_val - 10) // 2
+            roll = random.randint(1, 20) + int_modifier
+            if roll < 12:
+                target._channeling.cancel()
+                target._channeling = None
+                refund = target._channeling_spell_mp // 2
+                target.character.mp = min(
+                    target.character.max_mp,
+                    target.character.mp + refund,
+                )
+                target._channeling_spell_mp = 0
+                log.append(
+                    f"  {target.name}'s concentration breaks! ({refund} MP refunded)"
+                )
+        return actual
+
+    # ── Zero-mana mage action ─────────────────────────────────────────────────
+
+    def _do_action_mage_zero_mp(self, actor: "Combatant", log: list[str]) -> None:
+        char = actor.character
+        if not getattr(char, "_zero_mp_message_shown", True):
+            log.append(
+                f"  {actor.name} reaches for the arcane but finds nothing."
+                f" They can only brace themselves."
+            )
+            char._zero_mp_message_shown = True  # type: ignore[attr-defined]
+        if not hasattr(char, "status_effects"):
+            char.status_effects = {}  # type: ignore[attr-defined]
+        char.status_effects["defending"] = 1  # type: ignore[attr-defined]
+        log.append(
+            f"  {actor.name} braces — no mana to cast, moving to dodge."
+        )
 
     # ── Main loop ─────────────────────────────────────────────────────────────
 

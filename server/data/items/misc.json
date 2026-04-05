@@ -108,5 +108,29 @@
     },
     "weight": 0,
     "value": 200
+  },
+  {
+    "id": "basic_spellbook",
+    "name": "Basic Spellbook",
+    "description": "A battered tome containing the fundamentals of arcane conjuration. Grants the bearer access to written spells.",
+    "type": "accessory",
+    "class_requirement": "mage",
+    "effect_type": "spellbook",
+    "grants_spells": ["arcane_bolt", "arcane_light"],
+    "spell_power_bonus": 3,
+    "weight": 2,
+    "value": 60
+  },
+  {
+    "id": "advanced_spellbook",
+    "name": "Advanced Spellbook",
+    "description": "A thick tome filled with complex arcane notation. Grants access to powerful spells.",
+    "type": "accessory",
+    "class_requirement": "mage",
+    "effect_type": "spellbook",
+    "grants_spells": ["fireball", "chain_lightning", "blink"],
+    "spell_power_bonus": 8,
+    "weight": 3,
+    "value": 150
   }
 ]

@@ -25,6 +25,11 @@ class Skill:
     stamina_cost: int = 0
     required_items: list[str] = field(default_factory=list)
     consumes_item: bool = False
+    cast_time_seconds: int = 0
+    target_type: str = "single"
+    damage_type: str = "physical"
+    spell_power_scale: float = 1.0
+    cast_messages: list[str] = field(default_factory=list)
 
     def short_desc(self) -> str:
         return f"{self.name} (MP:{self.mp_cost}, CD:{self.cooldown_ticks}t) — {self.description}"
@@ -65,6 +70,11 @@ def load_skills(data_dir: str) -> None:
                 stamina_cost=raw.get("stamina_cost", 0),
                 required_items=raw.get("required_items", []),
                 consumes_item=raw.get("consumes_item", False),
+                cast_time_seconds=raw.get("cast_time_seconds", 0),
+                target_type=raw.get("target_type", "single"),
+                damage_type=raw.get("damage_type", "physical"),
+                spell_power_scale=raw.get("spell_power_scale", 1.0),
+                cast_messages=raw.get("cast_messages", []),
             )
             _SKILL_REGISTRY[skill.id] = skill
 

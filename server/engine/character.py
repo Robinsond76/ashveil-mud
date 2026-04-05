@@ -152,6 +152,8 @@ class Character:
 
     @property
     def carry_weight_cap(self) -> int:
+        if self.class_type == "mage":
+            return int(self.INT * 1.5)
         base = 20
         back_id = self.equipment.get("back")
         if back_id:
@@ -226,10 +228,44 @@ class Character:
     # ── Combat helpers ───────────────────────────────────────────────────────
 
     def roll_damage(self, multiplier: float = 1.0) -> int:
+        if self.class_type == "mage":
+            w = equipped_weapon(self.equipment)
+            if w is None or w.weapon_type != "staff":
+                return 1
         dmg_min, dmg_max = weapon_damage_range(self.equipment)
         str_bonus = max(0, (self.STR - 10) // 2)
         base = random.randint(dmg_min, dmg_max) + str_bonus
         return max(1, round(base * multiplier))
+
+    def spell_power_modifier(self) -> float:
+        if self.class_type != "mage":
+            return 1.0
+        _ARMOR_TYPE_MODIFIERS = {
+            "cloth": 1.0,
+            "robe": 1.0,
+            "leather": 0.9,
+            "chain": 0.7,
+            "plate": 0.0,
+        }
+        body_id = self.equipment.get("body")
+        base = 1.0
+        if body_id:
+            body_item = get_item(body_id)
+            if body_item and body_item.armor_type:
+                base = _ARMOR_TYPE_MODIFIERS.get(body_item.armor_type, 1.0)
+        # Plate = cannot cast; skip additive bonuses
+        if base == 0.0:
+            return 0.0
+        # Add staff spell_power_bonus
+        weapon = equipped_weapon(self.equipment)
+        if weapon and weapon.weapon_type == "staff":
+            base += weapon.spell_power_bonus / 100
+        # Add spellbook spell_power_bonus from inventory
+        for item_id in self.inventory:
+            item = get_item(item_id)
+            if item and item.effect_type == "spellbook":
+                base += item.spell_power_bonus / 100
+        return base
 
     def roll_hit(self, target: "Character", hit_penalty: float = 0.0) -> bool:
         """
