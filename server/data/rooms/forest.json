@@ -1,0 +1,142 @@
+[
+  {
+    "id": "forest_path_north",
+    "name": "Northern Forest Path",
+    "description": "The road from Ashveil narrows as it enters the Thornwood. Gnarled oaks press close on either side, their roots breaking through the packed earth of the path. Birdsong echoes somewhere high above, but the undergrowth is suspiciously quiet.",
+    "exits": {
+      "north": "south_gate",
+      "south": "forest_clearing",
+      "east": "forest_trail_east"
+    },
+    "item_ids": [],
+    "encounter_ids": [
+      { "group": "wolves_small", "members": ["forest_wolf", "forest_wolf"], "respawn_ticks": 30 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 62.0,
+    "zone": "thornwood"
+  },
+  {
+    "id": "forest_trail_east",
+    "name": "Overgrown Trail",
+    "description": "A seldom-used trail winds in from the east, barely visible beneath years of fallen leaves. Broken branches and trampled bushes hint at recent passage — someone or something has been through here.",
+    "exits": {
+      "west": "forest_path_north",
+      "east": "bandit_camp"
+    },
+    "item_ids": ["health_potion"],
+    "encounter_ids": [
+      { "group": "goblin_patrol", "members": ["goblin_scout", "goblin_scout"], "respawn_ticks": 25 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 62.0,
+    "zone": "thornwood"
+  },
+  {
+    "id": "forest_clearing",
+    "name": "Forest Clearing",
+    "description": "The trees thin here, opening onto a wide clearing carpeted in soft moss. The remains of an old stone well sit half-buried in the center. A crude campfire ring of blackened stones suggests this is a regular rest spot for travellers.",
+    "exits": {
+      "north": "forest_path_north",
+      "south": "deep_forest",
+      "west": "forest_shrine"
+    },
+    "item_ids": ["campfire_kit"],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [],
+    "is_campfire": true,
+    "room_type": "outdoor",
+    "base_temp_f": 62.0,
+    "zone": "thornwood"
+  },
+  {
+    "id": "forest_shrine",
+    "name": "Ancient Shrine",
+    "description": "A mossy shrine to a forgotten deity stands half-collapsed against an immense oak. Offerings of coins and bone have been left at its base. There's a faint hum of old magic in the air. You feel slightly watched.",
+    "exits": {
+      "east": "forest_clearing"
+    },
+    "item_ids": ["mana_potion", "antidote"],
+    "encounter_ids": [
+      { "group": "spirits", "members": ["skeleton", "skeleton"], "respawn_ticks": 20 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 62.0,
+    "zone": "thornwood"
+  },
+  {
+    "id": "deep_forest",
+    "name": "Deep Thornwood",
+    "description": "Darkness presses in here despite the hour. The canopy above is dense enough that only thin shafts of light reach the forest floor. Strange symbols are carved into the bark of nearby trees. The air smells of damp earth and something metallic.",
+    "exits": {
+      "north": "forest_clearing",
+      "south": "dungeon_approach",
+      "east": "wolf_den"
+    },
+    "item_ids": [],
+    "encounter_ids": [
+      { "group": "goblin_warband", "members": ["goblin_warrior", "goblin_warrior", "goblin_shaman"], "respawn_ticks": 30 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 60.0,
+    "zone": "thornwood"
+  },
+  {
+    "id": "wolf_den",
+    "name": "The Wolf Den",
+    "description": "Scraped earth and gnawed bones mark the edge of a wolf pack's territory. Low growls emerge from the shadows between the trees. The den entrance — a hollow beneath a massive fallen trunk — yawns darkly ahead.",
+    "exits": {
+      "west": "deep_forest"
+    },
+    "item_ids": [],
+    "encounter_ids": [
+      { "group": "wolf_pack", "members": ["forest_wolf", "forest_wolf", "forest_wolf", "forest_wolf"], "respawn_ticks": 20 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 60.0,
+    "zone": "thornwood"
+  },
+  {
+    "id": "bandit_camp",
+    "name": "Bandit Camp",
+    "description": "A ring of crude tents and overturned wagons forms the bones of a makeshift camp. Empty bottles and discarded scraps litter the ground. The bandits here are armed, dangerous, and very much not welcoming visitors.",
+    "exits": {
+      "west": "forest_trail_east"
+    },
+    "item_ids": ["health_potion", "iron_sword"],
+    "encounter_ids": [
+      { "group": "bandit_patrol", "members": ["bandit", "bandit", "bandit_archer"], "respawn_ticks": 35 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 62.0,
+    "zone": "thornwood"
+  },
+  {
+    "id": "dungeon_approach",
+    "name": "Darkhold Approach",
+    "description": "The trees give way to bare, cracked earth as the ground slopes downward. A massive iron door, rusted but intact, is set into the face of a rocky hillside ahead. Etched above the arch reads: DARKHOLD. Whatever was once sealed inside has long since undone the seals.",
+    "exits": {
+      "north": "deep_forest",
+      "down": "dungeon_entry"
+    },
+    "item_ids": [],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 58.0,
+    "zone": "thornwood"
+  }
+]

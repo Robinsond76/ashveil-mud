@@ -1,0 +1,82 @@
+[
+  {
+    "id": "town_square",
+    "name": "Town Square",
+    "description": "The heart of Ashveil. Cobblestone streets radiate outward from a weathered fountain at the center. Merchants call out their wares from covered stalls, and townsfolk bustle past on their daily errands. A notice board displays faded wanted posters and travel advisories.",
+    "exits": {
+      "north": "blacksmith",
+      "east": "inn",
+      "south": "south_gate",
+      "west": "alchemist_shop"
+    },
+    "item_ids": [],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 65.0,
+    "zone": "ashveil"
+  },
+  {
+    "id": "blacksmith",
+    "name": "Blacksmith's Forge",
+    "description": "Heat rolls off the forge in visible waves. The blacksmith, a stooped dwarf named Durgin, hammers rhythmically at a piece of glowing iron. Finished weapons and armor hang from every rafter, and the smell of coal and hot metal is thick in the air.",
+    "exits": {
+      "south": "town_square"
+    },
+    "item_ids": ["iron_sword", "hand_axe", "leather_armor", "iron_helm"],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "indoor",
+    "base_temp_f": 82.0,
+    "zone": "ashveil"
+  },
+  {
+    "id": "inn",
+    "name": "The Rusty Flagon Inn",
+    "description": "Low beams and candle-wax-plastered tables give the inn a cozy, if rundown, charm. The barkeep wipes a mug with a questionable cloth. A fire crackles in the stone hearth. Weary travellers slump in chairs, nursing cheap ale.",
+    "exits": {
+      "west": "town_square"
+    },
+    "item_ids": ["health_potion", "mana_potion"],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [],
+    "is_campfire": true,
+    "room_type": "indoor",
+    "base_temp_f": 68.0,
+    "zone": "ashveil"
+  },
+  {
+    "id": "alchemist_shop",
+    "name": "Mirabel's Apothecary",
+    "description": "Shelves sag under the weight of glass jars filled with luminous liquids, dried herbs, and stranger things. An elderly woman with ink-stained fingers peers over half-moon spectacles at you. A sign reads: 'No browsing the back room.'",
+    "exits": {
+      "east": "town_square"
+    },
+    "item_ids": ["health_potion", "greater_health_potion", "mana_potion", "antidote", "elixir_of_speed", "torch", "lantern", "oil_flask"],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "indoor",
+    "base_temp_f": 65.0,
+    "zone": "ashveil"
+  },
+  {
+    "id": "south_gate",
+    "name": "South Gate",
+    "description": "A pair of iron-banded doors, perpetually ajar, mark the boundary between the safety of Ashveil and the wilds beyond. The road south disappears into the Thornwood Forest. Two bored guards lean on their spears.",
+    "exits": {
+      "north": "town_square",
+      "south": "forest_path_north",
+      "east": "test_entrance"
+    },
+    "item_ids": [],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 65.0,
+    "zone": "ashveil"
+  }
+]

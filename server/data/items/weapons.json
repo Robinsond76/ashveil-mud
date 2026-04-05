@@ -1,0 +1,132 @@
+[
+  {
+    "id": "rusty_sword",
+    "name": "Rusty Sword",
+    "description": "A battered old sword. Not impressive, but it gets the job done.",
+    "type": "weapon",
+    "weapon_type": "sword",
+    "stats": { "damage_min": 4, "damage_max": 8 },
+    "weight": 5,
+    "value": 10
+  },
+  {
+    "id": "iron_sword",
+    "name": "Iron Sword",
+    "description": "A standard iron sword. Reliable and balanced.",
+    "type": "weapon",
+    "weapon_type": "sword",
+    "stats": { "damage_min": 7, "damage_max": 13 },
+    "weight": 6,
+    "value": 50
+  },
+  {
+    "id": "steel_sword",
+    "name": "Steel Sword",
+    "description": "Forged from quality steel with a keen edge.",
+    "type": "weapon",
+    "weapon_type": "sword",
+    "stats": { "damage_min": 12, "damage_max": 20 },
+    "weight": 7,
+    "value": 150
+  },
+  {
+    "id": "hand_axe",
+    "name": "Hand Axe",
+    "description": "A compact axe that hits hard.",
+    "type": "weapon",
+    "weapon_type": "axe",
+    "stats": { "damage_min": 8, "damage_max": 14 },
+    "weight": 6,
+    "value": 45
+  },
+  {
+    "id": "battle_axe",
+    "name": "Battle Axe",
+    "description": "A heavy, two-handed axe capable of cleaving through armor.",
+    "type": "weapon",
+    "weapon_type": "axe",
+    "stats": { "damage_min": 14, "damage_max": 24 },
+    "weight": 14,
+    "value": 180
+  },
+  {
+    "id": "oak_staff",
+    "name": "Oak Staff",
+    "description": "A simple wooden staff etched with minor arcane runes.",
+    "type": "weapon",
+    "weapon_type": "staff",
+    "stats": { "damage_min": 3, "damage_max": 7, "magic_bonus": 5 },
+    "weight": 4,
+    "value": 60
+  },
+  {
+    "id": "arcane_staff",
+    "name": "Arcane Staff",
+    "description": "A staff crackling with stored magical energy.",
+    "type": "weapon",
+    "weapon_type": "staff",
+    "stats": { "damage_min": 5, "damage_max": 10, "magic_bonus": 15 },
+    "weight": 5,
+    "value": 200
+  },
+  {
+    "id": "iron_dagger",
+    "name": "Iron Dagger",
+    "description": "A short, quick blade. Favored by thieves.",
+    "type": "weapon",
+    "weapon_type": "dagger",
+    "stats": { "damage_min": 5, "damage_max": 9 },
+    "weight": 2,
+    "value": 35
+  },
+  {
+    "id": "shadow_dagger",
+    "name": "Shadow Dagger",
+    "description": "A blade that seems to drink in light. Poison-coated edge.",
+    "type": "weapon",
+    "weapon_type": "dagger",
+    "stats": { "damage_min": 8, "damage_max": 14, "poison_chance": 15 },
+    "weight": 2,
+    "value": 180
+  },
+  {
+    "id": "wooden_mace",
+    "name": "Wooden Mace",
+    "description": "A crude but serviceable mace.",
+    "type": "weapon",
+    "weapon_type": "mace",
+    "stats": { "damage_min": 5, "damage_max": 10 },
+    "weight": 5,
+    "value": 20
+  },
+  {
+    "id": "iron_mace",
+    "name": "Iron Mace",
+    "description": "A solid iron mace blessed by a minor cleric.",
+    "type": "weapon",
+    "weapon_type": "mace",
+    "stats": { "damage_min": 8, "damage_max": 15, "holy_bonus": 5 },
+    "weight": 7,
+    "value": 80
+  },
+  {
+    "id": "short_bow",
+    "name": "Short Bow",
+    "description": "A light bow for quick shots.",
+    "type": "weapon",
+    "weapon_type": "bow",
+    "stats": { "damage_min": 6, "damage_max": 10 },
+    "weight": 3,
+    "value": 55
+  },
+  {
+    "id": "long_bow",
+    "name": "Long Bow",
+    "description": "A powerful bow with excellent range and stopping power.",
+    "type": "weapon",
+    "weapon_type": "bow",
+    "stats": { "damage_min": 10, "damage_max": 18 },
+    "weight": 4,
+    "value": 140
+  }
+]

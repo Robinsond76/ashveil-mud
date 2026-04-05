@@ -1,0 +1,192 @@
+[
+  {
+    "id": "goblin_scout",
+    "name": "Goblin Scout",
+    "class_type": "thief",
+    "level": 1,
+    "stats": { "STR": 7, "DEX": 14, "CON": 8, "INT": 6, "WIS": 6, "AGI": 14 },
+    "equipment": { "weapon": "iron_dagger", "body": "leather_armor" },
+    "inventory": [],
+    "unlocked_skills": {},
+    "modifiers": { "dagger_prof": 1 },
+    "loot_table": [
+      { "item_id": "health_potion", "chance": 20 },
+      { "item_id": "iron_dagger", "chance": 10 }
+    ],
+    "xp_reward": 25,
+    "gold_range": [2, 8],
+    "default_strategies": [
+      { "priority": 1, "condition": "ALWAYS", "action": "ATTACK", "target": "WEAKEST_ENEMY" }
+    ]
+  },
+  {
+    "id": "goblin_warrior",
+    "name": "Goblin Warrior",
+    "class_type": "warrior",
+    "level": 2,
+    "stats": { "STR": 12, "DEX": 11, "CON": 10, "INT": 5, "WIS": 5, "AGI": 11 },
+    "equipment": { "weapon": "rusty_sword", "body": "leather_armor", "offhand": "wooden_shield" },
+    "inventory": [],
+    "unlocked_skills": {},
+    "modifiers": { "sword_prof": 1 },
+    "loot_table": [
+      { "item_id": "health_potion", "chance": 25 },
+      { "item_id": "rusty_sword", "chance": 15 }
+    ],
+    "xp_reward": 40,
+    "gold_range": [5, 15],
+    "default_strategies": [
+      { "priority": 1, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+    ]
+  },
+  {
+    "id": "goblin_shaman",
+    "name": "Goblin Shaman",
+    "class_type": "mage",
+    "level": 2,
+    "stats": { "STR": 6, "DEX": 9, "CON": 7, "INT": 13, "WIS": 11, "AGI": 10 },
+    "equipment": { "weapon": "oak_staff", "body": "cloth_robe" },
+    "inventory": [],
+    "unlocked_skills": { "fireball": 1 },
+    "modifiers": { "fire_intensity": 1 },
+    "loot_table": [
+      { "item_id": "mana_potion", "chance": 30 },
+      { "item_id": "oak_staff", "chance": 10 }
+    ],
+    "xp_reward": 55,
+    "gold_range": [8, 20],
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 20%", "action": "DEFEND", "target": "SELF" },
+      { "priority": 2, "condition": "ALWAYS", "action": "USE_SKILL fireball", "target": "NEAREST_ENEMY" }
+    ]
+  },
+  {
+    "id": "forest_wolf",
+    "name": "Forest Wolf",
+    "class_type": "warrior",
+    "level": 1,
+    "stats": { "STR": 11, "DEX": 13, "CON": 10, "INT": 3, "WIS": 5, "AGI": 15 },
+    "equipment": { "weapon": "rusty_sword" },
+    "inventory": [],
+    "unlocked_skills": {},
+    "modifiers": {},
+    "loot_table": [
+      { "item_id": "health_potion", "chance": 10 }
+    ],
+    "xp_reward": 20,
+    "gold_range": [0, 3],
+    "default_strategies": [
+      { "priority": 1, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+    ]
+  },
+  {
+    "id": "bandit",
+    "name": "Bandit",
+    "class_type": "warrior",
+    "level": 3,
+    "stats": { "STR": 13, "DEX": 12, "CON": 12, "INT": 8, "WIS": 8, "AGI": 11 },
+    "equipment": { "weapon": "iron_sword", "body": "leather_armor", "head": "leather_helm" },
+    "inventory": [],
+    "unlocked_skills": {},
+    "modifiers": { "sword_prof": 1 },
+    "loot_table": [
+      { "item_id": "health_potion", "chance": 30 },
+      { "item_id": "iron_sword", "chance": 10 }
+    ],
+    "xp_reward": 70,
+    "gold_range": [15, 35],
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 30%", "action": "DEFEND", "target": "SELF" },
+      { "priority": 2, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+    ]
+  },
+  {
+    "id": "bandit_archer",
+    "name": "Bandit Archer",
+    "class_type": "thief",
+    "level": 3,
+    "stats": { "STR": 10, "DEX": 15, "CON": 10, "INT": 9, "WIS": 8, "AGI": 14 },
+    "equipment": { "weapon": "short_bow", "body": "leather_armor" },
+    "inventory": [],
+    "unlocked_skills": {},
+    "modifiers": { "bow_prof": 2 },
+    "loot_table": [
+      { "item_id": "health_potion", "chance": 25 }
+    ],
+    "xp_reward": 65,
+    "gold_range": [10, 25],
+    "default_strategies": [
+      { "priority": 1, "condition": "ALWAYS", "action": "ATTACK", "target": "LOWEST_HP_ALLY" }
+    ]
+  },
+  {
+    "id": "skeleton",
+    "name": "Skeleton",
+    "class_type": "warrior",
+    "level": 2,
+    "stats": { "STR": 10, "DEX": 8, "CON": 12, "INT": 2, "WIS": 2, "AGI": 8 },
+    "equipment": { "weapon": "rusty_sword", "body": "leather_armor" },
+    "inventory": [],
+    "unlocked_skills": {},
+    "modifiers": {},
+    "darkvision": true,
+    "loot_table": [
+      { "item_id": "health_potion", "chance": 5 }
+    ],
+    "xp_reward": 35,
+    "gold_range": [0, 10],
+    "default_strategies": [
+      { "priority": 1, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+    ]
+  },
+  {
+    "id": "dungeon_mage",
+    "name": "Dungeon Mage",
+    "class_type": "mage",
+    "level": 4,
+    "stats": { "STR": 6, "DEX": 10, "CON": 8, "INT": 16, "WIS": 13, "AGI": 11 },
+    "equipment": { "weapon": "arcane_staff", "body": "cloth_robe" },
+    "inventory": [],
+    "unlocked_skills": { "fireball": 1, "frost_bolt": 1 },
+    "modifiers": { "fire_intensity": 2 },
+    "loot_table": [
+      { "item_id": "mana_potion", "chance": 40 },
+      { "item_id": "arcane_staff", "chance": 8 }
+    ],
+    "xp_reward": 120,
+    "gold_range": [25, 60],
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 20%", "action": "DEFEND", "target": "SELF" },
+      { "priority": 2, "condition": "ALWAYS", "action": "USE_SKILL fireball", "target": "NEAREST_ENEMY" }
+    ]
+  },
+  {
+    "id": "dungeon_champion",
+    "name": "Dungeon Champion",
+    "class_type": "warrior",
+    "level": 5,
+    "stats": { "STR": 17, "DEX": 11, "CON": 16, "INT": 7, "WIS": 8, "AGI": 10 },
+    "equipment": {
+      "weapon": "steel_sword",
+      "body": "plate_armor",
+      "head": "iron_helm",
+      "offhand": "iron_shield",
+      "hands": "iron_gauntlets",
+      "feet": "iron_boots"
+    },
+    "inventory": [],
+    "unlocked_skills": { "power_strike": 1 },
+    "modifiers": { "sword_prof": 2 },
+    "loot_table": [
+      { "item_id": "health_potion", "chance": 50 },
+      { "item_id": "steel_sword", "chance": 15 },
+      { "item_id": "plate_armor", "chance": 8 }
+    ],
+    "xp_reward": 200,
+    "gold_range": [50, 120],
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 30%", "action": "DEFEND", "target": "SELF" },
+      { "priority": 2, "condition": "ALWAYS", "action": "USE_SKILL power_strike", "target": "NEAREST_ENEMY" }
+    ]
+  }
+]

@@ -1,0 +1,143 @@
+[
+  {
+    "id": "dungeon_entry",
+    "name": "Darkhold — Entry Hall",
+    "description": "Torches guttered out long ago. Your light source reveals a vaulted entry hall carpeted in centuries of dust. Broken furniture and collapsed shelving line the walls. The silhouettes of once-ornate pillars rise into shadow overhead. The smell of decay is everywhere.",
+    "exits": {
+      "up": "dungeon_approach",
+      "north": "dungeon_corridor",
+      "east": "dungeon_storeroom"
+    },
+    "item_ids": [],
+    "encounter_ids": [
+      { "group": "skeletons_entry", "members": ["skeleton", "skeleton"], "respawn_ticks": 20 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "underground",
+    "base_temp_f": 52.0,
+    "zone": "darkhold"
+  },
+  {
+    "id": "dungeon_storeroom",
+    "name": "Collapsed Storeroom",
+    "description": "Half the ceiling has caved in, leaving a jumble of stone and rotted wood. But among the rubble, you can make out the dull glint of old crates. Something valuable may have survived the collapse.",
+    "exits": {
+      "west": "dungeon_entry"
+    },
+    "item_ids": ["health_potion", "mana_potion", "antidote", "iron_helm", "torch"],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "underground",
+    "base_temp_f": 52.0,
+    "zone": "darkhold"
+  },
+  {
+    "id": "dungeon_corridor",
+    "name": "Darkhold Corridor",
+    "description": "A long corridor stretches north to south, its flagstone floor worn smooth by forgotten footfalls. Alcoves set into the walls hold the crumbled remains of statues, their faces worn beyond recognition. Somewhere ahead, you hear the echo of movement.",
+    "exits": {
+      "south": "dungeon_entry",
+      "north": "dungeon_hall",
+      "west": "dungeon_crypt"
+    },
+    "item_ids": [],
+    "encounter_ids": [
+      { "group": "skeleton_patrol", "members": ["skeleton", "skeleton", "skeleton"], "respawn_ticks": 25 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "underground",
+    "base_temp_f": 52.0,
+    "zone": "darkhold"
+  },
+  {
+    "id": "dungeon_crypt",
+    "name": "Ancient Crypt",
+    "description": "Stone sarcophagi line the walls, their lids ajar. Faded heraldry marks these as once-noble occupants. The dead do not rest easy here — you can hear faint scraping from within the closest coffin.",
+    "exits": {
+      "east": "dungeon_corridor"
+    },
+    "item_ids": ["iron_gauntlets", "leather_boots"],
+    "encounter_ids": [
+      { "group": "crypt_guard", "members": ["skeleton", "skeleton", "skeleton", "skeleton"], "respawn_ticks": 30 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "underground",
+    "base_temp_f": 52.0,
+    "zone": "darkhold"
+  },
+  {
+    "id": "dungeon_hall",
+    "name": "Darkhold Great Hall",
+    "description": "A grand hall that once hosted feasts now hosts only shadows. A long table of rotted oak sits down the center. Tapestries hang in tatters from iron rings. At the far end, a stone throne sits empty. Something dark flickers in the fireplace that shouldn't still be burning.",
+    "exits": {
+      "south": "dungeon_corridor",
+      "north": "dungeon_throne_approach",
+      "east": "dungeon_mage_tower"
+    },
+    "item_ids": [],
+    "encounter_ids": [
+      { "group": "hall_guardians", "members": ["goblin_warrior", "goblin_warrior", "dungeon_mage"], "respawn_ticks": 35 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "underground",
+    "base_temp_f": 52.0,
+    "zone": "darkhold"
+  },
+  {
+    "id": "dungeon_mage_tower",
+    "name": "Mage's Study",
+    "description": "Bookshelves stuffed with moldering tomes line every wall. Arcane diagrams are chalked across the floor in overlapping layers. A faint magical residue hangs in the air, sharp as ozone. The mages who worked here clearly never stopped.",
+    "exits": {
+      "west": "dungeon_hall"
+    },
+    "item_ids": ["mana_potion", "mana_potion", "arcane_staff"],
+    "encounter_ids": [
+      { "group": "arcane_guardians", "members": ["dungeon_mage", "dungeon_mage"], "respawn_ticks": 40 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "underground",
+    "base_temp_f": 52.0,
+    "zone": "darkhold"
+  },
+  {
+    "id": "dungeon_throne_approach",
+    "name": "Throne Antechamber",
+    "description": "The last door before the throne room hangs open. Armored figures flank the passage — not statues. Their heads turn toward you slowly. Beyond them, through the gap in the door, something enormous breathes.",
+    "exits": {
+      "south": "dungeon_hall",
+      "north": "dungeon_throne_room"
+    },
+    "item_ids": [],
+    "encounter_ids": [
+      { "group": "elite_guard", "members": ["dungeon_champion", "dungeon_champion"], "respawn_ticks": 50 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": true,
+    "room_type": "underground",
+    "base_temp_f": 52.0,
+    "zone": "darkhold"
+  },
+  {
+    "id": "dungeon_throne_room",
+    "name": "Throne Room of Darkhold",
+    "description": "A vast chamber of cold stone. The Darkhold Champion stands at the center, a colossus in dented plate, flanked by undead warriors. The iron throne behind them is empty — they serve a master long gone, driven only by the dark will bound to their bones.",
+    "exits": {
+      "south": "dungeon_throne_approach"
+    },
+    "item_ids": ["greater_health_potion", "steel_sword"],
+    "encounter_ids": [
+      { "group": "throne_room_boss", "members": ["dungeon_champion", "dungeon_mage", "skeleton", "skeleton", "goblin_shaman"], "respawn_ticks": 60 }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "underground",
+    "base_temp_f": 52.0,
+    "zone": "darkhold"
+  }
+]

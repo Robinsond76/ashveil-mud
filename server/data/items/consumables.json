@@ -1,0 +1,112 @@
+[
+  {
+    "id": "health_potion",
+    "name": "Health Potion",
+    "description": "A red vial that restores 40 HP when consumed.",
+    "type": "consumable",
+    "effect_type": "heal",
+    "effect_params": { "amount": 40 },
+    "weight": 1,
+    "value": 25
+  },
+  {
+    "id": "greater_health_potion",
+    "name": "Greater Health Potion",
+    "description": "A large red vial restoring 100 HP.",
+    "type": "consumable",
+    "effect_type": "heal",
+    "effect_params": { "amount": 100 },
+    "weight": 1,
+    "value": 80
+  },
+  {
+    "id": "mana_potion",
+    "name": "Mana Potion",
+    "description": "A blue vial restoring 40 MP.",
+    "type": "consumable",
+    "effect_type": "restore_mp",
+    "effect_params": { "amount": 40 },
+    "weight": 1,
+    "value": 25
+  },
+  {
+    "id": "antidote",
+    "name": "Antidote",
+    "description": "Neutralizes Poison immediately.",
+    "type": "consumable",
+    "effect_type": "status_remove",
+    "effect_params": { "status": "poison" },
+    "weight": 1,
+    "value": 20
+  },
+  {
+    "id": "campfire_kit",
+    "name": "Campfire Kit",
+    "description": "Flint, tinder and dry wood. Use outside combat to set up a campfire anywhere.",
+    "type": "consumable",
+    "effect_type": "campfire",
+    "effect_params": {},
+    "weight": 3,
+    "value": 15
+  },
+  {
+    "id": "elixir_of_speed",
+    "name": "Elixir of Speed",
+    "description": "A shimmering vial granting +3 effective speed for 5 combat ticks.",
+    "type": "consumable",
+    "effect_type": "status_apply",
+    "effect_params": { "status": "haste", "duration_ticks": 5, "speed_bonus": 3 },
+    "weight": 1,
+    "value": 60
+  },
+  {
+    "id": "hard_bread",
+    "name": "Hard Bread",
+    "description": "Dense, dry bread that keeps for weeks. Restores 30 hunger.",
+    "type": "food",
+    "effect_type": "restore_hunger",
+    "effect_params": { "amount": 30 },
+    "weight": 1,
+    "value": 5
+  },
+  {
+    "id": "dried_meat",
+    "name": "Dried Meat",
+    "description": "Salted strips of cured meat. Restores 50 hunger.",
+    "type": "food",
+    "effect_type": "restore_hunger",
+    "effect_params": { "amount": 50 },
+    "weight": 1,
+    "value": 8
+  },
+  {
+    "id": "rations",
+    "name": "Rations",
+    "description": "A day's worth of mixed provisions. Restores 40 hunger and 20 thirst.",
+    "type": "food",
+    "effect_type": "restore_hunger_thirst",
+    "effect_params": { "hunger": 40, "thirst": 20 },
+    "weight": 2,
+    "value": 12
+  },
+  {
+    "id": "water_flask",
+    "name": "Water Flask",
+    "description": "A small flask of clean water. Restores 40 thirst.",
+    "type": "drink",
+    "effect_type": "restore_thirst",
+    "effect_params": { "amount": 40 },
+    "weight": 1,
+    "value": 5
+  },
+  {
+    "id": "waterskin",
+    "name": "Waterskin",
+    "description": "A large skin of water. Restores 80 thirst.",
+    "type": "drink",
+    "effect_type": "restore_thirst",
+    "effect_params": { "amount": 80 },
+    "weight": 2,
+    "value": 10
+  }
+]

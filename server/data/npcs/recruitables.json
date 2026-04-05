@@ -1,0 +1,212 @@
+[
+  {
+    "id": "recruit_gareth",
+    "name": "Gareth",
+    "title": "the Iron Guard",
+    "class_type": "warrior",
+    "level": 2,
+    "stats": { "STR": 16, "DEX": 10, "CON": 14, "INT": 6, "WIS": 8, "AGI": 11 },
+    "equipment": {
+      "weapon": "iron_sword",
+      "body": "chainmail",
+      "head": "iron_helm",
+      "offhand": "iron_shield",
+      "hands": "iron_gauntlets",
+      "feet": "leather_boots"
+    },
+    "inventory": ["health_potion"],
+    "unlocked_skills": { "power_strike": 1 },
+    "modifiers": { "sword_prof": 1 },
+    "is_recruitable": true,
+    "recruit_dialogue": "Gareth sizes you up with a weathered eye.\n\"I've been looking for steady work. My sword arm's strong and I don't run from a fight.\"\n\"Want me to join your party? (YES/NO)\"",
+    "room_flavor": "A broad-shouldered guardsman named Gareth stands here, polishing his sword. He looks between jobs.",
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 20%", "action": "DEFEND", "target": "SELF" },
+      { "priority": 2, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+    ]
+  },
+  {
+    "id": "recruit_lyria",
+    "name": "Lyria",
+    "title": "the Ember Witch",
+    "class_type": "mage",
+    "level": 2,
+    "stats": { "STR": 6, "DEX": 10, "CON": 8, "INT": 17, "WIS": 13, "AGI": 12 },
+    "equipment": {
+      "weapon": "oak_staff",
+      "body": "cloth_robe",
+      "head": "cloth_hood",
+      "hands": "cloth_gloves",
+      "feet": "leather_boots"
+    },
+    "inventory": ["mana_potion", "mana_potion"],
+    "unlocked_skills": { "fireball": 1 },
+    "modifiers": { "fire_intensity": 1 },
+    "is_recruitable": true,
+    "recruit_dialogue": "Lyria looks up from a worn grimoire, firelight dancing in her eyes.\n\"You seem capable enough. I need someone to stand between me and sharp objects while I work.\"\n\"Join your party? (YES/NO)\"",
+    "room_flavor": "A young woman in a singed robe named Lyria sits reading by a lantern. Arcane symbols float around her fingers.",
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 20%", "action": "DEFEND", "target": "SELF" },
+      { "priority": 2, "condition": "MP_SELF < 10%", "action": "ATTACK", "target": "NEAREST_ENEMY" },
+      { "priority": 3, "condition": "ALWAYS", "action": "USE_SKILL fireball", "target": "STRONGEST_ENEMY" }
+    ]
+  },
+  {
+    "id": "recruit_sable",
+    "name": "Sable",
+    "title": "the Shadow",
+    "class_type": "thief",
+    "level": 2,
+    "stats": { "STR": 10, "DEX": 17, "CON": 10, "INT": 11, "WIS": 8, "AGI": 15 },
+    "equipment": {
+      "weapon": "iron_dagger",
+      "body": "leather_armor",
+      "head": "leather_helm",
+      "hands": "leather_gloves",
+      "feet": "leather_boots"
+    },
+    "inventory": ["health_potion", "antidote"],
+    "unlocked_skills": { "backstab": 1 },
+    "modifiers": { "dagger_prof": 1 },
+    "is_recruitable": true,
+    "recruit_dialogue": "You almost don't notice Sable until she speaks.\n\"Didn't see me coming, did you? That's the point.\"\n\"I work for a fair split. You want my blades at your back? (YES/NO)\"",
+    "room_flavor": "A lean figure in dark leathers named Sable leans in the shadows. You only spot her because she lets you.",
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 25%", "action": "USE_SKILL smoke_bomb", "target": "SELF" },
+      { "priority": 2, "condition": "ALWAYS", "action": "ATTACK", "target": "WEAKEST_ENEMY" }
+    ]
+  },
+  {
+    "id": "recruit_aldric",
+    "name": "Aldric",
+    "title": "the Healer",
+    "class_type": "cleric",
+    "level": 2,
+    "stats": { "STR": 9, "DEX": 8, "CON": 12, "INT": 10, "WIS": 17, "AGI": 10 },
+    "equipment": {
+      "weapon": "wooden_mace",
+      "body": "leather_armor",
+      "head": "cloth_hood",
+      "hands": "cloth_gloves",
+      "feet": "leather_boots"
+    },
+    "inventory": ["health_potion", "health_potion"],
+    "unlocked_skills": { "heal": 1, "smite": 1 },
+    "modifiers": { "heal_power": 1, "mace_prof": 1 },
+    "is_recruitable": true,
+    "recruit_dialogue": "The cleric offers a solemn nod.\n\"The Light guides me to those in need. I sense much danger in your path.\"\n\"I will tend your wounds and smite your enemies. Shall I join you? (YES/NO)\"",
+    "room_flavor": "A serene cleric named Aldric tends to a small traveling shrine. A faint divine glow surrounds him.",
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_ALLY < 30%", "action": "USE_SKILL heal", "target": "LOWEST_HP_ALLY" },
+      { "priority": 2, "condition": "HP_SELF < 30%", "action": "USE_SKILL heal", "target": "SELF" },
+      { "priority": 3, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+    ]
+  },
+  {
+    "id": "recruit_brom",
+    "name": "Brom",
+    "title": "the Axeman",
+    "class_type": "warrior",
+    "level": 3,
+    "stats": { "STR": 17, "DEX": 9, "CON": 15, "INT": 6, "WIS": 7, "AGI": 10 },
+    "equipment": {
+      "weapon": "battle_axe",
+      "body": "chainmail",
+      "head": "iron_helm",
+      "hands": "iron_gauntlets",
+      "feet": "iron_boots"
+    },
+    "inventory": ["health_potion"],
+    "unlocked_skills": { "power_strike": 1, "whirlwind": 1 },
+    "modifiers": { "axe_prof": 2 },
+    "is_recruitable": true,
+    "recruit_dialogue": "Brom scratches the back of his head and grins broadly.\n\"Aye, I could use the coin. And the fighting. Mostly the fighting.\"\n\"Join up? (YES/NO)\"",
+    "room_flavor": "A mountain of a man named Brom sits on a crate, twirling a battle axe with unsettling ease.",
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 25%", "action": "DEFEND", "target": "SELF" },
+      { "priority": 2, "condition": "ENEMY_COUNT > 2", "action": "USE_SKILL whirlwind", "target": "NEAREST_ENEMY" },
+      { "priority": 3, "condition": "ALWAYS", "action": "USE_SKILL power_strike", "target": "NEAREST_ENEMY" }
+    ]
+  },
+  {
+    "id": "recruit_vex",
+    "name": "Vex",
+    "title": "the Frostweaver",
+    "class_type": "mage",
+    "level": 3,
+    "stats": { "STR": 5, "DEX": 11, "CON": 8, "INT": 18, "WIS": 14, "AGI": 13 },
+    "equipment": {
+      "weapon": "arcane_staff",
+      "body": "cloth_robe",
+      "head": "cloth_hood",
+      "hands": "cloth_gloves",
+      "feet": "leather_boots"
+    },
+    "inventory": ["mana_potion", "mana_potion", "health_potion"],
+    "unlocked_skills": { "frost_bolt": 1, "blizzard": 1 },
+    "modifiers": { "frost_intensity": 2 },
+    "is_recruitable": true,
+    "recruit_dialogue": "Vex taps her staff against the floor with a crisp clack.\n\"I've been looking for a group worthy of my expertise. You'll have to do.\"\n\"I warn you: I don't bodyguard. Keep enemies away from me. Deal? (YES/NO)\"",
+    "room_flavor": "An imperious mage named Vex stands with perfect posture, frost trailing from her fingertips.",
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 20%", "action": "DEFEND", "target": "SELF" },
+      { "priority": 2, "condition": "ENEMY_COUNT > 2", "action": "USE_SKILL blizzard", "target": "NEAREST_ENEMY" },
+      { "priority": 3, "condition": "MP_SELF < 15%", "action": "ATTACK", "target": "NEAREST_ENEMY" },
+      { "priority": 4, "condition": "ALWAYS", "action": "USE_SKILL frost_bolt", "target": "STRONGEST_ENEMY" }
+    ]
+  },
+  {
+    "id": "recruit_mira",
+    "name": "Mira",
+    "title": "the Swift",
+    "class_type": "thief",
+    "level": 3,
+    "stats": { "STR": 9, "DEX": 18, "CON": 9, "INT": 12, "WIS": 9, "AGI": 16 },
+    "equipment": {
+      "weapon": "shadow_dagger",
+      "body": "leather_armor",
+      "head": "leather_helm",
+      "hands": "leather_gloves",
+      "feet": "leather_boots"
+    },
+    "inventory": ["health_potion", "antidote", "antidote"],
+    "unlocked_skills": { "backstab": 1, "poison_blade": 1 },
+    "modifiers": { "dagger_prof": 2, "dodge_mastery": 1 },
+    "is_recruitable": true,
+    "recruit_dialogue": "Mira flips a coin and catches it without looking.\n\"You've got a good face. Honest enough. I like honest — easier to read.\"\n\"My daggers are at your service, for a reasonable cut of the loot. (YES/NO)\"",
+    "room_flavor": "A nimble rogue named Mira perches on the back of a chair, watching the room with sharp eyes.",
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 20%", "action": "USE_SKILL smoke_bomb", "target": "SELF" },
+      { "priority": 2, "condition": "ENEMY_HAS_STATUS poison", "action": "USE_SKILL backstab", "target": "WEAKEST_ENEMY" },
+      { "priority": 3, "condition": "ALWAYS", "action": "USE_SKILL poison_blade", "target": "SELF" }
+    ]
+  },
+  {
+    "id": "recruit_sister_ophelia",
+    "name": "Sister Ophelia",
+    "title": "the Devoted",
+    "class_type": "cleric",
+    "level": 3,
+    "stats": { "STR": 10, "DEX": 8, "CON": 13, "INT": 10, "WIS": 18, "AGI": 9 },
+    "equipment": {
+      "weapon": "iron_mace",
+      "body": "chainmail",
+      "head": "leather_helm",
+      "hands": "cloth_gloves",
+      "feet": "leather_boots"
+    },
+    "inventory": ["health_potion", "health_potion", "mana_potion"],
+    "unlocked_skills": { "heal": 1, "smite": 1, "cure_poison": 1, "mass_heal": 1 },
+    "modifiers": { "heal_power": 2, "mace_prof": 1 },
+    "is_recruitable": true,
+    "recruit_dialogue": "Sister Ophelia clasps her hands and regards you with calm, searching eyes.\n\"The wounded follow you like a shadow. I have the gift of healing.\"\n\"If you would have me walk this road with you, I will not turn away. (YES/NO)\"",
+    "room_flavor": "A composed cleric named Sister Ophelia kneels in quiet prayer, her mace laid at her side.",
+    "default_strategies": [
+      { "priority": 1, "condition": "HAS_STATUS poison", "action": "USE_SKILL cure_poison", "target": "LOWEST_HP_ALLY" },
+      { "priority": 2, "condition": "HP_ALLY < 25%", "action": "USE_SKILL mass_heal", "target": "LOWEST_HP_ALLY" },
+      { "priority": 3, "condition": "HP_ALLY < 50%", "action": "USE_SKILL heal", "target": "LOWEST_HP_ALLY" },
+      { "priority": 4, "condition": "HP_SELF < 35%", "action": "USE_SKILL heal", "target": "SELF" },
+      { "priority": 5, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+    ]
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "fireball",
+    "name": "Fireball",
+    "description": "Hurls a ball of fire at one enemy, dealing fire damage.",
+    "class_type": "mage",
+    "mp_cost": 12,
+    "cooldown_ticks": 3,
+    "effect_type": "damage",
+    "effect_params": { "base_damage": 25, "damage_type": "fire" }
+  },
+  {
+    "id": "frost_bolt",
+    "name": "Frost Bolt",
+    "description": "A bolt of ice that damages and applies Slow for 2 ticks.",
+    "class_type": "mage",
+    "mp_cost": 10,
+    "cooldown_ticks": 3,
+    "effect_type": "damage_status",
+    "effect_params": { "base_damage": 18, "damage_type": "frost", "status": "slow", "duration_ticks": 2 }
+  },
+  {
+    "id": "arcane_shield",
+    "name": "Arcane Shield",
+    "description": "Absorbs the next hit taken for 4 ticks.",
+    "class_type": "mage",
+    "mp_cost": 15,
+    "cooldown_ticks": 8,
+    "effect_type": "status_apply",
+    "effect_params": { "status": "arcane_shield", "duration_ticks": 4, "target_scope": "self" }
+  },
+  {
+    "id": "chain_lightning",
+    "name": "Chain Lightning",
+    "description": "Lightning arcs between up to 3 enemies dealing lightning damage.",
+    "class_type": "mage",
+    "mp_cost": 18,
+    "cooldown_ticks": 4,
+    "effect_type": "damage_chain",
+    "effect_params": { "base_damage": 20, "damage_type": "lightning", "chain_count": 3 }
+  },
+  {
+    "id": "blizzard",
+    "name": "Blizzard",
+    "description": "Blankets all enemies in ice dealing frost damage and applying Slow.",
+    "class_type": "mage",
+    "mp_cost": 22,
+    "cooldown_ticks": 6,
+    "effect_type": "damage_aoe",
+    "effect_params": { "base_damage": 15, "damage_type": "frost", "status": "slow", "duration_ticks": 2 }
+  },
+  {
+    "id": "meteor",
+    "name": "Meteor",
+    "description": "Calls down a meteor for massive fire damage to all enemies.",
+    "class_type": "mage",
+    "mp_cost": 40,
+    "cooldown_ticks": 12,
+    "effect_type": "damage_aoe",
+    "effect_params": { "base_damage": 50, "damage_type": "fire" }
+  }
+]

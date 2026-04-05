@@ -1,0 +1,52 @@
+[
+  {
+    "id": "power_strike",
+    "name": "Power Strike",
+    "description": "A powerful melee blow that deals 150% weapon damage.",
+    "class_type": "warrior",
+    "mp_cost": 8,
+    "cooldown_ticks": 4,
+    "effect_type": "damage",
+    "effect_params": { "multiplier": 1.5, "damage_type": "physical" }
+  },
+  {
+    "id": "taunt",
+    "name": "Taunt",
+    "description": "Forces all enemies to target you for 3 ticks.",
+    "class_type": "warrior",
+    "mp_cost": 5,
+    "cooldown_ticks": 6,
+    "effect_type": "status_apply",
+    "effect_params": { "status": "taunted", "duration_ticks": 3, "target_scope": "all_enemies" }
+  },
+  {
+    "id": "whirlwind",
+    "name": "Whirlwind",
+    "description": "Spin attack dealing 80% weapon damage to all enemies.",
+    "class_type": "warrior",
+    "mp_cost": 12,
+    "cooldown_ticks": 6,
+    "effect_type": "damage_aoe",
+    "effect_params": { "multiplier": 0.8, "damage_type": "physical" }
+  },
+  {
+    "id": "battle_cry",
+    "name": "Battle Cry",
+    "description": "Bolsters the party, reducing all ally cooldowns by 2 ticks.",
+    "class_type": "warrior",
+    "mp_cost": 10,
+    "cooldown_ticks": 8,
+    "effect_type": "cooldown_reduce_allies",
+    "effect_params": { "ticks": 2 }
+  },
+  {
+    "id": "berserker_rage",
+    "name": "Berserker Rage",
+    "description": "Enter a rage for 6 ticks: +50% damage but cannot DEFEND.",
+    "class_type": "warrior",
+    "mp_cost": 20,
+    "cooldown_ticks": 12,
+    "effect_type": "status_apply",
+    "effect_params": { "status": "berserker", "duration_ticks": 6, "target_scope": "self" }
+  }
+]

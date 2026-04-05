@@ -1,0 +1,62 @@
+[
+  {
+    "id": "heal",
+    "name": "Heal",
+    "description": "Restores HP to a single ally.",
+    "class_type": "cleric",
+    "mp_cost": 12,
+    "cooldown_ticks": 3,
+    "effect_type": "heal",
+    "effect_params": { "base_heal": 30, "school": "heal" }
+  },
+  {
+    "id": "smite",
+    "name": "Smite",
+    "description": "A divine strike dealing holy damage. Extra damage to undead.",
+    "class_type": "cleric",
+    "mp_cost": 10,
+    "cooldown_ticks": 3,
+    "effect_type": "damage",
+    "effect_params": { "base_damage": 22, "damage_type": "holy", "undead_bonus": 1.5 }
+  },
+  {
+    "id": "cure_poison",
+    "name": "Cure Poison",
+    "description": "Removes Poison from a single ally.",
+    "class_type": "cleric",
+    "mp_cost": 8,
+    "cooldown_ticks": 2,
+    "effect_type": "status_remove",
+    "effect_params": { "status": "poison" }
+  },
+  {
+    "id": "holy_shield",
+    "name": "Holy Shield",
+    "description": "Grants an ally a divine barrier reducing incoming damage by 30% for 4 ticks.",
+    "class_type": "cleric",
+    "mp_cost": 15,
+    "cooldown_ticks": 6,
+    "effect_type": "status_apply",
+    "effect_params": { "status": "holy_shield", "duration_ticks": 4, "target_scope": "single_ally" }
+  },
+  {
+    "id": "mass_heal",
+    "name": "Mass Heal",
+    "description": "Heals all allies for a moderate amount.",
+    "class_type": "cleric",
+    "mp_cost": 30,
+    "cooldown_ticks": 8,
+    "effect_type": "heal_aoe",
+    "effect_params": { "base_heal": 20, "school": "heal" }
+  },
+  {
+    "id": "divine_judgment",
+    "name": "Divine Judgment",
+    "description": "Calls down divine wrath on a single enemy for massive holy damage.",
+    "class_type": "cleric",
+    "mp_cost": 35,
+    "cooldown_ticks": 10,
+    "effect_type": "damage",
+    "effect_params": { "base_damage": 60, "damage_type": "holy" }
+  }
+]

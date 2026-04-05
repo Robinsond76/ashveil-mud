@@ -1,0 +1,99 @@
+[
+  {
+    "id": "test_entrance",
+    "name": "The Proving Grounds",
+    "description": "A walled courtyard just east of Ashveil's south gate, used by the city guard for training exercises. A sign on the stone arch reads: PROVING GROUNDS — AUTHORIZED TRAINING ONLY. Three passages lead deeper into the complex.\n\n  East  — The Wanderers' Hall (recruit companions)\n  South — The Ember Circle (campfire, rest & strategy)\n  West  — The Gauntlet (combat arena)",
+    "exits": {
+      "west": "south_gate",
+      "east": "test_recruit_hall",
+      "south": "test_campfire",
+      "north": "test_arena"
+    },
+    "item_ids": [],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 65.0,
+    "zone": "testing_grounds"
+  },
+  {
+    "id": "test_recruit_hall",
+    "name": "The Wanderers' Hall",
+    "description": "A long hall where adventurers between jobs wait, trade stories, and look for work. Mismatched chairs and tables are scattered about. The guild board on the wall is covered in request notices.\n\nSeveral capable-looking individuals occupy the room:\n\n  - Gareth the Iron Guard leans on his sword in the corner, his chainmail polished to a dull gleam.\n  - Lyria the Ember Witch sits at a table, firelight dancing around her fingers as she pages through a grimoire.\n  - Sable the Shadow is barely visible in a darkened alcove — you only notice her because she wants you to.\n  - Aldric the Healer tends to a small shrine, offering a calm nod as you enter.\n  - Brom the Axeman sits on a crate, cheerfully spinning a battle axe that has no business being spun in an enclosed room.\n  - Vex the Frostweaver stands perfectly still near the window, trailing cold mist.\n  - Mira the Swift balances a dagger on her fingertip, watching you with sharp eyes.\n  - Sister Ophelia kneels before a small icon, her mace resting at her side.\n\nType TALK <name> to speak with anyone. Type LOOK to see who is available.",
+    "exits": {
+      "west": "test_entrance"
+    },
+    "item_ids": [],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [
+      "recruit_gareth",
+      "recruit_lyria",
+      "recruit_sable",
+      "recruit_aldric",
+      "recruit_brom",
+      "recruit_vex",
+      "recruit_mira",
+      "recruit_sister_ophelia"
+    ],
+    "is_campfire": false,
+    "room_type": "indoor",
+    "base_temp_f": 65.0,
+    "zone": "testing_grounds"
+  },
+  {
+    "id": "test_campfire",
+    "name": "The Ember Circle",
+    "description": "A circular stone courtyard with a large, well-maintained campfire at its center. Smooth logs serve as benches around the fire. The smell of pine smoke and woodsmoke fills the air. This is where soldiers and adventurers alike come to rest, plan, and prepare before the Gauntlet.\n\nThis is a campfire. You can:\n  REST      — Restore all HP/MP and save your progress\n  PARTY     — View your party members and their stats\n  MANAGE <member> — Edit strategies for a party member\n  LEARN <skill>   — Spend skill points to learn new abilities\n  UPGRADE <mod>   — Spend modifier points to improve proficiencies",
+    "exits": {
+      "north": "test_entrance"
+    },
+    "item_ids": ["campfire_kit"],
+    "encounter_ids": [],
+    "recruitable_npc_ids": [],
+    "is_campfire": true,
+    "room_type": "outdoor",
+    "base_temp_f": 65.0,
+    "zone": "testing_grounds"
+  },
+  {
+    "id": "test_arena",
+    "name": "The Gauntlet",
+    "description": "A large open-air arena ringed by low stone walls. Practice dummies stand along the edges, but the real training opportunities wait in the marked combat zones at the arena's center. Each zone is cordoned off with rope and marked with a colored banner.\n\n  [A] SOLO BOUT     — One opponent. Good for testing basic combat and speed.\n  [B] SKIRMISH      — Three opponents of mixed types. Tests party cohesion.\n  [C] SWARM         — Five low-level opponents. Tests AoE and multi-target strategy.\n  [D] FULL ASSAULT  — Six opponents of varied levels. Maximum challenge.\n\nType ATTACK A, ATTACK B, ATTACK C, or ATTACK D to enter a combat zone.\nDefeated groups respawn automatically after a short time.",
+    "exits": {
+      "south": "test_entrance"
+    },
+    "item_ids": [],
+    "encounter_ids": [
+      {
+        "group": "A",
+        "label": "Solo Bout",
+        "members": ["bandit"],
+        "respawn_ticks": 5
+      },
+      {
+        "group": "B",
+        "label": "Skirmish",
+        "members": ["bandit", "goblin_warrior", "goblin_scout"],
+        "respawn_ticks": 5
+      },
+      {
+        "group": "C",
+        "label": "Swarm",
+        "members": ["goblin_scout", "goblin_scout", "goblin_scout", "goblin_warrior", "goblin_warrior"],
+        "respawn_ticks": 5
+      },
+      {
+        "group": "D",
+        "label": "Full Assault",
+        "members": ["bandit", "bandit", "bandit_archer", "goblin_warrior", "goblin_shaman", "dungeon_mage"],
+        "respawn_ticks": 5
+      }
+    ],
+    "recruitable_npc_ids": [],
+    "is_campfire": false,
+    "room_type": "outdoor",
+    "base_temp_f": 65.0,
+    "zone": "testing_grounds"
+  }
+]

@@ -1,0 +1,52 @@
+[
+  {
+    "id": "backstab",
+    "name": "Backstab",
+    "description": "A precise strike dealing 200% weapon damage.",
+    "class_type": "thief",
+    "mp_cost": 10,
+    "cooldown_ticks": 4,
+    "effect_type": "damage",
+    "effect_params": { "multiplier": 2.0, "damage_type": "physical" }
+  },
+  {
+    "id": "smoke_bomb",
+    "name": "Smoke Bomb",
+    "description": "Throws a smoke bomb, applying Blind to all enemies for 2 ticks (they miss more).",
+    "class_type": "thief",
+    "mp_cost": 8,
+    "cooldown_ticks": 6,
+    "effect_type": "status_apply",
+    "effect_params": { "status": "blind", "duration_ticks": 2, "target_scope": "all_enemies" }
+  },
+  {
+    "id": "poison_blade",
+    "name": "Poison Blade",
+    "description": "Coats your weapon in poison. Next attack applies Poison for 4 ticks.",
+    "class_type": "thief",
+    "mp_cost": 12,
+    "cooldown_ticks": 5,
+    "effect_type": "status_apply",
+    "effect_params": { "status": "poison_blade", "duration_ticks": 1, "target_scope": "self" }
+  },
+  {
+    "id": "shadow_step",
+    "name": "Shadow Step",
+    "description": "Teleport behind an enemy and deal 120% weapon damage, ignoring armor.",
+    "class_type": "thief",
+    "mp_cost": 14,
+    "cooldown_ticks": 6,
+    "effect_type": "damage",
+    "effect_params": { "multiplier": 1.2, "damage_type": "physical", "ignore_armor": true }
+  },
+  {
+    "id": "assassinate",
+    "name": "Assassinate",
+    "description": "Strike a vulnerable enemy for 300% weapon damage. Bonus damage if enemy has Poison.",
+    "class_type": "thief",
+    "mp_cost": 25,
+    "cooldown_ticks": 10,
+    "effect_type": "damage",
+    "effect_params": { "multiplier": 3.0, "damage_type": "physical", "poison_bonus_multiplier": 1.5 }
+  }
+]

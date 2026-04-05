@@ -1,0 +1,178 @@
+{
+  "warrior": {
+    "display_name": "Warrior",
+    "description": "A battle-hardened fighter who excels at physical combat and can absorb tremendous punishment.",
+    "suggested_stats": { "STR": 16, "DEX": 10, "CON": 15, "INT": 6, "WIS": 8, "AGI": 12 },
+    "hp_per_level": 12,
+    "mp_per_level": 2,
+    "base_hp": 60,
+    "base_mp": 10,
+    "recommended_modifiers": ["sword_prof", "axe_prof", "shield_prof"],
+    "skill_tree": [
+      {
+        "id": "power_strike",
+        "unlock_cost": 1,
+        "prerequisites": []
+      },
+      {
+        "id": "taunt",
+        "unlock_cost": 1,
+        "prerequisites": []
+      },
+      {
+        "id": "whirlwind",
+        "unlock_cost": 2,
+        "prerequisites": ["power_strike"]
+      },
+      {
+        "id": "battle_cry",
+        "unlock_cost": 2,
+        "prerequisites": ["taunt"]
+      },
+      {
+        "id": "berserker_rage",
+        "unlock_cost": 3,
+        "prerequisites": ["whirlwind", "battle_cry"]
+      }
+    ],
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 20%", "action": "DEFEND", "target": "SELF" },
+      { "priority": 2, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+    ]
+  },
+  "mage": {
+    "display_name": "Mage",
+    "description": "A student of the arcane arts. Fragile in body but devastating in magical power.",
+    "suggested_stats": { "STR": 6, "DEX": 10, "CON": 8, "INT": 18, "WIS": 14, "AGI": 12 },
+    "hp_per_level": 4,
+    "mp_per_level": 10,
+    "base_hp": 25,
+    "base_mp": 60,
+    "recommended_modifiers": ["fire_intensity", "frost_intensity", "lightning_intensity"],
+    "skill_tree": [
+      {
+        "id": "fireball",
+        "unlock_cost": 1,
+        "prerequisites": []
+      },
+      {
+        "id": "frost_bolt",
+        "unlock_cost": 1,
+        "prerequisites": []
+      },
+      {
+        "id": "arcane_shield",
+        "unlock_cost": 1,
+        "prerequisites": []
+      },
+      {
+        "id": "chain_lightning",
+        "unlock_cost": 2,
+        "prerequisites": ["frost_bolt"]
+      },
+      {
+        "id": "blizzard",
+        "unlock_cost": 2,
+        "prerequisites": ["frost_bolt"]
+      },
+      {
+        "id": "meteor",
+        "unlock_cost": 3,
+        "prerequisites": ["fireball", "chain_lightning"]
+      }
+    ],
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 20%", "action": "DEFEND", "target": "SELF" },
+      { "priority": 2, "condition": "MP_SELF < 10%", "action": "ATTACK", "target": "NEAREST_ENEMY" },
+      { "priority": 3, "condition": "ALWAYS", "action": "USE_SKILL fireball", "target": "STRONGEST_ENEMY" }
+    ]
+  },
+  "thief": {
+    "display_name": "Thief",
+    "description": "A swift and cunning rogue who strikes from the shadows and exploits enemy weaknesses.",
+    "suggested_stats": { "STR": 10, "DEX": 18, "CON": 10, "INT": 10, "WIS": 8, "AGI": 16 },
+    "hp_per_level": 7,
+    "mp_per_level": 4,
+    "base_hp": 35,
+    "base_mp": 25,
+    "recommended_modifiers": ["dagger_prof", "bow_prof", "dodge_mastery"],
+    "skill_tree": [
+      {
+        "id": "backstab",
+        "unlock_cost": 1,
+        "prerequisites": []
+      },
+      {
+        "id": "smoke_bomb",
+        "unlock_cost": 1,
+        "prerequisites": []
+      },
+      {
+        "id": "poison_blade",
+        "unlock_cost": 2,
+        "prerequisites": ["backstab"]
+      },
+      {
+        "id": "shadow_step",
+        "unlock_cost": 2,
+        "prerequisites": ["smoke_bomb"]
+      },
+      {
+        "id": "assassinate",
+        "unlock_cost": 3,
+        "prerequisites": ["poison_blade", "shadow_step"]
+      }
+    ],
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_SELF < 25%", "action": "USE_SKILL smoke_bomb", "target": "SELF" },
+      { "priority": 2, "condition": "ALWAYS", "action": "ATTACK", "target": "WEAKEST_ENEMY" }
+    ]
+  },
+  "cleric": {
+    "display_name": "Cleric",
+    "description": "A devoted healer and divine warrior. Keeps the party alive through sacred magic.",
+    "suggested_stats": { "STR": 10, "DEX": 8, "CON": 12, "INT": 10, "WIS": 18, "AGI": 10 },
+    "hp_per_level": 8,
+    "mp_per_level": 8,
+    "base_hp": 40,
+    "base_mp": 45,
+    "recommended_modifiers": ["heal_power", "mace_prof", "curse_intensity"],
+    "skill_tree": [
+      {
+        "id": "heal",
+        "unlock_cost": 1,
+        "prerequisites": []
+      },
+      {
+        "id": "smite",
+        "unlock_cost": 1,
+        "prerequisites": []
+      },
+      {
+        "id": "cure_poison",
+        "unlock_cost": 1,
+        "prerequisites": ["heal"]
+      },
+      {
+        "id": "holy_shield",
+        "unlock_cost": 2,
+        "prerequisites": ["smite"]
+      },
+      {
+        "id": "mass_heal",
+        "unlock_cost": 2,
+        "prerequisites": ["heal", "cure_poison"]
+      },
+      {
+        "id": "divine_judgment",
+        "unlock_cost": 3,
+        "prerequisites": ["smite", "holy_shield"]
+      }
+    ],
+    "default_strategies": [
+      { "priority": 1, "condition": "HP_ALLY < 30%", "action": "USE_SKILL heal", "target": "LOWEST_HP_ALLY" },
+      { "priority": 2, "condition": "HP_SELF < 30%", "action": "USE_SKILL heal", "target": "SELF" },
+      { "priority": 3, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+    ]
+  }
+}

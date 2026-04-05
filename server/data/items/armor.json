@@ -1,0 +1,142 @@
+[
+  {
+    "id": "cloth_robe",
+    "name": "Cloth Robe",
+    "description": "A simple robe offering almost no protection, but light as a feather.",
+    "type": "armor",
+    "slot": "body",
+    "stats": { "defense": 2 },
+    "weight": 2,
+    "value": 15
+  },
+  {
+    "id": "leather_armor",
+    "name": "Leather Armor",
+    "description": "Supple leather that offers decent protection without hindering movement.",
+    "type": "armor",
+    "slot": "body",
+    "stats": { "defense": 6 },
+    "weight": 6,
+    "value": 60
+  },
+  {
+    "id": "chainmail",
+    "name": "Chainmail",
+    "description": "Interlocking rings of iron. Solid protection but somewhat heavy.",
+    "type": "armor",
+    "slot": "body",
+    "stats": { "defense": 12 },
+    "weight": 14,
+    "value": 180
+  },
+  {
+    "id": "plate_armor",
+    "name": "Plate Armor",
+    "description": "Full steel plate. Exceptional protection at the cost of significant weight.",
+    "type": "armor",
+    "slot": "body",
+    "stats": { "defense": 20 },
+    "weight": 24,
+    "value": 400
+  },
+  {
+    "id": "cloth_hood",
+    "name": "Cloth Hood",
+    "description": "A simple cloth hood.",
+    "type": "armor",
+    "slot": "head",
+    "stats": { "defense": 1 },
+    "weight": 1,
+    "value": 8
+  },
+  {
+    "id": "leather_helm",
+    "name": "Leather Helm",
+    "description": "A hardened leather cap.",
+    "type": "armor",
+    "slot": "head",
+    "stats": { "defense": 3 },
+    "weight": 3,
+    "value": 30
+  },
+  {
+    "id": "iron_helm",
+    "name": "Iron Helm",
+    "description": "A sturdy iron helmet protecting the skull.",
+    "type": "armor",
+    "slot": "head",
+    "stats": { "defense": 7 },
+    "weight": 6,
+    "value": 90
+  },
+  {
+    "id": "cloth_gloves",
+    "name": "Cloth Gloves",
+    "description": "Simple cloth gloves.",
+    "type": "armor",
+    "slot": "hands",
+    "stats": { "defense": 1 },
+    "weight": 1,
+    "value": 8
+  },
+  {
+    "id": "leather_gloves",
+    "name": "Leather Gloves",
+    "description": "Supple gloves allowing precise movement.",
+    "type": "armor",
+    "slot": "hands",
+    "stats": { "defense": 3, "dex_bonus": 1 },
+    "weight": 2,
+    "value": 35
+  },
+  {
+    "id": "iron_gauntlets",
+    "name": "Iron Gauntlets",
+    "description": "Heavy iron gauntlets.",
+    "type": "armor",
+    "slot": "hands",
+    "stats": { "defense": 6 },
+    "weight": 5,
+    "value": 70
+  },
+  {
+    "id": "leather_boots",
+    "name": "Leather Boots",
+    "description": "Comfortable leather boots worn by travellers.",
+    "type": "armor",
+    "slot": "feet",
+    "stats": { "defense": 2 },
+    "weight": 2,
+    "value": 25
+  },
+  {
+    "id": "iron_boots",
+    "name": "Iron Boots",
+    "description": "Heavy iron boots that protect the feet.",
+    "type": "armor",
+    "slot": "feet",
+    "stats": { "defense": 5 },
+    "weight": 6,
+    "value": 65
+  },
+  {
+    "id": "wooden_shield",
+    "name": "Wooden Shield",
+    "description": "A battered wooden shield.",
+    "type": "armor",
+    "slot": "offhand",
+    "stats": { "defense": 4, "block_chance": 10 },
+    "weight": 5,
+    "value": 30
+  },
+  {
+    "id": "iron_shield",
+    "name": "Iron Shield",
+    "description": "A solid iron shield with a reinforced boss.",
+    "type": "armor",
+    "slot": "offhand",
+    "stats": { "defense": 9, "block_chance": 20 },
+    "weight": 10,
+    "value": 100
+  }
+]

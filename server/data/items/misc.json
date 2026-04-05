@@ -1,0 +1,41 @@
+[
+  {
+    "id": "torch",
+    "name": "Torch",
+    "description": "A wooden handle wrapped in oil-soaked cloth. Burns for 60 game-minutes once lit, providing a warm flickering light. Use LIT TORCH to ignite it.",
+    "type": "consumable",
+    "effect_type": "light_source",
+    "effect_params": {
+      "light_level": 0.5,
+      "fuel_minutes": 60
+    },
+    "weight": 1,
+    "value": 5
+  },
+  {
+    "id": "lantern",
+    "name": "Hooded Lantern",
+    "description": "A sturdy iron lantern with a glass hood that shields the flame from wind. Requires Oil Flask to fuel — burns for 90 game-minutes per fill. Use LIT LANTERN to light it (consumes one Oil Flask).",
+    "type": "consumable",
+    "effect_type": "light_source",
+    "effect_params": {
+      "light_level": 0.7,
+      "fuel_minutes": -1
+    },
+    "weight": 2,
+    "value": 30
+  },
+  {
+    "id": "oil_flask",
+    "name": "Oil Flask",
+    "description": "A small clay flask stoppered with wax, filled with lamp oil. Used to fuel a Hooded Lantern. One flask provides 90 game-minutes of lantern light.",
+    "type": "consumable",
+    "effect_type": "refuel",
+    "effect_params": {
+      "target_item": "lantern",
+      "fuel_minutes": 90
+    },
+    "weight": 1,
+    "value": 8
+  }
+]
