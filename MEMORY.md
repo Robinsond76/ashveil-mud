@@ -12,7 +12,7 @@
 | 6 | Horses & Mounts | ✅ COMPLETED |
 | 7 | Wizard & Spell Overhaul | ✅ COMPLETED |
 | 8 | Help System Overhaul | ✅ COMPLETED |
-| 9 | Multiplayer Foundations | 🔲 NOT STARTED |
+| 9 | Multiplayer Foundations | ✅ COMPLETED |
 
 ---
 
@@ -24,8 +24,8 @@
 | Single asyncio event loop | Avoids threading complexity; WebSocket + combat + clock all cooperative |
 | `WorldClock` subscribers | Decouples weather broadcast from session polling |
 | Per-session `CombatSession` | Keeps combat isolated; multiplayer combat joins are future work |
-| Darkvision on NPC not race | Simpler; monsters drive the rule, not player metadata |
 | `room_type` over `is_outdoor` flag | Three-way distinction needed (outdoor/indoor/underground) |
-| Effect flags on session | `_fortify_active`, `_bless_camp_active`, etc. as dynamic attrs — no dataclass field needed |
+| Effect flags on session | Dynamic attrs (`_fortify_active`, etc.) — no dataclass field needed |
 | Utility skills NOT in class skill_tree | Exist only in skill JSON files; unlocked via `unlocked_skills` dict |
-| Stamina multiplier (mounts) | `ratio = min(1.0, horses/party_size)` → `multiplier = 1.0 - 0.60 * ratio` |
+| `_sessions` dict in main.py | Keyed by player name; asyncio-safe (cooperative, no locks needed) |
+| `room_occupants` on WorldMap | Room ID → list of player names; updated on enter/leave/connect/disconnect |

@@ -665,6 +665,65 @@ _HELP_TOPICS: dict[str, str] = {
         "    Use on unknown or magical items to learn their stats.",
         "  See also: SPELLS, SKILLS, WIZARD",
     ]),
+    # ── Multiplayer / Chat ────────────────────────────────────────────────────
+    "SAY": _box("HELP: SAY", [
+        "  Speak to all players in the same room.",
+        "  Usage: SAY <message>",
+        "  Examples:",
+        "    SAY Hello, traveler!",
+        "  Receivers see: [YourName says]: \"message\"",
+        "  See also: EMOTE, SHOUT, PLAYERS",
+    ]),
+    "EMOTE": _box("HELP: EMOTE / ME", [
+        "  Perform an emote visible to all players in the room.",
+        "  Usage: EMOTE <action>  (or ME <action>)",
+        "  Examples:",
+        "    EMOTE waves cheerfully.",
+        "    ME bows deeply.",
+        "  Everyone in the room (including you) sees: * YourName action",
+        "  See also: SAY, SHOUT",
+    ]),
+    "ME": _box("HELP: EMOTE / ME", [
+        "  Perform an emote visible to all players in the room.",
+        "  Usage: EMOTE <action>  (or ME <action>)",
+        "  Examples:",
+        "    EMOTE waves cheerfully.",
+        "    ME bows deeply.",
+        "  Everyone in the room (including you) sees: * YourName action",
+        "  See also: SAY, SHOUT",
+    ]),
+    "SHOUT": _box("HELP: SHOUT / OOC", [
+        "  Broadcast a message to all connected players regardless of room.",
+        "  Usage: SHOUT <message>  (or OOC <message>)",
+        "  Examples:",
+        "    SHOUT Is anyone at the inn?",
+        "  See also: SAY, EMOTE, PLAYERS",
+    ]),
+    "OOC": _box("HELP: SHOUT / OOC", [
+        "  Broadcast a message to all connected players regardless of room.",
+        "  Usage: SHOUT <message>  (or OOC <message>)",
+        "  Examples:",
+        "    OOC Anyone want to group up?",
+        "  See also: SAY, EMOTE, PLAYERS",
+    ]),
+    "PLAYERS": _box("HELP: PLAYERS", [
+        "  Shows who else is currently in your room.",
+        "  Usage: LOOK  (other players appear under \"Also here:\")",
+        "  Details:",
+        "    Players in the same room can see each other's SAY and EMOTE messages.",
+        "    Use SHOUT to reach players in other rooms.",
+        "  See also: SAY, EMOTE, SHOUT, LOOK",
+    ]),
+    "MULTIPLAYER": _box("HELP: MULTIPLAYER", [
+        "  Ashveil MUD supports multiple simultaneous players.",
+        "  Key features:",
+        "    - Other players appear in room descriptions (Also here: ...).",
+        "    - Movement broadcasts: you see when others enter or leave.",
+        "    - SAY — speak to your room.",
+        "    - EMOTE / ME — perform an action visible to your room.",
+        "    - SHOUT / OOC — broadcast to all players world-wide.",
+        "  See also: SAY, EMOTE, SHOUT, PLAYERS",
+    ]),
 }
 
 
@@ -741,11 +800,13 @@ class GameSession:
         world: WorldMap,
         class_defs: dict,
         clock: WorldClock | None = None,
+        sessions: dict | None = None,
     ) -> None:
         self._send_raw = send_fn
         self.world = world
         self.class_defs = class_defs
         self.clock: WorldClock | None = clock
+        self._sessions: dict = sessions if sessions is not None else {}
 
         self.state = State.CONNECT
         self.player: Character | None = None
@@ -795,6 +856,14 @@ class GameSession:
 
     async def _send(self, text: str) -> None:
         await self._send_raw(text)
+
+    async def _broadcast_to_room(self, message: str, exclude_self: bool = True) -> None:
+        room_id = self.current_room_id
+        for name, session in self._sessions.items():
+            if exclude_self and self.player and name == self.player.name:
+                continue
+            if session.current_room_id == room_id:
+                await session._send(message)
 
     # ── World clock helpers ───────────────────────────────────────────────────
 
@@ -1353,6 +1422,9 @@ class GameSession:
         parts = upper.split(maxsplit=1)
         cmd = parts[0]
         args = parts[1] if len(parts) > 1 else ""
+        # Preserve original casing for free-text args (chat commands)
+        raw_parts = text.strip().split(maxsplit=1)
+        original_args = raw_parts[1] if len(raw_parts) > 1 else ""
 
         # Movement
         if cmd in self.DIR_ALIASES:
@@ -1516,7 +1588,51 @@ class GameSession:
             await self._send_help(args)
             return
 
+        # Chat
+        if cmd == "SAY":
+            await self._do_say(original_args)
+            return
+        if cmd in ("EMOTE", "ME"):
+            await self._do_emote(original_args)
+            return
+        if cmd in ("SHOUT", "OOC"):
+            await self._do_shout(original_args)
+            return
+
         await self._send(f"  Unknown command '{text}'. Type HELP for a list.\n")
+
+    async def _do_say(self, message: str) -> None:
+        message = message.strip()
+        if not message:
+            await self._send("  Say what? Usage: SAY <message>\n")
+            return
+        player_name = self.player.name if self.player else "Someone"
+        await self._send(f'  [You say]: "{message}"\n')
+        await self._broadcast_to_room(
+            f'  [{player_name} says]: "{message}"\n', exclude_self=True
+        )
+
+    async def _do_emote(self, action: str) -> None:
+        action = action.strip()
+        if not action:
+            await self._send("  Emote what? Usage: EMOTE <action>\n")
+            return
+        player_name = self.player.name if self.player else "Someone"
+        await self._broadcast_to_room(
+            f"  * {player_name} {action}\n", exclude_self=False
+        )
+
+    async def _do_shout(self, message: str) -> None:
+        message = message.strip()
+        if not message:
+            await self._send("  Shout what? Usage: SHOUT <message>\n")
+            return
+        player_name = self.player.name if self.player else "Someone"
+        await self._send(f'  [You shout]: "{message}"\n')
+        for name, session in self._sessions.items():
+            if self.player and name == self.player.name:
+                continue
+            await session._send(f'  [Shout from {player_name}]: "{message}"\n')
 
     async def _do_move(self, direction: str) -> None:
         room = self.world.get_room(self.current_room_id)
@@ -1567,8 +1683,23 @@ class GameSession:
                 self._horses_outside = False
                 self._mounted = True
                 await self._send("  Your horses fall back into step with the party.\n")
+        player_name = self.player.name if self.player else "Someone"
+        old_room_id = self.current_room_id
+        # Broadcast departure to current room occupants before moving
+        self.world.leave_room(player_name, old_room_id)
+        await self._broadcast_to_room(f"  {player_name} heads {direction}.\n", exclude_self=True)
         self.current_room_id = dest_id
+        # Broadcast arrival to new room occupants after moving
+        self.world.enter_room(player_name, dest_id)
+        opposite = self._OPPOSITE_DIR.get(direction, direction)
+        await self._broadcast_to_room(f"  {player_name} arrives from the {opposite}.\n", exclude_self=True)
         await self._do_look()
+
+    _OPPOSITE_DIR = {
+        "north": "south", "south": "north",
+        "east": "west", "west": "east",
+        "up": "down", "down": "up",
+    }
 
     async def _do_look(self) -> None:
         room = self.world.get_room(self.current_room_id)
@@ -1613,6 +1744,15 @@ class GameSession:
             )
 
         await self._send(room.render(item_names, npc_flavors, encounter_lines, env_footer=footer))
+
+        # Other players in room
+        if self.player:
+            others = [
+                n for n in self.world.players_in_room(self.current_room_id)
+                if n != self.player.name
+            ]
+            if others:
+                await self._send(f"\n  Also here: {', '.join(others)}\n")
 
         # Stamina exhaustion warning
         if self.player and self.player.stamina <= 0.0:
@@ -1781,6 +1921,10 @@ class GameSession:
                 if room:
                     room.item_ids.append(item_id)
                 await self._send(f"  You drop {item.name}.\n")
+                player_name = self.player.name if self.player else "Someone"
+                await self._broadcast_to_room(
+                    f"  {player_name} drops the {item.name}.\n", exclude_self=True
+                )
                 return
         await self._send(f"  You don't have '{args}'.\n")
 
@@ -1798,6 +1942,10 @@ class GameSession:
                     room.item_ids.append(item_id)
                     return
                 await self._send(f"  You pick up {item.name}.\n")
+                player_name = self.player.name if self.player else "Someone"
+                await self._broadcast_to_room(
+                    f"  {player_name} picks up the {item.name}.\n", exclude_self=True
+                )
                 return
         await self._send(f"  You don't see '{args}' here.\n")
 

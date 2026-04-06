@@ -92,6 +92,27 @@ class Room:
 class WorldMap:
     def __init__(self) -> None:
         self._rooms: dict[str, Room] = {}
+        self.room_occupants: dict[str, list[str]] = {}
+
+    def enter_room(self, player_name: str, room_id: str) -> None:
+        if not hasattr(self, 'room_occupants'):
+            self.room_occupants: dict[str, list[str]] = {}
+        occupants = self.room_occupants.setdefault(room_id, [])
+        if player_name not in occupants:
+            occupants.append(player_name)
+
+    def leave_room(self, player_name: str, room_id: str) -> None:
+        if not hasattr(self, 'room_occupants'):
+            return
+        if room_id in self.room_occupants:
+            self.room_occupants[room_id] = [
+                n for n in self.room_occupants[room_id] if n != player_name
+            ]
+
+    def players_in_room(self, room_id: str) -> list[str]:
+        if not hasattr(self, 'room_occupants'):
+            return []
+        return list(self.room_occupants.get(room_id, []))
 
     def load(self, data_dir: str) -> None:
         rooms_dir = os.path.join(data_dir, "rooms")
