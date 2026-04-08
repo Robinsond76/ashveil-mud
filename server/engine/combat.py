@@ -763,6 +763,7 @@ class CombatSession:
         log: list[str],
     ) -> None:
         from server.engine.items import get_item
+        from server.engine.item_effects import parse_item_effect, HealEffect, RestoreMPEffect, StatusRemoveEffect
         char = actor.character
         if item_id not in char.inventory:
             log.append(f"  {char.name} reaches for {item_id} but doesn't have it.")
@@ -773,20 +774,18 @@ class CombatSession:
             log.append(f"  {char.name} tries to use unknown item '{item_id}'.")
             return
         char.inventory.remove(item_id)
-        et = item.effect_type
-        ep = item.effect_params
         t = target if target else char
-        if et == "heal":
-            healed = t.heal(ep.get("amount", 30))
+        effect = parse_item_effect(item.effect_type, item.effect_params)
+        if isinstance(effect, HealEffect):
+            healed = t.heal(effect.amount)
             log.append(f"  {char.name} uses {item.name} on {t.name}: +{healed} HP.")
-        elif et == "restore_mp":
-            restored = char.restore_mp(ep.get("amount", 30))
+        elif isinstance(effect, RestoreMPEffect):
+            restored = char.restore_mp(effect.amount)
             log.append(f"  {char.name} uses {item.name}: +{restored} MP.")
-        elif et == "status_remove":
-            status = ep.get("status", "")
-            if hasattr(t, "status_effects") and status in t.status_effects:  # type: ignore[operator]
-                del t.status_effects[status]  # type: ignore[operator]
-                log.append(f"  {char.name} uses {item.name} on {t.name}: {status} cured!")
+        elif isinstance(effect, StatusRemoveEffect):
+            if hasattr(t, "status_effects") and effect.status_id in t.status_effects:  # type: ignore[operator]
+                del t.status_effects[effect.status_id]  # type: ignore[operator]
+                log.append(f"  {char.name} uses {item.name} on {t.name}: {effect.status_id} cured!")
         else:
             log.append(f"  {char.name} uses {item.name}.")
 
