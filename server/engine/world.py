@@ -6,9 +6,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 from dataclasses import dataclass, field
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -158,6 +161,14 @@ class WorldMap:
                 )
                 self._rooms[room.id] = room
 
+        # Validate referential integrity after all rooms are loaded
+        raw_for_validation = {
+            r.id: {"exits": r.exits} for r in self._rooms.values()
+        }
+        errors = validate_room_data(raw_for_validation)
+        for err in errors:
+            logger.warning("Room validation: %s", err)
+
     def get_room(self, room_id: str) -> Room | None:
         return self._rooms.get(room_id)
 
@@ -178,3 +189,35 @@ class WorldMap:
         if not room:
             return []
         return [eg for eg in room.encounter_groups if not eg.defeated]
+
+
+def validate_room_data(rooms_dict: dict) -> list[str]:
+    """Validate room data for referential integrity.
+
+    Checks:
+    - All room IDs are non-empty strings
+    - All exit targets point to existing room IDs
+
+    Parameters:
+        rooms_dict: dict[str, dict] — raw room data keyed by room_id
+
+    Returns:
+        list[str] — list of error messages (empty if valid)
+    """
+    errors: list[str] = []
+    all_room_ids = set(rooms_dict.keys())
+
+    for room_id, room_data in rooms_dict.items():
+        if not room_id:
+            errors.append("Found room with empty ID")
+            continue
+
+        exits = room_data.get("exits", {})
+        for direction, target_id in exits.items():
+            if target_id not in all_room_ids:
+                errors.append(
+                    f"Room '{room_id}' exit '{direction}' points to "
+                    f"non-existent room '{target_id}'"
+                )
+
+    return errors
