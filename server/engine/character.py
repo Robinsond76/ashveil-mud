@@ -136,6 +136,10 @@ class Character:
     grid_row: int = -1
     grid_col: int = -1
 
+    # Multiplayer ownership — which player session controls this character/NPC
+    # Empty string means unowned (safe to mutate by any session)
+    owner: str = ""
+
     # Active food buffs: buff_name → expiry game-minute (clock.total_minutes)
     active_buffs: dict[str, int] = field(default_factory=dict)
     # ── Derived properties ───────────────────────────────────────────────────
@@ -375,6 +379,7 @@ class Character:
             "strategies": self.strategies,
             "grid_row": self.grid_row,
             "grid_col": self.grid_col,
+            "owner": self.owner,
             "active_buffs": self.active_buffs,
         }
 
@@ -409,6 +414,7 @@ class Character:
         c.strategies = data.get("strategies", [])
         c.grid_row = data.get("grid_row", -1)
         c.grid_col = data.get("grid_col", -1)
+        c.owner = data.get("owner", "")
         c.active_buffs = data.get("active_buffs", {})
         return c
 

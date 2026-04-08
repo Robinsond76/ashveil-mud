@@ -486,6 +486,7 @@ class GameSession:
 
         self.current_room_id = "town_square"
         self.last_campfire_room_id = "test_campfire"
+        self.player.owner = self.player.name  # mark player as owning their own character
 
         await self._send(
             _box(f"CHARACTER CREATED: {self.player.name}", [
@@ -1196,6 +1197,7 @@ class GameSession:
         if upper in ("YES", "Y"):
             npc = spawn_npc(tid, self.class_defs)
             if npc:
+                npc.owner = self.player.name  # recruiter owns this companion
                 self.party.append(npc)
                 await self._send(
                     f"\n  {npc.name} joins your party!\n"
