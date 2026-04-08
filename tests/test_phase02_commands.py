@@ -84,7 +84,7 @@ def test_status_shows_percentage_values():
 
 # ── Phase F: LOOK shows warning at stamina 0 ─────────────────────────────────
 
-def test_look_shows_stamina_warning_when_zero():
+def test_look_zero_stamina_shows_exhaustion_warning():
     collected: list[str] = []
     async def _send(text: str): collected.append(text)
 

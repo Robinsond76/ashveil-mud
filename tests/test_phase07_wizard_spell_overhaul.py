@@ -93,7 +93,7 @@ class TestPhaseB_SpellbookItems:
 
 
 class TestPhaseB_SpellPowerModifierWithGear:
-    def test_mage_spell_power_modifier_adds_staff_bonus(self):
+    def test_mage_spell_power_nonzero_with_staff_equipped(self):
         mage = make_mage()
         mage.equipment["weapon"] = "apprentice_staff"
         staff = get_item("apprentice_staff")
