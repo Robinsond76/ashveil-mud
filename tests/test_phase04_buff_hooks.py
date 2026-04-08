@@ -30,25 +30,6 @@ def make_clock(total_minutes: int = 0):
     return clock
 
 
-def make_nav_session(clock=None):
-    world = WorldMap.__new__(WorldMap)
-    world._rooms = {}
-    world.get_room = lambda rid: None
-    world.active_encounter_groups = lambda rid: []
-    collected: list[str] = []
-
-    async def _send(text: str) -> None:
-        collected.append(text)
-
-    session = GameSession(send_fn=_send, world=world, class_defs={}, clock=clock)
-    player = Character(name="Hero", class_type="warrior")
-    player.stamina = 100.0
-    player.max_stamina = 100.0
-    session.player = player
-    session.state = State.NAVIGATION
-    return session
-
-
 # ── alertness → dodge_bonus ───────────────────────────────────────────────────
 
 def test_alertness_increases_dodge_bonus():
@@ -132,7 +113,7 @@ def test_thirst_drain_rate_quenched_plus_hot():
 
 # ── energised → _sitting_stamina_tick ────────────────────────────────────────
 
-def test_energised_increases_sit_recovery():
+def test_energised_increases_sit_recovery(make_nav_session):
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.stamina = 50.0
@@ -142,7 +123,7 @@ def test_energised_increases_sit_recovery():
     assert session.player.stamina == pytest.approx(51.5)
 
 
-def test_energised_expired_gives_normal_recovery():
+def test_energised_expired_gives_normal_recovery(make_nav_session):
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.stamina = 50.0
@@ -153,7 +134,7 @@ def test_energised_expired_gives_normal_recovery():
     assert session.player.stamina == pytest.approx(51.0)
 
 
-def test_no_energised_normal_sit_recovery():
+def test_no_energised_normal_sit_recovery(make_nav_session):
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.stamina = 50.0
@@ -164,7 +145,7 @@ def test_no_energised_normal_sit_recovery():
 
 # ── fortified → _do_move stamina drain ───────────────────────────────────────
 
-def test_fortified_reduces_move_stamina_drain():
+def test_fortified_reduces_move_stamina_drain(make_nav_session):
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.stamina = 100.0
@@ -183,7 +164,7 @@ def test_fortified_reduces_move_stamina_drain():
     assert session.player.stamina == pytest.approx(98.6)
 
 
-def test_no_fortified_normal_move_drain():
+def test_no_fortified_normal_move_drain(make_nav_session):
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.stamina = 100.0
@@ -201,7 +182,7 @@ def test_no_fortified_normal_move_drain():
 
 # ── _drain_survival_tick passes clock to drain rates ─────────────────────────
 
-def test_drain_survival_tick_honours_satiated_buff():
+def test_drain_survival_tick_honours_satiated_buff(make_nav_session):
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.hunger = 100.0
@@ -211,7 +192,7 @@ def test_drain_survival_tick_honours_satiated_buff():
     assert session.player.hunger == pytest.approx(100.0 - 0.06)
 
 
-def test_drain_survival_tick_honours_quenched_buff():
+def test_drain_survival_tick_honours_quenched_buff(make_nav_session):
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.thirst = 100.0

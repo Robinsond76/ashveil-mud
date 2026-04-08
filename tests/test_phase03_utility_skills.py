@@ -27,28 +27,6 @@ def _load_skills_once():
         load_skills(DATA_DIR)
 
 
-def make_nav_session(class_type="thief", mp=50, stamina=100.0):
-    world = WorldMap.__new__(WorldMap)
-    world._rooms = {}
-    world.get_room = lambda rid: None
-
-    collected: list[str] = []
-
-    async def _send(text: str) -> None:
-        collected.append(text)
-
-    session = GameSession(send_fn=_send, world=world, class_defs={}, clock=None)
-    player = Character(name="Hero", class_type=class_type)
-    player.mp = mp
-    player.max_mp = 100
-    player.stamina = stamina
-    player.max_stamina = 100.0
-    session.player = player
-    session.state = State.NAVIGATION
-    session._collected = collected
-    return session
-
-
 def run(session, cmd):
     session._collected.clear()
 
@@ -194,7 +172,7 @@ def test_existing_combat_skills_default_to_combat_context():
 
 # ── Phase D: USE command — state guard ───────────────────────────────────────
 
-def test_use_skill_blocked_in_combat_state():
+def test_use_skill_blocked_in_combat_state(make_nav_session):
     """USE <skill> must be rejected when not in NAVIGATION state."""
     _load_skills_once()
     s = make_nav_session(class_type="thief")
@@ -205,7 +183,7 @@ def test_use_skill_blocked_in_combat_state():
     assert "navigation" in output.lower() or "cannot" in output.lower() or "outside" in output.lower()
 
 
-def test_use_skill_blocked_in_campfire_state():
+def test_use_skill_blocked_in_campfire_state(make_nav_session):
     """USE <skill> must be rejected in CAMPFIRE state."""
     _load_skills_once()
     s = make_nav_session(class_type="thief")
@@ -218,7 +196,7 @@ def test_use_skill_blocked_in_campfire_state():
 
 # ── Phase D: USE command — skill validation ───────────────────────────────────
 
-def test_use_unknown_skill_shows_error():
+def test_use_unknown_skill_shows_error(make_nav_session):
     """USE with unknown skill ID shows error."""
     _load_skills_once()
     s = make_nav_session(class_type="thief")
@@ -226,7 +204,7 @@ def test_use_unknown_skill_shows_error():
     assert "unknown" in output.lower() or "not found" in output.lower() or "no skill" in output.lower()
 
 
-def test_use_unlearned_skill_shows_error():
+def test_use_unlearned_skill_shows_error(make_nav_session):
     """USE with skill not unlocked by player shows error."""
     _load_skills_once()
     s = make_nav_session(class_type="thief")
@@ -235,7 +213,7 @@ def test_use_unlearned_skill_shows_error():
     assert "not unlocked" in output.lower() or "haven't learned" in output.lower() or "unlock" in output.lower()
 
 
-def test_use_combat_skill_with_use_command_shows_error():
+def test_use_combat_skill_with_use_command_shows_error(make_nav_session):
     """USE on a combat skill shows error (USE is only for utility skills)."""
     _load_skills_once()
     s = make_nav_session(class_type="thief")
@@ -246,7 +224,7 @@ def test_use_combat_skill_with_use_command_shows_error():
 
 # ── Phase D: USE command — MP/stamina cost ────────────────────────────────────
 
-def test_use_detect_traps_deducts_mp():
+def test_use_detect_traps_deducts_mp(make_nav_session):
     """USE detect_traps must deduct the skill's MP cost from the player."""
     _load_skills_once()
     from server.engine.skills import get_skill
@@ -259,7 +237,7 @@ def test_use_detect_traps_deducts_mp():
     assert s.player.mp == 50 - skill.mp_cost
 
 
-def test_use_detect_traps_blocked_without_enough_mp():
+def test_use_detect_traps_blocked_without_enough_mp(make_nav_session):
     """USE detect_traps must be blocked if MP is insufficient."""
     _load_skills_once()
     s = make_nav_session(class_type="thief", mp=0)
@@ -268,7 +246,7 @@ def test_use_detect_traps_blocked_without_enough_mp():
     assert "mana" in output.lower() or "mp" in output.lower() or "not enough" in output.lower()
 
 
-def test_use_lockpick_deducts_stamina():
+def test_use_lockpick_deducts_stamina(make_nav_session):
     """USE lockpick must deduct the skill's stamina_cost from the player."""
     _load_skills_once()
     from server.engine.skills import get_skill
@@ -282,7 +260,7 @@ def test_use_lockpick_deducts_stamina():
     assert s.player.stamina == 100.0 - skill.stamina_cost
 
 
-def test_use_lockpick_blocked_without_enough_stamina():
+def test_use_lockpick_blocked_without_enough_stamina(make_nav_session):
     """USE lockpick must be blocked if stamina is insufficient."""
     _load_skills_once()
     s = make_nav_session(class_type="thief", stamina=0.0)
@@ -294,7 +272,7 @@ def test_use_lockpick_blocked_without_enough_stamina():
 
 # ── Phase D: USE command — item requirements ─────────────────────────────────
 
-def test_use_lockpick_blocked_without_lockpick_item():
+def test_use_lockpick_blocked_without_lockpick_item(make_nav_session):
     """USE lockpick must be blocked if no lockpick item in party inventory."""
     _load_skills_once()
     s = make_nav_session(class_type="thief")
@@ -304,7 +282,7 @@ def test_use_lockpick_blocked_without_lockpick_item():
     assert "lockpick" in output.lower() or "require" in output.lower() or "need" in output.lower()
 
 
-def test_use_lockpick_succeeds_when_npc_party_member_has_lockpick():
+def test_use_lockpick_succeeds_when_npc_party_member_has_lockpick(make_nav_session):
     """USE lockpick succeeds if a party NPC has a lockpick item."""
     _load_skills_once()
     from server.engine.npc import NPC
@@ -323,7 +301,7 @@ def test_use_lockpick_succeeds_when_npc_party_member_has_lockpick():
 
 # ── Phase D: USE command — utility effects ───────────────────────────────────
 
-def test_use_fortify_applies_party_damage_reduction():
+def test_use_fortify_applies_party_damage_reduction(make_nav_session):
     """USE fortify must apply a fortify flag on the session until next combat."""
     _load_skills_once()
     s = make_nav_session(class_type="warrior", stamina=100.0)
@@ -332,7 +310,7 @@ def test_use_fortify_applies_party_damage_reduction():
     assert getattr(s, "_fortify_active", False) is True
 
 
-def test_use_bless_camp_sets_bless_flag():
+def test_use_bless_camp_sets_bless_flag(make_nav_session):
     """USE bless_camp must set a flag reducing hunger drain for next rest."""
     _load_skills_once()
     s = make_nav_session(class_type="cleric", mp=50)
@@ -341,7 +319,7 @@ def test_use_bless_camp_sets_bless_flag():
     assert getattr(s, "_bless_camp_active", False) is True
 
 
-def test_use_arcane_light_sets_temporary_light_override():
+def test_use_arcane_light_sets_temporary_light_override(make_nav_session):
     """USE arcane_light must set a temporary light override on the session."""
     _load_skills_once()
     s = make_nav_session(class_type="mage", mp=50)
@@ -352,7 +330,7 @@ def test_use_arcane_light_sets_temporary_light_override():
 
 # ── Phase E: SKILLS command filtering ────────────────────────────────────────
 
-def test_skills_utility_shows_only_utility_skills():
+def test_skills_utility_shows_only_utility_skills(make_nav_session):
     """SKILLS UTILITY must list only utility skills."""
     _load_skills_once()
     s = make_nav_session(class_type="thief")
@@ -363,7 +341,7 @@ def test_skills_utility_shows_only_utility_skills():
     assert "backstab" not in output.lower()
 
 
-def test_skills_combat_shows_only_combat_skills():
+def test_skills_combat_shows_only_combat_skills(make_nav_session):
     """SKILLS COMBAT must list only combat skills."""
     _load_skills_once()
     s = make_nav_session(class_type="thief")
@@ -375,7 +353,7 @@ def test_skills_combat_shows_only_combat_skills():
     assert "lockpick" not in output.lower()
 
 
-def test_skills_bare_shows_both_sections():
+def test_skills_bare_shows_both_sections(make_nav_session):
     """SKILLS (bare) must show both COMBAT and UTILITY sections."""
     _load_skills_once()
     s = make_nav_session(class_type="thief")

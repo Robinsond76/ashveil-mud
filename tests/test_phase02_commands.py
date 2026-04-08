@@ -12,21 +12,6 @@ from server.engine.world import WorldMap
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def make_nav_session(player_kwargs=None):
-    world = WorldMap.__new__(WorldMap)
-    world._rooms = {}
-    world.get_room = lambda rid: None
-    world.active_encounter_groups = lambda rid: []
-    session = GameSession(send_fn=_collect_fn(session_ref=[]), world=world, class_defs={}, clock=None)
-    player = Character(name="Hero", class_type="warrior")
-    if player_kwargs:
-        for k, v in player_kwargs.items():
-            setattr(player, k, v)
-    session.player = player
-    session.state = State.NAVIGATION
-    return session
-
-
 def run(session, command):
     """Run a command and return all output lines joined."""
     collected: list[str] = []
@@ -41,7 +26,7 @@ def run(session, command):
 
 # ── Phase F: STATUS command ───────────────────────────────────────────────────
 
-def test_status_command_shows_hunger():
+def test_status_command_shows_hunger(make_nav_session):
     s = make_nav_session()
     s._send_raw = None  # will be replaced in run()
     s.player.hunger = 75.0
