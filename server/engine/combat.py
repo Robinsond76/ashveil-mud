@@ -184,6 +184,11 @@ class CombatSession:
         Conflicts (two chars want the same cell) are resolved by bumping the
         auto-assigned one to the next free cell.
         """
+        MAX_GRID_SLOTS = 6  # 2 rows × 3 columns
+        if len(combatants) > MAX_GRID_SLOTS:
+            raise ValueError(
+                f"Party of {len(combatants)} exceeds grid capacity ({MAX_GRID_SLOTS} slots)."
+            )
         occupied: set[tuple[int, int]] = set()
         auto_queue: list[Combatant] = []
 
