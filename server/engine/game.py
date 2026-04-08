@@ -47,6 +47,11 @@ from server.engine.strategy import (
     add_strategy, clear_strategies, list_strategies, remove_strategy,
 )
 from server.engine.help_registry import send_help, _HELP_TOPICS
+from server.engine.inventory_ops import (
+    party_inventory_view, do_inventory, do_equip, do_unequip, do_drop,
+    do_pick_up, do_give, do_load_cart, do_unload_cart,
+    auto_assign_item, auto_assign_item_with_message,
+)
 from server.engine.world import WorldMap
 from server.engine.world_clock import WorldClock, light_label
 
@@ -1078,258 +1083,52 @@ class GameSession:
     # ── Inventory ─────────────────────────────────────────────────────────────
 
     def _party_inventory_view(self) -> list[tuple[str, str, str]]:
-        """Return (holder_name, item_id, item_name) for all party inventories."""
-        result: list[tuple[str, str, str]] = []
-        members = ([self.player] if self.player else []) + list(self.party)
-        for m in members:
-            for item_id in m.inventory:
-                item = get_item(item_id)
-                name = item.name if item else item_id
-                result.append((m.name, item_id, name))
-        # Sort: weapons first, then armor, consumables, misc
-        type_order = {"weapon": 0, "armor": 1, "consumable": 2}
-        result.sort(key=lambda t: type_order.get(
-            (get_item(t[1]).type if get_item(t[1]) else "misc"), 3
-        ))
-        return result
+        return party_inventory_view(self.player, self.party)
 
     async def _do_inventory(self, args: str = "") -> None:
-        args_stripped = args.strip()
-        args_upper = args_stripped.upper()
-
-        # INV CART
-        if args_upper == "CART":
-            if not self._cart_inventory:
-                await self._send(_box("CART", ["  (empty)"]))
-            else:
-                lines = []
-                for item_id in self._cart_inventory:
-                    item = get_item(item_id)
-                    lines.append(f"  {item.name if item else item_id}")
-                await self._send(_box("CART", [""] + lines))
-            return
-
-        # INVENTORY <member>
-        if args_stripped:
-            target_name = args_stripped.lower()
-            members = ([self.player] if self.player else []) + list(self.party)
-            target = next(
-                (m for m in members if m.name.lower() == target_name), None
-            )
-            if not target:
-                await self._send(f"  '{args_stripped}' is not in your party.\n")
-                return
-            lines = []
-            if not target.inventory:
-                lines.append("  (empty)")
-            else:
-                counts: dict[str, int] = {}
-                for i in target.inventory:
-                    counts[i] = counts.get(i, 0) + 1
-                for item_id, count in counts.items():
-                    item = get_item(item_id)
-                    lines.append(f"  x{count}  {item.name if item else item_id}")
-            await self._send(_box(f"INVENTORY — {target.name}", [""] + lines))
-            return
-
-        # Unified party view
-        party_items = self._party_inventory_view()
-        lines: list[str] = []
-        if not party_items:
-            lines.append("  (empty)")
-        else:
-            for holder, item_id, item_name in party_items:
-                lines.append(f"  {item_name:<30} [{holder}]")
-
-        lines.append("")
-        lines.append("  EQUIPPED (player):")
-        for slot in EQUIPMENT_SLOTS:
-            eid = self.player.equipment.get(slot)
-            item = get_item(eid) if eid else None
-            lines.append(f"    {slot:<8}: {item.name if item else '---'}")
-
-        lines.append(f"\n  Carry weight: {total_equipped_weight(self.player.equipment)} "
-                     f"  Speed: {self.player.effective_speed}")
-        await self._send(_box("INVENTORY", [""] + lines))
+        await do_inventory(self._send, self.player, self.party, self._cart_inventory, args)
 
     async def _do_equip(self, args: str) -> None:
-        item_name = args.lower().strip()
-        for item_id in self.player.inventory:
-            item = get_item(item_id)
-            if item and item_name in item.name.lower():
-                slot = item.slot if item.slot else ("weapon" if item.type == "weapon" else None)
-                if not slot:
-                    await self._send(f"  {item.name} can't be equipped.\n")
-                    return
-                # Unequip current
-                current = self.player.equipment.get(slot)
-                if current:
-                    self.player.inventory.append(current)
-                self.player.equipment[slot] = item_id
-                self.player.inventory.remove(item_id)
-                await self._send(
-                    f"  You equip {item.name}. Speed is now {self.player.effective_speed}.\n"
-                )
-                return
-        await self._send(f"  You don't have '{args}' in your inventory.\n")
+        await do_equip(self._send, self.player, args)
 
     async def _do_unequip(self, args: str) -> None:
-        slot = args.lower().strip()
-        if slot not in EQUIPMENT_SLOTS:
-            await self._send(f"  Unknown slot '{args}'. Slots: {', '.join(EQUIPMENT_SLOTS)}\n")
-            return
-        eid = self.player.equipment.get(slot)
-        if not eid:
-            await self._send(f"  Nothing in slot '{slot}'.\n")
-            return
-        self.player.inventory.append(eid)
-        self.player.equipment[slot] = None
-        item = get_item(eid)
-        await self._send(
-            f"  You unequip {item.name if item else eid}. Speed is now {self.player.effective_speed}.\n"
-        )
+        await do_unequip(self._send, self.player, args)
 
     async def _do_drop(self, args: str) -> None:
-        item_name = args.lower().strip()
-        for item_id in self.player.inventory:
-            item = get_item(item_id)
-            if item and item_name in item.name.lower():
-                self.player.inventory.remove(item_id)
-                room = self.world.get_room(self.current_room_id)
-                if room:
-                    room.item_ids.append(item_id)
-                await self._send(f"  You drop {item.name}.\n")
-                player_name = self.player.name if self.player else "Someone"
-                await self._broadcast_to_room(
-                    f"  {player_name} drops the {item.name}.\n", exclude_self=True
-                )
-                return
-        await self._send(f"  You don't have '{args}'.\n")
+        room = self.world.get_room(self.current_room_id)
+        await do_drop(self._send, self.player, room, self._broadcast_to_room, args)
 
     async def _do_pick_up(self, args: str) -> None:
-        item_name = args.lower().strip()
         room = self.world.get_room(self.current_room_id)
-        if not room:
-            return
-        for item_id in room.item_ids:
-            item = get_item(item_id)
-            if item and item_name in item.name.lower():
-                room.item_ids.remove(item_id)
-                ok = await self._auto_assign_item_with_message(item_id)
-                if not ok:
-                    room.item_ids.append(item_id)
-                    return
-                await self._send(f"  You pick up {item.name}.\n")
-                player_name = self.player.name if self.player else "Someone"
-                await self._broadcast_to_room(
-                    f"  {player_name} picks up the {item.name}.\n", exclude_self=True
-                )
-                return
-        await self._send(f"  You don't see '{args}' here.\n")
+        await do_pick_up(
+            self._send, self.player, self.party, room,
+            self._cart_inventory, self._cart_present,
+            self._broadcast_to_room, args,
+        )
 
     def _auto_assign_item(self, item_id: str) -> bool:
-        """Place item_id into the first party member with available slots.
-        Falls back to cart if present. Returns True on success."""
-        members = ([self.player] if self.player else []) + list(self.party)
-        candidates = [m for m in members if len(m.inventory) < m.carry_slots]
-        if candidates:
-            choice = random.choice(candidates)
-            choice.inventory.append(item_id)
-            return True
-        # Fall back to cart
-        if self._cart_present:
-            self._cart_inventory.append(item_id)
-            return True
-        return False
+        return auto_assign_item(
+            self.player, self.party, item_id, self._cart_inventory, self._cart_present
+        )
 
     async def _auto_assign_item_with_message(self, item_id: str) -> bool:
-        """Like _auto_assign_item but sends an over-encumbered message on failure."""
-        ok = self._auto_assign_item(item_id)
-        if not ok:
-            await self._send("  Your party is over-encumbered. Drop something first.\n")
-        return ok
+        return await auto_assign_item_with_message(
+            self._send, self.player, self.party, item_id,
+            self._cart_inventory, self._cart_present,
+        )
 
     async def _do_give(self, args: str) -> None:
-        """GIVE <item> TO <member>"""
-        lower = args.lower()
-        if " to " not in lower:
-            await self._send("  Usage: GIVE <item> TO <member>\n")
-            return
-        idx = lower.index(" to ")
-        item_part = args[:idx].strip()
-        target_name = args[idx + 4:].strip()
-
-        # Find the item in any party member's inventory
-        members = ([self.player] if self.player else []) + list(self.party)
-        source = None
-        found_id = None
-        for m in members:
-            for item_id in m.inventory:
-                item = get_item(item_id)
-                if item and item_part.lower() in item.name.lower():
-                    source = m
-                    found_id = item_id
-                    break
-            if source:
-                break
-
-        if not source or not found_id:
-            await self._send(f"  '{item_part}' not found in party inventory.\n")
-            return
-
-        # Find target member
-        target = next(
-            (m for m in members if m.name.lower() == target_name.lower()), None
-        )
-        if not target:
-            await self._send(f"  '{target_name}' is not in your party.\n")
-            return
-
-        if len(target.inventory) >= target.carry_slots:
-            await self._send(f"  {target.name} doesn't have room for that.\n")
-            return
-
-        source.inventory.remove(found_id)
-        target.inventory.append(found_id)
-        item_obj = get_item(found_id)
-        await self._send(
-            f"  {item_obj.name if item_obj else found_id} transferred to {target.name}.\n"
-        )
+        await do_give(self._send, self.player, self.party, args)
 
     async def _do_load_cart(self, args: str) -> None:
-        """LOAD CART <item> / STASH <item> — move item from party to _cart_inventory."""
-        if not self._cart_present:
-            await self._send("  Your cart is not here.\n")
-            return
-        item_name = args.strip().lower()
-        members = ([self.player] if self.player else []) + list(self.party)
-        for m in members:
-            for item_id in m.inventory:
-                item = get_item(item_id)
-                if item and item_name in item.name.lower():
-                    m.inventory.remove(item_id)
-                    self._cart_inventory.append(item_id)
-                    await self._send(f"  {item.name} stashed in the cart.\n")
-                    return
-        await self._send(f"  '{args.strip()}' not found in party inventory.\n")
+        await do_load_cart(
+            self._send, self.player, self.party, self._cart_inventory, self._cart_present, args
+        )
 
     async def _do_unload_cart(self, args: str) -> None:
-        """UNLOAD CART <item> — move item from _cart_inventory to party via auto-assign."""
-        if not self._cart_present:
-            await self._send("  Your cart is not here.\n")
-            return
-        item_name = args.strip().lower()
-        for item_id in self._cart_inventory:
-            item = get_item(item_id)
-            if item and item_name in item.name.lower():
-                self._cart_inventory.remove(item_id)
-                ok = await self._auto_assign_item_with_message(item_id)
-                if not ok:
-                    self._cart_inventory.append(item_id)
-                    return
-                await self._send(f"  {item.name} unloaded from cart.\n")
-                return
-        await self._send(f"  '{args.strip()}' not found in cart.\n")
+        await do_unload_cart(
+            self._send, self.player, self.party, self._cart_inventory, self._cart_present, args
+        )
 
     # ── Mount commands ────────────────────────────────────────────────────────
 
