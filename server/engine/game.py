@@ -52,6 +52,7 @@ from server.engine.inventory_ops import (
     do_pick_up, do_give, do_load_cart, do_unload_cart,
     auto_assign_item, auto_assign_item_with_message,
 )
+from server.engine.chat import do_say, do_emote, do_shout
 from server.engine.survival import (
     party_survival_aggregate, apply_survival_penalties,
     drain_survival_tick, sitting_stamina_tick,
@@ -847,37 +848,16 @@ class GameSession:
         await self._send(f"  Unknown command '{text}'. Type HELP for a list.\n")
 
     async def _do_say(self, message: str) -> None:
-        message = message.strip()
-        if not message:
-            await self._send("  Say what? Usage: SAY <message>\n")
-            return
         player_name = self.player.name if self.player else "Someone"
-        await self._send(f'  [You say]: "{message}"\n')
-        await self._broadcast_to_room(
-            f'  [{player_name} says]: "{message}"\n', exclude_self=True
-        )
+        await do_say(self._send, self._broadcast_to_room, player_name, message)
 
     async def _do_emote(self, action: str) -> None:
-        action = action.strip()
-        if not action:
-            await self._send("  Emote what? Usage: EMOTE <action>\n")
-            return
         player_name = self.player.name if self.player else "Someone"
-        await self._broadcast_to_room(
-            f"  * {player_name} {action}\n", exclude_self=False
-        )
+        await do_emote(self._send, self._broadcast_to_room, player_name, action)
 
     async def _do_shout(self, message: str) -> None:
-        message = message.strip()
-        if not message:
-            await self._send("  Shout what? Usage: SHOUT <message>\n")
-            return
         player_name = self.player.name if self.player else "Someone"
-        await self._send(f'  [You shout]: "{message}"\n')
-        for name, session in self._sessions.items():
-            if self.player and name == self.player.name:
-                continue
-            await session._send(f'  [Shout from {player_name}]: "{message}"\n')
+        await do_shout(self._send, self._sessions, player_name, message)
 
     async def _do_move(self, direction: str) -> None:
         room = self.world.get_room(self.current_room_id)
