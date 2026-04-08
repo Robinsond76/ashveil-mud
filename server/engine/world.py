@@ -4,6 +4,7 @@ Rooms are loaded from data/rooms/*.json at startup.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 from dataclasses import dataclass, field
@@ -93,26 +94,38 @@ class WorldMap:
     def __init__(self) -> None:
         self._rooms: dict[str, Room] = {}
         self.room_occupants: dict[str, list[str]] = {}
+        self._occupants_lock: asyncio.Lock = asyncio.Lock()
 
-    def enter_room(self, player_name: str, room_id: str) -> None:
+    async def enter_room(self, player_name: str, room_id: str) -> None:
+        if not hasattr(self, '_occupants_lock'):
+            self._occupants_lock = asyncio.Lock()
         if not hasattr(self, 'room_occupants'):
-            self.room_occupants: dict[str, list[str]] = {}
-        occupants = self.room_occupants.setdefault(room_id, [])
-        if player_name not in occupants:
-            occupants.append(player_name)
+            self.room_occupants = {}
+        async with self._occupants_lock:
+            if room_id not in self.room_occupants:
+                self.room_occupants[room_id] = []
+            if player_name not in self.room_occupants[room_id]:
+                self.room_occupants[room_id].append(player_name)
 
-    def leave_room(self, player_name: str, room_id: str) -> None:
+    async def leave_room(self, player_name: str, room_id: str) -> None:
+        if not hasattr(self, '_occupants_lock'):
+            self._occupants_lock = asyncio.Lock()
         if not hasattr(self, 'room_occupants'):
             return
-        if room_id in self.room_occupants:
-            self.room_occupants[room_id] = [
-                n for n in self.room_occupants[room_id] if n != player_name
-            ]
+        async with self._occupants_lock:
+            if room_id in self.room_occupants:
+                try:
+                    self.room_occupants[room_id].remove(player_name)
+                except ValueError:
+                    pass
 
-    def players_in_room(self, room_id: str) -> list[str]:
+    async def players_in_room(self, room_id: str) -> list[str]:
+        if not hasattr(self, '_occupants_lock'):
+            self._occupants_lock = asyncio.Lock()
         if not hasattr(self, 'room_occupants'):
             return []
-        return list(self.room_occupants.get(room_id, []))
+        async with self._occupants_lock:
+            return list(self.room_occupants.get(room_id, []))
 
     def load(self, data_dir: str) -> None:
         rooms_dir = os.path.join(data_dir, "rooms")

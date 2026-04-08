@@ -34,6 +34,12 @@ def make_session(world=None, send_fn=None, player=None, party=None):
         world = MagicMock()
         world.get_room.return_value = None
 
+    # Ensure async world methods work with MagicMock
+    if isinstance(world, MagicMock):
+        world.players_in_room = AsyncMock(return_value=[])
+        world.enter_room = AsyncMock()
+        world.leave_room = AsyncMock()
+
     gs = GameSession(send_fn=send_fn, world=world, class_defs={})
     if player is not None:
         gs.player = player

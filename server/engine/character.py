@@ -142,6 +142,9 @@ class Character:
 
     # Active food buffs: buff_name → expiry game-minute (clock.total_minutes)
     active_buffs: dict[str, int] = field(default_factory=dict)
+
+    # Lit light sources: item_id → expiry in absolute game-minutes
+    lit_sources: dict[str, int] = field(default_factory=dict)
     # ── Derived properties ───────────────────────────────────────────────────
 
     @property
@@ -381,6 +384,7 @@ class Character:
             "grid_col": self.grid_col,
             "owner": self.owner,
             "active_buffs": self.active_buffs,
+            "lit_sources": dict(self.lit_sources),
         }
 
     @classmethod
@@ -416,6 +420,7 @@ class Character:
         c.grid_col = data.get("grid_col", -1)
         c.owner = data.get("owner", "")
         c.active_buffs = data.get("active_buffs", {})
+        c.lit_sources = data.get("lit_sources", {})
         return c
 
     def stats_summary(self) -> str:

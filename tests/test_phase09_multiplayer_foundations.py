@@ -114,56 +114,56 @@ class TestPhaseA_SessionRegistry:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class TestPhaseB_RoomOccupancy:
-    def test_players_in_room_empty_initially(self):
+    async def test_players_in_room_empty_initially(self):
         world = make_world_with_rooms()
-        assert world.players_in_room("room_a") == []
+        assert await world.players_in_room("room_a") == []
 
-    def test_enter_room_adds_player(self):
+    async def test_enter_room_adds_player(self):
         world = make_world_with_rooms()
-        world.enter_room("Aldric", "room_a")
-        assert "Aldric" in world.players_in_room("room_a")
+        await world.enter_room("Aldric", "room_a")
+        assert "Aldric" in await world.players_in_room("room_a")
 
-    def test_enter_room_multiple_players(self):
+    async def test_enter_room_multiple_players(self):
         world = make_world_with_rooms()
-        world.enter_room("Aldric", "room_a")
-        world.enter_room("Mira", "room_a")
-        occupants = world.players_in_room("room_a")
+        await world.enter_room("Aldric", "room_a")
+        await world.enter_room("Mira", "room_a")
+        occupants = await world.players_in_room("room_a")
         assert "Aldric" in occupants
         assert "Mira" in occupants
 
-    def test_leave_room_removes_player(self):
+    async def test_leave_room_removes_player(self):
         world = make_world_with_rooms()
-        world.enter_room("Aldric", "room_a")
-        world.leave_room("Aldric", "room_a")
-        assert "Aldric" not in world.players_in_room("room_a")
+        await world.enter_room("Aldric", "room_a")
+        await world.leave_room("Aldric", "room_a")
+        assert "Aldric" not in await world.players_in_room("room_a")
 
-    def test_leave_room_nonexistent_player_is_safe(self):
+    async def test_leave_room_nonexistent_player_is_safe(self):
         world = make_world_with_rooms()
-        world.leave_room("Ghost", "room_a")  # Should not raise
+        await world.leave_room("Ghost", "room_a")  # Should not raise
 
-    def test_leave_room_unknown_room_is_safe(self):
+    async def test_leave_room_unknown_room_is_safe(self):
         world = make_world_with_rooms()
-        world.leave_room("Aldric", "void_room")  # Should not raise
+        await world.leave_room("Aldric", "void_room")  # Should not raise
 
-    def test_players_in_room_returns_copy(self):
+    async def test_players_in_room_returns_copy(self):
         world = make_world_with_rooms()
-        world.enter_room("Aldric", "room_a")
-        result = world.players_in_room("room_a")
+        await world.enter_room("Aldric", "room_a")
+        result = await world.players_in_room("room_a")
         result.append("Injected")
-        assert "Injected" not in world.players_in_room("room_a")
+        assert "Injected" not in await world.players_in_room("room_a")
 
-    def test_enter_same_player_twice_appears_once(self):
+    async def test_enter_same_player_twice_appears_once(self):
         world = make_world_with_rooms()
-        world.enter_room("Aldric", "room_a")
-        world.enter_room("Aldric", "room_a")
-        assert world.players_in_room("room_a").count("Aldric") == 1
+        await world.enter_room("Aldric", "room_a")
+        await world.enter_room("Aldric", "room_a")
+        assert (await world.players_in_room("room_a")).count("Aldric") == 1
 
-    def test_players_in_different_rooms_isolated(self):
+    async def test_players_in_different_rooms_isolated(self):
         world = make_world_with_rooms()
-        world.enter_room("Aldric", "room_a")
-        world.enter_room("Mira", "room_b")
-        assert "Mira" not in world.players_in_room("room_a")
-        assert "Aldric" not in world.players_in_room("room_b")
+        await world.enter_room("Aldric", "room_a")
+        await world.enter_room("Mira", "room_b")
+        assert "Mira" not in await world.players_in_room("room_a")
+        assert "Aldric" not in await world.players_in_room("room_b")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -225,8 +225,8 @@ class TestPhaseD_MovementBroadcasts:
         s1 = make_session(name="Aldric", room_id="room_a", sessions=sessions)
         s2 = make_session(name="Mira", room_id="room_a", sessions=sessions)
         s2.world = s1.world
-        s1.world.enter_room("Aldric", "room_a")
-        s1.world.enter_room("Mira", "room_a")
+        run(s1.world.enter_room("Aldric", "room_a"))
+        run(s1.world.enter_room("Mira", "room_a"))
         sessions["Aldric"] = s1
         sessions["Mira"] = s2
         return s1, s2, sessions
@@ -235,13 +235,13 @@ class TestPhaseD_MovementBroadcasts:
         s1, s2, sessions = self._setup_two_players()
         s1.player.stamina = 100.0
         run(s1._do_move("north"))
-        assert "Aldric" not in s1.world.players_in_room("room_a")
+        assert "Aldric" not in run(s1.world.players_in_room("room_a"))
 
     def test_move_updates_room_occupancy_enter(self):
         s1, s2, sessions = self._setup_two_players()
         s1.player.stamina = 100.0
         run(s1._do_move("north"))
-        assert "Aldric" in s1.world.players_in_room("room_b")
+        assert "Aldric" in run(s1.world.players_in_room("room_b"))
 
     def test_move_broadcasts_leaves_to_old_room(self):
         s1, s2, sessions = self._setup_two_players()
@@ -258,8 +258,8 @@ class TestPhaseD_MovementBroadcasts:
         s1 = make_session(name="Aldric", room_id="room_a", sessions=sessions)
         s2 = make_session(name="Mira", room_id="room_b", sessions=sessions)
         s2.world = s1.world
-        s1.world.enter_room("Aldric", "room_a")
-        s1.world.enter_room("Mira", "room_b")
+        run(s1.world.enter_room("Aldric", "room_a"))
+        run(s1.world.enter_room("Mira", "room_b"))
         sessions["Aldric"] = s1
         sessions["Mira"] = s2
         s1.player.stamina = 100.0
@@ -281,8 +281,8 @@ class TestPhaseE_LookAlsoHere:
         s1 = make_session(name="Aldric", room_id="room_a", sessions=sessions)
         s2 = make_session(name="Mira", room_id="room_a", sessions=sessions)
         s2.world = s1.world
-        s1.world.enter_room("Aldric", "room_a")
-        s1.world.enter_room("Mira", "room_a")
+        run(s1.world.enter_room("Aldric", "room_a"))
+        run(s1.world.enter_room("Mira", "room_a"))
         sessions["Aldric"] = s1
         sessions["Mira"] = s2
 
@@ -296,7 +296,7 @@ class TestPhaseE_LookAlsoHere:
         sessions = {}
         s1 = make_session(name="Aldric", room_id="room_a", sessions=sessions)
         sessions["Aldric"] = s1
-        s1.world.enter_room("Aldric", "room_a")
+        run(s1.world.enter_room("Aldric", "room_a"))
 
         received = collect_output(s1)
         run(s1._do_look())

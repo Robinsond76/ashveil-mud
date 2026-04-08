@@ -127,10 +127,6 @@ class GameSession:
         # Session quit flag (checked in main.py after handle_input)
         self._quit: bool = False
 
-        # Light sources: item_id → expiry in absolute game-minutes
-        # (only sources that have been explicitly lit by the player)
-        self._lit_sources: dict[str, int] = {}
-
         # Sitting flag for passive stamina recovery
         self._sitting: bool = False
 
@@ -204,11 +200,11 @@ class GameSession:
         sitting_stamina_tick(self.player, self.party, self.clock, self._sitting)
 
     def _carried_light(self) -> float:
-        return _carried_light_fn(self.player, self.party, self._lit_sources, self.clock, self._send)
+        return _carried_light_fn(self.player, self.party, self.player.lit_sources, self.clock, self._send)
 
     def _effective_light(self) -> float:
         room = self.world.get_room(self.current_room_id)
-        return _effective_light_fn(self.player, self.party, self._lit_sources, self.clock, room)
+        return _effective_light_fn(self.player, self.party, self.player.lit_sources, self.clock, room)
 
     # ── Cart helpers ──────────────────────────────────────────────────────────
 
@@ -880,11 +876,11 @@ class GameSession:
         player_name = self.player.name if self.player else "Someone"
         old_room_id = self.current_room_id
         # Broadcast departure to current room occupants before moving
-        self.world.leave_room(player_name, old_room_id)
+        await self.world.leave_room(player_name, old_room_id)
         await self._broadcast_to_room(f"  {player_name} heads {direction}.\n", exclude_self=True)
         self.current_room_id = dest_id
         # Broadcast arrival to new room occupants after moving
-        self.world.enter_room(player_name, dest_id)
+        await self.world.enter_room(player_name, dest_id)
         opposite = self._OPPOSITE_DIR.get(direction, direction)
         await self._broadcast_to_room(f"  {player_name} arrives from the {opposite}.\n", exclude_self=True)
         await self._do_look()
@@ -942,7 +938,7 @@ class GameSession:
         # Other players in room
         if self.player:
             others = [
-                n for n in self.world.players_in_room(self.current_room_id)
+                n for n in await self.world.players_in_room(self.current_room_id)
                 if n != self.player.name
             ]
             if others:
@@ -1541,7 +1537,7 @@ class GameSession:
 
     async def _do_light(self) -> None:
         room = self.world.get_room(self.current_room_id)
-        await do_light(self._send, self.clock, room, self._lit_sources, self._carried_light)
+        await do_light(self._send, self.clock, room, self.player.lit_sources, self._carried_light)
 
     async def _do_envdetails(self) -> None:
         room = self.world.get_room(self.current_room_id)
@@ -1549,7 +1545,7 @@ class GameSession:
 
     async def _do_light_source(self, args: str, extinguish: bool) -> None:
         await do_light_source(
-            self._send, self.player, self.party, self._lit_sources, self.clock, args, extinguish
+            self._send, self.player, self.party, self.player.lit_sources, self.clock, args, extinguish
         )
 
     # ═══════════════════════════════════════════════════════════════════

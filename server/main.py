@@ -32,7 +32,7 @@ load_npcs(DATA_DIR)
 _world = WorldMap()
 _world.load(DATA_DIR)
 
-_world_clock = WorldClock()
+_world_clock = WorldClock(world=_world)
 
 with open(os.path.join(DATA_DIR, "classes", "classes.json"), encoding="utf-8") as _f:
     _class_defs = json.load(_f)

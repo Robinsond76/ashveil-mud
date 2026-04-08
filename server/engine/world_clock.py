@@ -137,10 +137,13 @@ class WorldClock:
     One instance is shared across all GameSessions via main.py.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, world=None) -> None:
         # Absolute game-minutes elapsed since the world began (day 0, 00:00).
         # Start at GAME_START_HOUR so new players enter at morning.
         self._total_minutes: int = GAME_START_HOUR * 60
+
+        # Optional WorldMap reference for periodic respawn ticking
+        self._world = world
 
         # Weather state machine
         self.current_weather: str = "sunny"
@@ -182,6 +185,8 @@ class WorldClock:
     def _advance_one_minute(self) -> None:
         self._total_minutes += 1
         self._tick_weather()
+        if self._world is not None:
+            self._world.tick_respawns()
 
     # ── Weather state machine ─────────────────────────────────────────────────
 
