@@ -64,11 +64,14 @@ class TestPhaseA_MeleeDamageGuard:
             assert mage.roll_damage() == 1
 
     def test_mage_with_staff_uses_normal_range(self):
+        import random
         mage = make_mage()
         mage.equipment["weapon"] = "oak_staff"
-        results = {mage.roll_damage() for _ in range(50)}
-        # Should hit multiple values (normal range), not always 1
-        assert len(results) > 1
+        random.seed(42)
+        results = [mage.roll_damage() for _ in range(20)]
+        # Oak staff: damage_min=3, damage_max=7. Mage guard (returns 1) must NOT apply.
+        assert min(results) >= 3, "Mage with staff should use weapon damage range, not mage guard"
+        assert max(results) <= 7, "Damage should not exceed weapon maximum"
 
     def test_mage_bare_handed_deals_1_damage(self):
         mage = make_mage()
@@ -76,10 +79,14 @@ class TestPhaseA_MeleeDamageGuard:
             assert mage.roll_damage() == 1
 
     def test_warrior_with_sword_uses_normal_range(self):
+        import random
         warrior = make_warrior()
         warrior.equipment["weapon"] = "iron_sword"
-        results = {warrior.roll_damage() for _ in range(30)}
-        assert len(results) > 1
+        random.seed(42)
+        results = [warrior.roll_damage() for _ in range(20)]
+        # Iron sword: damage_min=7, damage_max=13.
+        assert min(results) >= 7, "Warrior with iron_sword should deal at least 7 damage"
+        assert max(results) <= 13, "Warrior with iron_sword should deal at most 13 damage"
 
 
 class TestPhaseA_MageWeightCap:
