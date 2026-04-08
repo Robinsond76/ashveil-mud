@@ -15,7 +15,6 @@ Input arrives via `handle_input(raw_text)`.
 from __future__ import annotations
 
 import json
-import math
 import os
 import random
 from enum import Enum
@@ -30,12 +29,11 @@ from server.config import (
     MIN_STAT,
     MODIFIER_BONUS_PER_LEVEL,
     STAT_POINT_BUY_BUDGET,
-    WEIGHT_DIVISOR,
 )
 from server.engine.character import Character, MODIFIER_CATALOGUE, XP_TABLE
 from server.engine.combat import CombatSession, CombatState
 from server.engine.items import (
-    EQUIPMENT_SLOTS, all_items, get_item,
+    get_item,
     equipped_weapon, total_equipped_weight,
 )
 from server.engine.npc import NPC, spawn_npc
@@ -46,8 +44,26 @@ from server.engine.skills import (
 from server.engine.strategy import (
     add_strategy, clear_strategies, list_strategies, remove_strategy,
 )
+from server.engine.help_registry import send_help, _HELP_TOPICS
+from server.engine.inventory_ops import (
+    party_inventory_view, do_inventory, do_equip, do_unequip, do_drop,
+    do_pick_up, do_give, do_load_cart, do_unload_cart,
+    auto_assign_item, auto_assign_item_with_message,
+)
+from server.engine.campfire import do_formation, do_manage
+from server.engine.chat import do_say, do_emote, do_shout
+from server.engine.environment import (
+    carried_light as _carried_light_fn,
+    effective_light as _effective_light_fn,
+    do_time, do_weather, do_light, do_envdetails, do_light_source,
+)
+from server.engine.survival import (
+    party_survival_aggregate, apply_survival_penalties,
+    drain_survival_tick, sitting_stamina_tick,
+    do_survival_status, do_eat, do_drink, do_buffs,
+)
 from server.engine.world import WorldMap
-from server.engine.world_clock import WorldClock, light_label
+from server.engine.world_clock import WorldClock
 
 
 class State(Enum):
@@ -69,730 +85,7 @@ def _box(title: str, lines: list[str]) -> str:
     return "\n".join(out)
 
 
-# ── Help topic registry ───────────────────────────────────────────────────────
-
-_HELP_TOPICS: dict[str, str] = {
-    # ── Navigation ────────────────────────────────────────────────────────────
-    "LOOK": _box("HELP: LOOK", [
-        "  Show the current room description, items, and exits.",
-        "  Usage: LOOK  (or L)",
-        "  Examples:",
-        "    LOOK",
-        "    L",
-        "  See also: NORTH, SOUTH, EAST, WEST",
-    ]),
-    "L": _box("HELP: LOOK (L)", [
-        "  Show the current room description, items, and exits.",
-        "  Usage: LOOK  (or L)",
-        "  Examples:",
-        "    LOOK",
-        "    L",
-        "  See also: NORTH, SOUTH, EAST, WEST",
-    ]),
-    "NORTH": _box("HELP: NORTH / SOUTH / EAST / WEST", [
-        "  Move your party in the given direction.",
-        "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
-        "  Details:",
-        "    Moving costs 2 stamina per step.",
-        "    Stamina 0 blocks movement until you rest.",
-        "    Horses reduce stamina drain (HELP HORSES).",
-        "  See also: LOOK, STAMINA, HORSES",
-    ]),
-    "SOUTH": _box("HELP: NORTH / SOUTH / EAST / WEST", [
-        "  Move your party in the given direction.",
-        "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
-        "  Details:",
-        "    Moving costs 2 stamina per step.",
-        "    Stamina 0 blocks movement until you rest.",
-        "    Horses reduce stamina drain (HELP HORSES).",
-        "  See also: LOOK, STAMINA, HORSES",
-    ]),
-    "EAST": _box("HELP: NORTH / SOUTH / EAST / WEST", [
-        "  Move your party in the given direction.",
-        "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
-        "  Details:",
-        "    Moving costs 2 stamina per step.",
-        "    Stamina 0 blocks movement until you rest.",
-        "    Horses reduce stamina drain (HELP HORSES).",
-        "  See also: LOOK, STAMINA, HORSES",
-    ]),
-    "WEST": _box("HELP: NORTH / SOUTH / EAST / WEST", [
-        "  Move your party in the given direction.",
-        "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
-        "  Details:",
-        "    Moving costs 2 stamina per step.",
-        "    Stamina 0 blocks movement until you rest.",
-        "    Horses reduce stamina drain (HELP HORSES).",
-        "  See also: LOOK, STAMINA, HORSES",
-    ]),
-    "MOVE": _box("HELP: NORTH / SOUTH / EAST / WEST", [
-        "  Move your party in the given direction.",
-        "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
-        "  Details:",
-        "    Moving costs 2 stamina per step.",
-        "    Stamina 0 blocks movement until you rest.",
-        "    Horses reduce stamina drain (HELP HORSES).",
-        "  See also: LOOK, STAMINA, HORSES",
-    ]),
-    "INV": _box("HELP: INV / INVENTORY", [
-        "  List all items carried by the party.",
-        "  Usage: INV  (or INVENTORY)",
-        "  Examples:",
-        "    INV",
-        "    INVENTORY",
-        "  See also: EQUIP, UNEQUIP, DROP, TAKE, WEIGHT",
-    ]),
-    "INVENTORY": _box("HELP: INV / INVENTORY", [
-        "  List all items carried by the party.",
-        "  Usage: INV  (or INVENTORY)",
-        "  Examples:",
-        "    INV",
-        "    INVENTORY",
-        "  See also: EQUIP, UNEQUIP, DROP, TAKE, WEIGHT",
-    ]),
-    "EQUIP": _box("HELP: EQUIP", [
-        "  Equip an item on a party member.",
-        "  Usage: EQUIP <member> <item>",
-        "  Examples:",
-        "    EQUIP Hero iron_sword",
-        "    EQUIP Mira leather_armor",
-        "  Details:",
-        "    Equipping replaces whatever is in that slot.",
-        "    Mages suffer spell power penalties for heavy armor.",
-        "  See also: UNEQUIP, INV, WIZARD",
-    ]),
-    "UNEQUIP": _box("HELP: UNEQUIP", [
-        "  Remove an equipped item from a slot.",
-        "  Usage: UNEQUIP <member> <slot>",
-        "  Examples:",
-        "    UNEQUIP Hero weapon",
-        "    UNEQUIP Mira body",
-        "  Details:",
-        "    Slots: weapon, body, head, hands, feet, back",
-        "  See also: EQUIP, INV",
-    ]),
-    "DROP": _box("HELP: DROP", [
-        "  Drop an item from your inventory into the room.",
-        "  Usage: DROP <item>",
-        "  Examples:",
-        "    DROP torch",
-        "    DROP iron_sword",
-        "  Details:",
-        "    Dropped items remain in the room until picked up.",
-        "  See also: TAKE, INV",
-    ]),
-    "TAKE": _box("HELP: TAKE / PICK", [
-        "  Pick up an item from the current room.",
-        "  Usage: TAKE <item>  (or PICK <item>)",
-        "  Examples:",
-        "    TAKE torch",
-        "    PICK gold_coin",
-        "  Details:",
-        "    Check carry weight first — overloading slows movement.",
-        "  See also: DROP, INV, WEIGHT",
-    ]),
-    "PICK": _box("HELP: TAKE / PICK", [
-        "  Pick up an item from the current room.",
-        "  Usage: TAKE <item>  (or PICK <item>)",
-        "  Examples:",
-        "    TAKE torch",
-        "    PICK gold_coin",
-        "  Details:",
-        "    Check carry weight first — overloading slows movement.",
-        "  See also: DROP, INV, WEIGHT",
-    ]),
-    "STATS": _box("HELP: STATS", [
-        "  Show your character's statistics and attributes.",
-        "  Usage: STATS",
-        "  Details:",
-        "    Shows STR, DEX, INT, WIS, CON and derived values.",
-        "    Also shows HP, MP, XP, level, and equipped gear.",
-        "  See also: SKILLS, STATUS, MODIFIERS",
-    ]),
-    "SKILLS": _box("HELP: SKILLS", [
-        "  Show known skills and their effects.",
-        "  Usage: SKILLS [COMBAT | UTILITY]",
-        "  Examples:",
-        "    SKILLS           — show all skills",
-        "    SKILLS COMBAT    — show only combat skills",
-        "    SKILLS UTILITY   — show only utility skills",
-        "  See also: STATS, LEARN",
-    ]),
-    "ATTACK": _box("HELP: ATTACK", [
-        "  Engage in combat with hostile creatures in the room.",
-        "  Usage: ATTACK [group]",
-        "  Examples:",
-        "    ATTACK           — target the first hostile group",
-        "    ATTACK A         — target group A (Gauntlet arena)",
-        "  Details:",
-        "    Combat is automatic — your party fights by strategy.",
-        "    Cannot attack in pitch black conditions.",
-        "  Type HELP COMBAT for more on the combat system.",
-        "  See also: COMBAT, STRATEGY, LIGHT",
-    ]),
-    "CAMP": _box("HELP: CAMP", [
-        "  Enter campfire mode to rest and manage your party.",
-        "  Usage: CAMP  (or CAMPFIRE)",
-        "  Details:",
-        "    At camp you can: REST, PARTY, STRATEGY, LEARN skills.",
-        "    Type LEAVE to return to exploring.",
-        "  See also: REST, PARTY, STRATEGY",
-    ]),
-    "STATUS": _box("HELP: STATUS", [
-        "  Show party survival stats: hunger, thirst, and stamina.",
-        "  Usage: STATUS",
-        "  Details:",
-        "    Survival bars drain over time and affect performance.",
-        "    Use EAT and DRINK to restore hunger and thirst.",
-        "    Use REST or SIT to recover stamina.",
-        "  See also: HUNGER, THIRST, STAMINA, SURVIVAL",
-    ]),
-    "SIT": _box("HELP: SIT / STAND", [
-        "  Begin or end passive stamina recovery.",
-        "  Usage: SIT   — sit down to slowly recover stamina",
-        "         STAND — stand up and stop recovering",
-        "  Details:",
-        "    Sitting recovers stamina outside of combat.",
-        "    You cannot move while sitting.",
-        "    Full REST at campfire recovers much faster.",
-        "  See also: STAMINA, REST",
-    ]),
-    "STAND": _box("HELP: SIT / STAND", [
-        "  Begin or end passive stamina recovery.",
-        "  Usage: SIT   — sit down to slowly recover stamina",
-        "         STAND — stand up and stop recovering",
-        "  Details:",
-        "    Sitting recovers stamina outside of combat.",
-        "    You cannot move while sitting.",
-        "    Full REST at campfire recovers much faster.",
-        "  See also: STAMINA, REST",
-    ]),
-    # ── Environment ───────────────────────────────────────────────────────────
-    "TIME": _box("HELP: TIME", [
-        "  Show the current in-game time, day number, and moon phase.",
-        "  Usage: TIME",
-        "  Details:",
-        "    Time of day affects outdoor visibility (dawn/day/dusk/night).",
-        "    Moon phase determines brightness on clear nights.",
-        "  See also: WEATHER, LIGHT, ENVDETAILS",
-    ]),
-    "WEATHER": _box("HELP: WEATHER", [
-        "  Show the current weather and temperature label.",
-        "  Usage: WEATHER",
-        "  Details:",
-        "    Weather only affects outdoor and indoor rooms.",
-        "    Underground rooms are always the same temperature.",
-        "    Weather changes gradually — a warning appears before it shifts.",
-        "  See also: TIME, LIGHT, ENVDETAILS",
-    ]),
-    "LIGHT": _box("HELP: LIGHT", [
-        "  Show current lighting conditions and active light sources.",
-        "  Usage: LIGHT  (or LIGHTING)",
-        "  Details:",
-        "    Light levels affect combat accuracy and dodge chance.",
-        "    Pitch black rooms forbid player-initiated combat.",
-        "    Use LIT <item> to light a torch or lantern.",
-        "    Use EXTINGUISH <item> to put one out.",
-        "  See also: LIT, EXTINGUISH, ENVDETAILS, COMBAT",
-    ]),
-    "LIGHTING": _box("HELP: LIGHT", [
-        "  Show current lighting conditions and active light sources.",
-        "  Usage: LIGHT  (or LIGHTING)",
-        "  Details:",
-        "    Light levels affect combat accuracy and dodge chance.",
-        "    Pitch black rooms forbid player-initiated combat.",
-        "    Use LIT <item> to light a torch or lantern.",
-        "    Use EXTINGUISH <item> to put one out.",
-        "  See also: LIT, EXTINGUISH, ENVDETAILS, COMBAT",
-    ]),
-    "ENVDETAILS": _box("HELP: ENVDETAILS", [
-        "  Display full numeric environmental information.",
-        "  Usage: ENVDETAILS  (or ENV)",
-        "  Details:",
-        "    Shows exact temperature, light percentages, moon phase, fuel remaining.",
-        "  See also: TIME, WEATHER, LIGHT",
-    ]),
-    "ENV": _box("HELP: ENVDETAILS", [
-        "  Display full numeric environmental information.",
-        "  Usage: ENVDETAILS  (or ENV)",
-        "  Details:",
-        "    Shows exact temperature, light percentages, moon phase, fuel remaining.",
-        "  See also: TIME, WEATHER, LIGHT",
-    ]),
-    "LIT": _box("HELP: LIT / EXTINGUISH", [
-        "  Light a torch or lantern from your inventory.",
-        "  Usage: LIT <item>",
-        "  Examples:",
-        "    LIT TORCH",
-        "    LIT LANTERN",
-        "  Details:",
-        "    Torches burn for 60 game-minutes then go out automatically.",
-        "    Lanterns require an Oil Flask to fill; they burn for 90 game-minutes.",
-        "    ENVDETAILS shows fuel remaining.",
-        "  See also: EXTINGUISH, LIGHT, ENVDETAILS",
-    ]),
-    "EXTINGUISH": _box("HELP: LIT / EXTINGUISH", [
-        "  Put out a lit light source.",
-        "  Usage: EXTINGUISH <item>  (or DOUSE <item>)",
-        "  Examples:",
-        "    EXTINGUISH TORCH",
-        "    DOUSE LANTERN",
-        "  Details:",
-        "    Extinguishing preserves remaining fuel.",
-        "  See also: LIT, LIGHT",
-    ]),
-    "DOUSE": _box("HELP: LIT / EXTINGUISH", [
-        "  Put out a lit light source.",
-        "  Usage: EXTINGUISH <item>  (or DOUSE <item>)",
-        "  Examples:",
-        "    EXTINGUISH TORCH",
-        "    DOUSE LANTERN",
-        "  Details:",
-        "    Extinguishing preserves remaining fuel.",
-        "  See also: LIT, LIGHT",
-    ]),
-    # ── Combat ────────────────────────────────────────────────────────────────
-    "COMBAT": _box("HELP: COMBAT", [
-        "  Combat is real-time and automatic. Your party acts on strategy rules.",
-        "  Details:",
-        "    Configure strategies at any campfire with STRATEGY <name> <tactic>.",
-        "    Lighting affects accuracy and dodge chance:",
-        "      Well-lit (80-100%) — no penalty",
-        "      Good (60-80%)      — slight penalty",
-        "      Dim (40-60%)       — moderate penalty",
-        "      Dark (20-40%)      — heavy penalty",
-        "      Very dark (5-20%)  — severe penalty",
-        "      Pitch black (<5%)  — combat forbidden (your side)",
-        "    Some creatures have Darkvision and ignore darkness penalties.",
-        "  See also: ATTACK, FLEE, STRATEGY, LIGHT",
-    ]),
-    "FLEE": _box("HELP: FLEE", [
-        "  Attempt to escape from combat.",
-        "  Usage: FLEE",
-        "  Details:",
-        "    Fleeing costs 5 stamina.",
-        "    Low stamina reduces your chance of fleeing successfully.",
-        "    High DEX and SUPPORT/FLEE strategy improve flee odds.",
-        "  See also: COMBAT, STRATEGY, STAMINA",
-    ]),
-    "STRATEGY": _box("HELP: STRATEGY", [
-        "  Set a combat tactic for a party member or enemy.",
-        "  Usage: STRATEGY <name> <tactic>",
-        "  Tactics:",
-        "    AGGRESSIVE — maximize damage output",
-        "    DEFENSIVE  — reduce incoming damage, lower output",
-        "    SUPPORT    — prioritize healing and buffs",
-        "    FLEE       — attempt to flee on their turn",
-        "  Examples:",
-        "    STRATEGY Hero AGGRESSIVE",
-        "    STRATEGY Mira DEFENSIVE",
-        "  See also: COMBAT, FLEE",
-    ]),
-    "STRATEGIES": _box("HELP: STRATEGY", [
-        "  Set a combat tactic for a party member or enemy.",
-        "  Usage: STRATEGY <name> <tactic>",
-        "  Tactics:",
-        "    AGGRESSIVE — maximize damage output",
-        "    DEFENSIVE  — reduce incoming damage, lower output",
-        "    SUPPORT    — prioritize healing and buffs",
-        "    FLEE       — attempt to flee on their turn",
-        "  Examples:",
-        "    STRATEGY Hero AGGRESSIVE",
-        "    STRATEGY Mira DEFENSIVE",
-        "  See also: COMBAT, FLEE",
-    ]),
-    "CAST": _box("HELP: CAST", [
-        "  Cast a spell (mages only).",
-        "  Usage: CAST <spell_id>",
-        "  Examples:",
-        "    CAST fireball",
-        "    CAST frost_bolt",
-        "  Details:",
-        "    Casting costs MP and may take multiple ticks (cast time).",
-        "    Being hit while casting may interrupt the spell.",
-        "    Type HELP <spell_id> for details on a specific spell.",
-        "  See also: SPELLS, WIZARD, CASTING",
-    ]),
-    # ── Campfire ──────────────────────────────────────────────────────────────
-    "REST": _box("HELP: REST", [
-        "  Rest the party at campfire to recover HP, MP, and stamina.",
-        "  Usage: REST  (used in CAMPFIRE mode)",
-        "  Details:",
-        "    REST recovers full HP, MP, and stamina over time.",
-        "    Bless Camp (cleric skill) boosts HP recovery rate.",
-        "    Enter campfire mode with CAMP from NAVIGATION.",
-        "  See also: CAMP, STAMINA, SIT",
-    ]),
-    "PARTY": _box("HELP: PARTY", [
-        "  Show all party member status: HP, MP, survival stats.",
-        "  Usage: PARTY",
-        "  Details:",
-        "    PARTY works in NAVIGATION and CAMPFIRE states.",
-        "    Shows survival aggregate row (hunger, thirst, stamina).",
-        "  See also: STATUS, STATS",
-    ]),
-    # ── Survival ──────────────────────────────────────────────────────────────
-    "HUNGER": _box("HELP: HUNGER", [
-        "  Hunger drains over time and penalizes combat when critically low.",
-        "  Details:",
-        "    Hunger drains at a base rate each game tick.",
-        "    At low hunger, your survival multiplier reduces damage dealt.",
-        "    Use EAT <food> to restore hunger.",
-        "  See also: THIRST, STAMINA, SURVIVAL, STATUS",
-    ]),
-    "THIRST": _box("HELP: THIRST", [
-        "  Thirst drains faster in hot weather and penalizes combat.",
-        "  Details:",
-        "    Thirst drain rate scales with temperature (HELP WEATHER).",
-        "    At low thirst, your survival multiplier reduces damage dealt.",
-        "    Use DRINK <item> to restore thirst.",
-        "  See also: HUNGER, STAMINA, SURVIVAL, STATUS",
-    ]),
-    "STAMINA": _box("HELP: STAMINA", [
-        "  Stamina is consumed by movement and fleeing combat.",
-        "  Details:",
-        "    Each move costs 2 stamina (reduced by horses).",
-        "    At stamina 0, movement is blocked.",
-        "    FLEE costs 5 stamina.",
-        "    Recovering: SIT to rest in place; REST at campfire for full recovery.",
-        "  See also: HUNGER, THIRST, SURVIVAL, SIT, REST, HORSES",
-    ]),
-    "SURVIVAL": _box("HELP: SURVIVAL", [
-        "  Overview of the three survival stats: Hunger, Thirst, Stamina.",
-        "  Details:",
-        "    Hunger — drains per tick; EAT to restore",
-        "    Thirst — drains faster in heat; DRINK to restore",
-        "    Stamina — drains on movement and FLEE; REST to restore",
-        "    When Hunger or Thirst is critically low, combat damage is reduced.",
-        "    Stamina 0 blocks movement entirely.",
-        "  See also: HUNGER, THIRST, STAMINA, STATUS",
-    ]),
-    # ── Weight ────────────────────────────────────────────────────────────────
-    "WEIGHT": _box("HELP: WEIGHT", [
-        "  Carry weight affects movement stamina drain.",
-        "  Details:",
-        "    Your carry capacity is based on STR.",
-        "    Carrying over the threshold increases stamina drain per step.",
-        "    Check your current load with INV.",
-        "  See also: INV, BACKPACK, CART, STAMINA",
-    ]),
-    "BACKPACK": _box("HELP: BACKPACK", [
-        "  The backpack occupies the 'back' equipment slot.",
-        "  Details:",
-        "    Equip a backpack to increase carry capacity.",
-        "    Usage: EQUIP <member> backpack",
-        "  See also: EQUIP, WEIGHT, INV",
-    ]),
-    "CART": _box("HELP: CART", [
-        "  A cart carries extra gear but is outdoor-only.",
-        "  Details:",
-        "    Load items into the cart with STASH <item>.",
-        "    Retrieve items with UNLOAD <item>.",
-        "    Cart items are inaccessible indoors or underground.",
-        "  See also: STASH, UNLOAD, WEIGHT",
-    ]),
-    "GIVE": _box("HELP: GIVE", [
-        "  Transfer an item between party members.",
-        "  Usage: GIVE <item> <member>",
-        "  Examples:",
-        "    GIVE torch Mira",
-        "    GIVE hard_bread Hero",
-        "  See also: INV, EQUIP",
-    ]),
-    "STASH": _box("HELP: STASH / LOAD", [
-        "  Load an item into the party cart.",
-        "  Usage: STASH <item>  (or LOAD <item>)",
-        "  Details:",
-        "    Cart is only accessible outdoors.",
-        "    Use UNLOAD to retrieve items from the cart.",
-        "  See also: CART, UNLOAD, WEIGHT",
-    ]),
-    "LOAD": _box("HELP: STASH / LOAD", [
-        "  Load an item into the party cart.",
-        "  Usage: STASH <item>  (or LOAD <item>)",
-        "  Details:",
-        "    Cart is only accessible outdoors.",
-        "    Use UNLOAD to retrieve items from the cart.",
-        "  See also: CART, UNLOAD, WEIGHT",
-    ]),
-    "UNLOAD": _box("HELP: UNLOAD", [
-        "  Retrieve an item from the party cart.",
-        "  Usage: UNLOAD <item>",
-        "  Details:",
-        "    Cart is only accessible outdoors.",
-        "  See also: CART, STASH, WEIGHT",
-    ]),
-    # ── Mounts ────────────────────────────────────────────────────────────────
-    "RIDE": _box("HELP: RIDE", [
-        "  Mount the party's horses to reduce stamina drain while travelling.",
-        "  Usage: RIDE",
-        "  Details:",
-        "    Requires at least one horse in the party's inventory.",
-        "    Only works outdoors — horses wait outside indoor/underground rooms.",
-        "    Stamina drain reduction scales with horse-to-party ratio.",
-        "  See also: DISMOUNT, HORSES, STAMINA",
-    ]),
-    "DISMOUNT": _box("HELP: DISMOUNT", [
-        "  Dismount the party's horses.",
-        "  Usage: DISMOUNT",
-        "  Details:",
-        "    Horses wait in the last outdoor room and rejoin on return.",
-        "  See also: RIDE, HORSES",
-    ]),
-    "HORSES": _box("HELP: HORSES / MOUNTS", [
-        "  Show party horse count and stamina reduction.",
-        "  Usage: HORSES  (or MOUNTS)",
-        "  Details:",
-        "    Stamina drain formula: 1 - (0.60 × horses / party_size)",
-        "    Full mounted party (1 horse each) → 60% stamina reduction.",
-        "  See also: RIDE, DISMOUNT, STAMINA",
-    ]),
-    "MOUNTS": _box("HELP: HORSES / MOUNTS", [
-        "  Show party horse count and stamina reduction.",
-        "  Usage: HORSES  (or MOUNTS)",
-        "  Details:",
-        "    Stamina drain formula: 1 - (0.60 × horses / party_size)",
-        "    Full mounted party (1 horse each) → 60% stamina reduction.",
-        "  See also: RIDE, DISMOUNT, STAMINA",
-    ]),
-    # ── Wizard ────────────────────────────────────────────────────────────────
-    "WIZARD": _box("HELP: WIZARD (MAGE CLASS)", [
-        "  The Mage class is a powerful glass cannon — high burst, fragile body.",
-        "  Details:",
-        "    Spells deal scaling damage based on INT and spell_power_modifier.",
-        "    Wearing heavy armor reduces spell power (leather -10%, chain -30%, plate 0%).",
-        "    Mages deal only 1 melee damage without a staff.",
-        "    At 0 MP, mages can only DODGE — they cannot attack.",
-        "    Staves preserve spell power and provide normal melee damage.",
-        "  See also: SPELLS, CASTING, CAST, EQUIP",
-    ]),
-    "SPELLS": _box("HELP: SPELLS", [
-        "  List of available mage spells with mana cost and cast time.",
-        "  Spells:",
-        "    ARCANE_BOLT     — quick single-target bolt (low MP)",
-        "    MAGIC_MISSILE   — homing missile, moderate MP",
-        "    FROST_BOLT      — single target, slowing effect",
-        "    FIREBALL        — AoE fire damage",
-        "    CHAIN_LIGHTNING — AoE lightning jumping between targets",
-        "    ARCANE_SHIELD   — temporary damage reduction buff",
-        "    BLINK           — teleport to avoid hits",
-        "    ARCANE_LIGHT    — conjure magical light source",
-        "    IDENTIFY        — reveal hidden item properties",
-        "  Type HELP <spell_id> for details on any spell.",
-        "  See also: CAST, CASTING, WIZARD",
-    ]),
-    "CASTING": _box("HELP: CASTING", [
-        "  Cast times, interruption, and cancellation.",
-        "  Details:",
-        "    Some spells have a cast time (multiple ticks to complete).",
-        "    Being hit while casting may interrupt the spell (wasting the cast).",
-        "    High concentration resistance reduces interruption chance.",
-        "    Cast: CAST <spell_id>",
-        "  See also: CAST, SPELLS, WIZARD",
-    ]),
-    # ── Per-spell entries ─────────────────────────────────────────────────────
-    "ARCANE_BOLT": _box("HELP: ARCANE_BOLT", [
-        "  A quick bolt of arcane energy. Low cost, instant cast.",
-        "  Usage: CAST arcane_bolt",
-        "  Details:",
-        "    Single target. Damage scales with INT.",
-        "    Cast time: instant.",
-        "  See also: SPELLS, CASTING, WIZARD",
-    ]),
-    "MAGIC_MISSILE": _box("HELP: MAGIC_MISSILE", [
-        "  A homing missile of magical force. Never misses.",
-        "  Usage: CAST magic_missile",
-        "  Details:",
-        "    Single target. Always hits (ignores dodge).",
-        "    Damage scales with INT.",
-        "  See also: SPELLS, CASTING, WIZARD",
-    ]),
-    "FROST_BOLT": _box("HELP: FROST_BOLT", [
-        "  A bolt of freezing ice that chills the target.",
-        "  Usage: CAST frost_bolt",
-        "  Details:",
-        "    Single target. Moderate MP cost.",
-        "    Can reduce target movement / speed in future phases.",
-        "  See also: SPELLS, CASTING, WIZARD",
-    ]),
-    "FIREBALL": _box("HELP: FIREBALL", [
-        "  A ball of fire that explodes on impact, hitting all nearby enemies.",
-        "  Usage: CAST fireball",
-        "  Details:",
-        "    AoE spell — damages all enemies in the target group.",
-        "    High MP cost. Cast time: 1 tick.",
-        "    Damage scales with INT and spell_power_modifier.",
-        "  See also: SPELLS, CASTING, WIZARD, CHAIN_LIGHTNING",
-    ]),
-    "CHAIN_LIGHTNING": _box("HELP: CHAIN_LIGHTNING", [
-        "  Lightning arcs between multiple enemies.",
-        "  Usage: CAST chain_lightning",
-        "  Details:",
-        "    AoE spell — jumps between all enemies in range.",
-        "    High MP cost. Damage scales with INT.",
-        "  See also: SPELLS, CASTING, WIZARD, FIREBALL",
-    ]),
-    "ARCANE_SHIELD": _box("HELP: ARCANE_SHIELD", [
-        "  Conjure a magical barrier that absorbs damage.",
-        "  Usage: CAST arcane_shield",
-        "  Details:",
-        "    Buff — reduces incoming damage for the caster.",
-        "    Duration: several ticks.",
-        "  See also: SPELLS, CASTING, WIZARD",
-    ]),
-    "BLINK": _box("HELP: BLINK", [
-        "  Teleport a short distance to avoid an attack.",
-        "  Usage: CAST blink",
-        "  Details:",
-        "    Utility spell — provides a dodge chance boost.",
-        "    Instant cast.",
-        "  See also: SPELLS, CASTING, WIZARD",
-    ]),
-    "ARCANE_LIGHT": _box("HELP: ARCANE_LIGHT", [
-        "  Conjure magical light, illuminating the area.",
-        "  Usage: CAST arcane_light  (or USE arcane_light out of combat)",
-        "  Details:",
-        "    Provides light for 120 game-minutes.",
-        "    Useful alternative to torches — requires no item.",
-        "    Costs 15 MP.",
-        "  See also: SPELLS, LIT, LIGHT, WIZARD",
-    ]),
-    "IDENTIFY": _box("HELP: IDENTIFY", [
-        "  Reveal the hidden properties of an item.",
-        "  Usage: USE identify  (utility skill, out of combat)",
-        "  Details:",
-        "    Costs 20 MP.",
-        "    Use on unknown or magical items to learn their stats.",
-        "  See also: SPELLS, SKILLS, WIZARD",
-    ]),
-    # ── Multiplayer / Chat ────────────────────────────────────────────────────
-    "SAY": _box("HELP: SAY", [
-        "  Speak to all players in the same room.",
-        "  Usage: SAY <message>",
-        "  Examples:",
-        "    SAY Hello, traveler!",
-        "  Receivers see: [YourName says]: \"message\"",
-        "  See also: EMOTE, SHOUT, PLAYERS",
-    ]),
-    "EMOTE": _box("HELP: EMOTE / ME", [
-        "  Perform an emote visible to all players in the room.",
-        "  Usage: EMOTE <action>  (or ME <action>)",
-        "  Examples:",
-        "    EMOTE waves cheerfully.",
-        "    ME bows deeply.",
-        "  Everyone in the room (including you) sees: * YourName action",
-        "  See also: SAY, SHOUT",
-    ]),
-    "ME": _box("HELP: EMOTE / ME", [
-        "  Perform an emote visible to all players in the room.",
-        "  Usage: EMOTE <action>  (or ME <action>)",
-        "  Examples:",
-        "    EMOTE waves cheerfully.",
-        "    ME bows deeply.",
-        "  Everyone in the room (including you) sees: * YourName action",
-        "  See also: SAY, SHOUT",
-    ]),
-    "SHOUT": _box("HELP: SHOUT / OOC", [
-        "  Broadcast a message to all connected players regardless of room.",
-        "  Usage: SHOUT <message>  (or OOC <message>)",
-        "  Examples:",
-        "    SHOUT Is anyone at the inn?",
-        "  See also: SAY, EMOTE, PLAYERS",
-    ]),
-    "OOC": _box("HELP: SHOUT / OOC", [
-        "  Broadcast a message to all connected players regardless of room.",
-        "  Usage: SHOUT <message>  (or OOC <message>)",
-        "  Examples:",
-        "    OOC Anyone want to group up?",
-        "  See also: SAY, EMOTE, PLAYERS",
-    ]),
-    "PLAYERS": _box("HELP: PLAYERS", [
-        "  Shows who else is currently in your room.",
-        "  Usage: LOOK  (other players appear under \"Also here:\")",
-        "  Details:",
-        "    Players in the same room can see each other's SAY and EMOTE messages.",
-        "    Use SHOUT to reach players in other rooms.",
-        "  See also: SAY, EMOTE, SHOUT, LOOK",
-    ]),
-    "MULTIPLAYER": _box("HELP: MULTIPLAYER", [
-        "  Ashveil MUD supports multiple simultaneous players.",
-        "  Key features:",
-        "    - Other players appear in room descriptions (Also here: ...).",
-        "    - Movement broadcasts: you see when others enter or leave.",
-        "    - SAY — speak to your room.",
-        "    - EMOTE / ME — perform an action visible to your room.",
-        "    - SHOUT / OOC — broadcast to all players world-wide.",
-        "  See also: SAY, EMOTE, SHOUT, PLAYERS",
-    ]),
-}
-
-
-def _help_for_state(state) -> str:
-    if state.value in ("connect", "creation"):
-        return _box("HELP", [
-            "  You are creating a character. Available choices:",
-            "",
-            "    HELP RACES    — learn about available races",
-            "    HELP CLASSES  — learn about available classes",
-            "",
-            "  Type your responses as prompted.",
-        ])
-    elif state.value == "navigation":
-        return _box("HELP", [
-            "  You are exploring Ashveil. Available commands:",
-            "",
-            "    Movement     NORTH / N, SOUTH / S, EAST / E, WEST / W",
-            "    Look         LOOK / L",
-            "    Inventory    INV / INVENTORY, EQUIP, UNEQUIP, DROP, TAKE",
-            "    Character    STATS, SKILLS, STATUS",
-            "    Combat       ATTACK <target>",
-            "    Environment  TIME, WEATHER, LIGHT, ENVDETAILS / ENV",
-            "    Lighting     LIT <item>, EXTINGUISH / DOUSE",
-            "    Camping      CAMP (enter campfire mode)",
-            "",
-            "  Type HELP <command> for details on any command.",
-        ])
-    elif state.value == "campfire":
-        return _box("HELP", [
-            "  You are resting at camp. Available commands:",
-            "",
-            "    REST             Rest the party (recovers HP, MP, stamina)",
-            "    PARTY            Show party status",
-            "    STRATEGY <name>  Set a combatant's strategy",
-            "    LEAVE            Break camp and return to exploring",
-            "",
-            "  Type HELP <command> for details on any command.",
-        ])
-    elif state.value == "strategy":
-        return _box("HELP", [
-            "  You are setting combat strategies. Available commands:",
-            "",
-            "    STRATEGY <name> <tactic>   Set strategy for a party member",
-            "    DONE                       Confirm strategies and return",
-            "",
-            "    Tactics: AGGRESSIVE, DEFENSIVE, SUPPORT, FLEE",
-            "    Type HELP STRATEGY for full details.",
-        ])
-    elif state.value == "combat":
-        return _box("HELP", [
-            "  You are in combat. Available commands:",
-            "",
-            "    ATTACK <target>  Attack the named enemy",
-            "    CAST <spell>     Cast a spell (mage only)",
-            "    USE <item>       Use a consumable item",
-            "    FLEE             Attempt to flee combat",
-            "    PARTY            Show party HP/MP status",
-            "",
-            "  Battles are tick-based. Your strategy runs automatically.",
-            "  Type HELP COMBAT for full details.",
-        ])
-    else:
-        return _box("HELP", [
-            "  Type HELP <command> for details on any command.",
-            "  Type HELP for a list of available commands.",
-        ])
-
-
+# ── Help topic registry moved to server.engine.help_registry ─────────────────
 class GameSession:
     def __init__(
         self,
@@ -899,102 +192,23 @@ class GameSession:
     # ── Survival helpers ──────────────────────────────────────────────────────
 
     def _party_survival_aggregate(self) -> tuple[float, float, float]:
-        """Return (hunger_pct, thirst_pct, stamina_pct) averaged across the whole party."""
-        members = [self.player] + list(self.party)
-        total_hunger  = sum(m.hunger  for m in members)
-        total_thirst  = sum(m.thirst  for m in members)
-        total_stamina = sum(m.stamina for m in members)
-        total_max_h   = sum(m.max_hunger  for m in members)
-        total_max_t   = sum(m.max_thirst  for m in members)
-        total_max_s   = sum(m.max_stamina for m in members)
-        return (
-            total_hunger  / total_max_h if total_max_h else 1.0,
-            total_thirst  / total_max_t if total_max_t else 1.0,
-            total_stamina / total_max_s if total_max_s else 1.0,
-        )
+        return party_survival_aggregate(self.player, self.party)
 
     def _apply_survival_penalties(self) -> tuple[float, bool]:
-        """Return (combat_stat_multiplier, movement_blocked) based on party aggregate."""
-        hunger_pct, thirst_pct, stamina_pct = self._party_survival_aggregate()
-        multiplier = 1.0
-        blocked = False
-
-        # Stamina penalties
-        if stamina_pct <= 0.10:
-            blocked = True
-        elif stamina_pct <= 0.30:
-            multiplier *= 0.85
-
-        # Hunger + thirst combined (average of the two)
-        ht_avg = (hunger_pct + thirst_pct) / 2.0
-        if ht_avg < 0.20:
-            multiplier *= 0.75
-        elif ht_avg < 0.40:
-            multiplier *= 0.90
-
-        return multiplier, blocked
+        return apply_survival_penalties(self.player, self.party)
 
     def _drain_survival_tick(self, temp_label: str) -> None:
-        """Decrement hunger and thirst for every party member by one game-minute's drain."""
-        members = [self.player] + list(self.party)
-        for m in members:
-            hunger_drain = m.hunger_drain_rate(self.clock)
-            thirst_drain = m.thirst_drain_rate(temp_label, self.clock)
-            m.hunger = max(0.0, m.hunger - hunger_drain)
-            m.thirst = max(0.0, m.thirst - thirst_drain)
+        drain_survival_tick(self.player, self.party, self.clock, temp_label)
 
     def _sitting_stamina_tick(self) -> None:
-        """Restore stamina per game-minute while sitting (out of combat).
-        Base: +1/min. With energised buff: +1.5/min."""
-        if not self._sitting:
-            return
-        members = [self.player] + list(self.party)
-        for m in members:
-            recovery = 1.5 if (self.clock and "energised" in m.get_active_buffs(self.clock)) else 1.0
-            m.stamina = min(m.max_stamina, m.stamina + recovery)
+        sitting_stamina_tick(self.player, self.party, self.clock, self._sitting)
 
     def _carried_light(self) -> float:
-        """
-        Return the highest light level from all lit sources currently held
-        by any party member.  Expired sources are silently removed.
-        """
-        if not self._lit_sources or not self.clock:
-            return 0.0
-        now = self.clock.total_minutes
-        # Expire burned-out sources
-        expired = [k for k, exp in self._lit_sources.items() if exp <= now]
-        for k in expired:
-            del self._lit_sources[k]
-            # Build a friendly name for the notification
-            item = get_item(k)
-            iname = item.name if item else k
-            # Queue a non-blocking notification; fire-and-forget
-            import asyncio
-            asyncio.get_event_loop().create_task(
-                self._send(f"\n  Your {iname} has burned out.\n")
-            )
-        if not self._lit_sources:
-            return 0.0
-        # Collect all item_ids in party inventory
-        all_inv: list[str] = list(self.player.inventory) if self.player else []
-        for npc in self.party:
-            all_inv.extend(npc.inventory)
-        best = 0.0
-        for item_id in list(self._lit_sources):
-            if item_id in all_inv:
-                item = get_item(item_id)
-                if item:
-                    best = max(best, item.effect_params.get("light_level", 0.0))
-        return best
+        return _carried_light_fn(self.player, self.party, self._lit_sources, self.clock, self._send)
 
     def _effective_light(self) -> float:
-        """Effective light level [0,1] in the current room."""
-        if not self.clock:
-            return 1.0
         room = self.world.get_room(self.current_room_id)
-        if not room:
-            return 1.0
-        return self.clock.effective_light(room.room_type, self._carried_light())
+        return _effective_light_fn(self.player, self.party, self._lit_sources, self.clock, room)
 
     # ── Cart helpers ──────────────────────────────────────────────────────────
 
@@ -1602,37 +816,16 @@ class GameSession:
         await self._send(f"  Unknown command '{text}'. Type HELP for a list.\n")
 
     async def _do_say(self, message: str) -> None:
-        message = message.strip()
-        if not message:
-            await self._send("  Say what? Usage: SAY <message>\n")
-            return
         player_name = self.player.name if self.player else "Someone"
-        await self._send(f'  [You say]: "{message}"\n')
-        await self._broadcast_to_room(
-            f'  [{player_name} says]: "{message}"\n', exclude_self=True
-        )
+        await do_say(self._send, self._broadcast_to_room, player_name, message)
 
     async def _do_emote(self, action: str) -> None:
-        action = action.strip()
-        if not action:
-            await self._send("  Emote what? Usage: EMOTE <action>\n")
-            return
         player_name = self.player.name if self.player else "Someone"
-        await self._broadcast_to_room(
-            f"  * {player_name} {action}\n", exclude_self=False
-        )
+        await do_emote(self._send, self._broadcast_to_room, player_name, action)
 
     async def _do_shout(self, message: str) -> None:
-        message = message.strip()
-        if not message:
-            await self._send("  Shout what? Usage: SHOUT <message>\n")
-            return
         player_name = self.player.name if self.player else "Someone"
-        await self._send(f'  [You shout]: "{message}"\n')
-        for name, session in self._sessions.items():
-            if self.player and name == self.player.name:
-                continue
-            await session._send(f'  [Shout from {player_name}]: "{message}"\n')
+        await do_shout(self._send, self._sessions, player_name, message)
 
     async def _do_move(self, direction: str) -> None:
         room = self.world.get_room(self.current_room_id)
@@ -1800,258 +993,52 @@ class GameSession:
     # ── Inventory ─────────────────────────────────────────────────────────────
 
     def _party_inventory_view(self) -> list[tuple[str, str, str]]:
-        """Return (holder_name, item_id, item_name) for all party inventories."""
-        result: list[tuple[str, str, str]] = []
-        members = ([self.player] if self.player else []) + list(self.party)
-        for m in members:
-            for item_id in m.inventory:
-                item = get_item(item_id)
-                name = item.name if item else item_id
-                result.append((m.name, item_id, name))
-        # Sort: weapons first, then armor, consumables, misc
-        type_order = {"weapon": 0, "armor": 1, "consumable": 2}
-        result.sort(key=lambda t: type_order.get(
-            (get_item(t[1]).type if get_item(t[1]) else "misc"), 3
-        ))
-        return result
+        return party_inventory_view(self.player, self.party)
 
     async def _do_inventory(self, args: str = "") -> None:
-        args_stripped = args.strip()
-        args_upper = args_stripped.upper()
-
-        # INV CART
-        if args_upper == "CART":
-            if not self._cart_inventory:
-                await self._send(_box("CART", ["  (empty)"]))
-            else:
-                lines = []
-                for item_id in self._cart_inventory:
-                    item = get_item(item_id)
-                    lines.append(f"  {item.name if item else item_id}")
-                await self._send(_box("CART", [""] + lines))
-            return
-
-        # INVENTORY <member>
-        if args_stripped:
-            target_name = args_stripped.lower()
-            members = ([self.player] if self.player else []) + list(self.party)
-            target = next(
-                (m for m in members if m.name.lower() == target_name), None
-            )
-            if not target:
-                await self._send(f"  '{args_stripped}' is not in your party.\n")
-                return
-            lines = []
-            if not target.inventory:
-                lines.append("  (empty)")
-            else:
-                counts: dict[str, int] = {}
-                for i in target.inventory:
-                    counts[i] = counts.get(i, 0) + 1
-                for item_id, count in counts.items():
-                    item = get_item(item_id)
-                    lines.append(f"  x{count}  {item.name if item else item_id}")
-            await self._send(_box(f"INVENTORY — {target.name}", [""] + lines))
-            return
-
-        # Unified party view
-        party_items = self._party_inventory_view()
-        lines: list[str] = []
-        if not party_items:
-            lines.append("  (empty)")
-        else:
-            for holder, item_id, item_name in party_items:
-                lines.append(f"  {item_name:<30} [{holder}]")
-
-        lines.append("")
-        lines.append("  EQUIPPED (player):")
-        for slot in EQUIPMENT_SLOTS:
-            eid = self.player.equipment.get(slot)
-            item = get_item(eid) if eid else None
-            lines.append(f"    {slot:<8}: {item.name if item else '---'}")
-
-        lines.append(f"\n  Carry weight: {total_equipped_weight(self.player.equipment)} "
-                     f"  Speed: {self.player.effective_speed}")
-        await self._send(_box("INVENTORY", [""] + lines))
+        await do_inventory(self._send, self.player, self.party, self._cart_inventory, args)
 
     async def _do_equip(self, args: str) -> None:
-        item_name = args.lower().strip()
-        for item_id in self.player.inventory:
-            item = get_item(item_id)
-            if item and item_name in item.name.lower():
-                slot = item.slot if item.slot else ("weapon" if item.type == "weapon" else None)
-                if not slot:
-                    await self._send(f"  {item.name} can't be equipped.\n")
-                    return
-                # Unequip current
-                current = self.player.equipment.get(slot)
-                if current:
-                    self.player.inventory.append(current)
-                self.player.equipment[slot] = item_id
-                self.player.inventory.remove(item_id)
-                await self._send(
-                    f"  You equip {item.name}. Speed is now {self.player.effective_speed}.\n"
-                )
-                return
-        await self._send(f"  You don't have '{args}' in your inventory.\n")
+        await do_equip(self._send, self.player, args)
 
     async def _do_unequip(self, args: str) -> None:
-        slot = args.lower().strip()
-        if slot not in EQUIPMENT_SLOTS:
-            await self._send(f"  Unknown slot '{args}'. Slots: {', '.join(EQUIPMENT_SLOTS)}\n")
-            return
-        eid = self.player.equipment.get(slot)
-        if not eid:
-            await self._send(f"  Nothing in slot '{slot}'.\n")
-            return
-        self.player.inventory.append(eid)
-        self.player.equipment[slot] = None
-        item = get_item(eid)
-        await self._send(
-            f"  You unequip {item.name if item else eid}. Speed is now {self.player.effective_speed}.\n"
-        )
+        await do_unequip(self._send, self.player, args)
 
     async def _do_drop(self, args: str) -> None:
-        item_name = args.lower().strip()
-        for item_id in self.player.inventory:
-            item = get_item(item_id)
-            if item and item_name in item.name.lower():
-                self.player.inventory.remove(item_id)
-                room = self.world.get_room(self.current_room_id)
-                if room:
-                    room.item_ids.append(item_id)
-                await self._send(f"  You drop {item.name}.\n")
-                player_name = self.player.name if self.player else "Someone"
-                await self._broadcast_to_room(
-                    f"  {player_name} drops the {item.name}.\n", exclude_self=True
-                )
-                return
-        await self._send(f"  You don't have '{args}'.\n")
+        room = self.world.get_room(self.current_room_id)
+        await do_drop(self._send, self.player, room, self._broadcast_to_room, args)
 
     async def _do_pick_up(self, args: str) -> None:
-        item_name = args.lower().strip()
         room = self.world.get_room(self.current_room_id)
-        if not room:
-            return
-        for item_id in room.item_ids:
-            item = get_item(item_id)
-            if item and item_name in item.name.lower():
-                room.item_ids.remove(item_id)
-                ok = await self._auto_assign_item_with_message(item_id)
-                if not ok:
-                    room.item_ids.append(item_id)
-                    return
-                await self._send(f"  You pick up {item.name}.\n")
-                player_name = self.player.name if self.player else "Someone"
-                await self._broadcast_to_room(
-                    f"  {player_name} picks up the {item.name}.\n", exclude_self=True
-                )
-                return
-        await self._send(f"  You don't see '{args}' here.\n")
+        await do_pick_up(
+            self._send, self.player, self.party, room,
+            self._cart_inventory, self._cart_present,
+            self._broadcast_to_room, args,
+        )
 
     def _auto_assign_item(self, item_id: str) -> bool:
-        """Place item_id into the first party member with available slots.
-        Falls back to cart if present. Returns True on success."""
-        members = ([self.player] if self.player else []) + list(self.party)
-        candidates = [m for m in members if len(m.inventory) < m.carry_slots]
-        if candidates:
-            choice = random.choice(candidates)
-            choice.inventory.append(item_id)
-            return True
-        # Fall back to cart
-        if self._cart_present:
-            self._cart_inventory.append(item_id)
-            return True
-        return False
+        return auto_assign_item(
+            self.player, self.party, item_id, self._cart_inventory, self._cart_present
+        )
 
     async def _auto_assign_item_with_message(self, item_id: str) -> bool:
-        """Like _auto_assign_item but sends an over-encumbered message on failure."""
-        ok = self._auto_assign_item(item_id)
-        if not ok:
-            await self._send("  Your party is over-encumbered. Drop something first.\n")
-        return ok
+        return await auto_assign_item_with_message(
+            self._send, self.player, self.party, item_id,
+            self._cart_inventory, self._cart_present,
+        )
 
     async def _do_give(self, args: str) -> None:
-        """GIVE <item> TO <member>"""
-        lower = args.lower()
-        if " to " not in lower:
-            await self._send("  Usage: GIVE <item> TO <member>\n")
-            return
-        idx = lower.index(" to ")
-        item_part = args[:idx].strip()
-        target_name = args[idx + 4:].strip()
-
-        # Find the item in any party member's inventory
-        members = ([self.player] if self.player else []) + list(self.party)
-        source = None
-        found_id = None
-        for m in members:
-            for item_id in m.inventory:
-                item = get_item(item_id)
-                if item and item_part.lower() in item.name.lower():
-                    source = m
-                    found_id = item_id
-                    break
-            if source:
-                break
-
-        if not source or not found_id:
-            await self._send(f"  '{item_part}' not found in party inventory.\n")
-            return
-
-        # Find target member
-        target = next(
-            (m for m in members if m.name.lower() == target_name.lower()), None
-        )
-        if not target:
-            await self._send(f"  '{target_name}' is not in your party.\n")
-            return
-
-        if len(target.inventory) >= target.carry_slots:
-            await self._send(f"  {target.name} doesn't have room for that.\n")
-            return
-
-        source.inventory.remove(found_id)
-        target.inventory.append(found_id)
-        item_obj = get_item(found_id)
-        await self._send(
-            f"  {item_obj.name if item_obj else found_id} transferred to {target.name}.\n"
-        )
+        await do_give(self._send, self.player, self.party, args)
 
     async def _do_load_cart(self, args: str) -> None:
-        """LOAD CART <item> / STASH <item> — move item from party to _cart_inventory."""
-        if not self._cart_present:
-            await self._send("  Your cart is not here.\n")
-            return
-        item_name = args.strip().lower()
-        members = ([self.player] if self.player else []) + list(self.party)
-        for m in members:
-            for item_id in m.inventory:
-                item = get_item(item_id)
-                if item and item_name in item.name.lower():
-                    m.inventory.remove(item_id)
-                    self._cart_inventory.append(item_id)
-                    await self._send(f"  {item.name} stashed in the cart.\n")
-                    return
-        await self._send(f"  '{args.strip()}' not found in party inventory.\n")
+        await do_load_cart(
+            self._send, self.player, self.party, self._cart_inventory, self._cart_present, args
+        )
 
     async def _do_unload_cart(self, args: str) -> None:
-        """UNLOAD CART <item> — move item from _cart_inventory to party via auto-assign."""
-        if not self._cart_present:
-            await self._send("  Your cart is not here.\n")
-            return
-        item_name = args.strip().lower()
-        for item_id in self._cart_inventory:
-            item = get_item(item_id)
-            if item and item_name in item.name.lower():
-                self._cart_inventory.remove(item_id)
-                ok = await self._auto_assign_item_with_message(item_id)
-                if not ok:
-                    self._cart_inventory.append(item_id)
-                    return
-                await self._send(f"  {item.name} unloaded from cart.\n")
-                return
-        await self._send(f"  '{args.strip()}' not found in cart.\n")
+        await do_unload_cart(
+            self._send, self.player, self.party, self._cart_inventory, self._cart_present, args
+        )
 
     # ── Mount commands ────────────────────────────────────────────────────────
 
@@ -2150,103 +1137,16 @@ class GameSession:
         await self._send(_box("PARTY", lines))
 
     async def _do_survival_status(self) -> None:
-        h_pct, t_pct, s_pct = self._party_survival_aggregate()
-        lines = [
-            f"  Stamina : {s_pct * 100:.0f}%",
-            f"  Hunger  : {h_pct * 100:.0f}%",
-            f"  Thirst  : {t_pct * 100:.0f}%",
-        ]
-        await self._send(_box("SURVIVAL STATUS", lines))
+        await do_survival_status(self._send, self.player, self.party)
 
     async def _do_eat(self, args: str) -> None:
-        item_name = args.lower().strip()
-        if not item_name:
-            await self._send("  Eat what? Usage: EAT <item>\n")
-            return
-        members = [self.player] + list(self.party)
-        for carrier in members:
-            for item_id in list(carrier.inventory):
-                item = get_item(item_id)
-                if not item:
-                    continue
-                if item_name in item.name.lower() or item_name == item_id.lower():
-                    if item.effect_type != "food":
-                        await self._send(f"  You can't eat {item.name}.\n")
-                        return
-                    carrier.inventory.remove(item_id)
-                    hunger_gain = item.effect_params.get("hunger", 0)
-                    thirst_gain = item.effect_params.get("thirst", 0)
-                    carrier.hunger = min(carrier.max_hunger, carrier.hunger + hunger_gain)
-                    carrier.thirst = min(carrier.max_thirst, carrier.thirst + thirst_gain)
-                    # Apply buff to all party members
-                    buff = item.effect_params.get("buff")
-                    if buff and self.clock:
-                        duration = item.effect_params.get("buff_duration", 0)
-                        for m in members:
-                            m.apply_food_buff(buff, duration, self.clock)
-                    msg = f"  You eat the {item.name}."
-                    if hunger_gain:
-                        msg += f" (Hunger +{hunger_gain})"
-                    if thirst_gain:
-                        msg += f" (Thirst +{thirst_gain})"
-                    if buff:
-                        msg += f" [{buff} buff applied!]"
-                    await self._send(msg + "\n")
-                    return
-        await self._send(f"  You don't have '{item_name}' in your inventory.\n")
+        await do_eat(self._send, self.player, self.party, self.clock, args)
 
     async def _do_drink(self, args: str) -> None:
-        item_name = args.lower().strip()
-        if not item_name:
-            await self._send("  Drink what? Usage: DRINK <item>\n")
-            return
-        members = [self.player] + list(self.party)
-        for carrier in members:
-            for item_id in list(carrier.inventory):
-                item = get_item(item_id)
-                if not item:
-                    continue
-                if item_name in item.name.lower() or item_name == item_id.lower():
-                    # Accept food-type items (some drinks have hunger 0 / thirst > 0)
-                    if item.effect_type != "food":
-                        await self._send(f"  You can't drink {item.name}.\n")
-                        return
-                    thirst_gain = item.effect_params.get("thirst", 0)
-                    if thirst_gain == 0:
-                        await self._send(f"  {item.name} doesn't restore thirst.\n")
-                        return
-                    carrier.inventory.remove(item_id)
-                    hunger_gain = item.effect_params.get("hunger", 0)
-                    carrier.thirst = min(carrier.max_thirst, carrier.thirst + thirst_gain)
-                    if hunger_gain:
-                        carrier.hunger = min(carrier.max_hunger, carrier.hunger + hunger_gain)
-                    buff = item.effect_params.get("buff")
-                    if buff and self.clock:
-                        duration = item.effect_params.get("buff_duration", 0)
-                        for m in members:
-                            m.apply_food_buff(buff, duration, self.clock)
-                    msg = f"  You drink the {item.name}. (Thirst +{thirst_gain})"
-                    if buff:
-                        msg += f" [{buff} buff applied!]"
-                    await self._send(msg + "\n")
-                    return
-        await self._send(f"  You don't have '{item_name}' in your inventory.\n")
+        await do_drink(self._send, self.player, self.party, self.clock, args)
 
     async def _do_buffs(self) -> None:
-        if not self.clock:
-            await self._send("  No active buffs.\n")
-            return
-        members = [self.player] + list(self.party)
-        lines: list[str] = []
-        for m in members:
-            active = m.get_active_buffs(self.clock)
-            for buff_name in active:
-                remaining = m.active_buffs[buff_name] - self.clock.total_minutes
-                lines.append(f"  {m.name}: {buff_name} ({remaining} min remaining)")
-        if not lines:
-            await self._send("  No active buffs.\n")
-        else:
-            await self._send(_box("ACTIVE BUFFS", lines))
+        await do_buffs(self._send, self.player, self.party, self.clock)
 
     async def _do_talk(self, args: str) -> None:
         name = args.lower().strip()
@@ -2596,171 +1496,16 @@ class GameSession:
         await self._send(f"  Unknown campfire command '{text}'. Type HELP.\n")
 
     async def _do_formation(self, args: str) -> None:
-        """Show or change party battle formation.
-        Usage:
-          FORMATION            — show current grid
-          FORMATION <name> FRONT <col>   — place member in front row, column 1-3
-          FORMATION <name> BACK <col>    — place member in back row, column 1-3
-          FORMATION <name> AUTO          — reset to auto-assign
-        """
-        from server.engine.combat import FRONT_ROW, BACK_ROW, MELEE_CLASSES
-
-        all_members: list[Character | NPC] = [self.player] + self.party
-
-        def _render_formation() -> str:
-            grid: dict[tuple[int, int], str] = {}
-            unplaced: list[str] = []
-            for m in all_members:
-                r, c = m.grid_row, m.grid_col
-                if r in (FRONT_ROW, BACK_ROW) and 0 <= c <= 2:
-                    grid[(r, c)] = m.name[:12]
-                else:
-                    unplaced.append(m.name)
-            rows = ["  Party formation (2 rows x 3 columns):", ""]
-            for row_idx, row_label in ((FRONT_ROW, "FRONT"), (BACK_ROW, "BACK ")):
-                cells = []
-                for col in range(3):
-                    entry = grid.get((row_idx, col), "------")
-                    cells.append(f"{entry:<12}")
-                rows.append(f"  {row_label}  [ {' | '.join(cells)} ]")
-                rows.append(f"           [ col 1       | col 2       | col 3       ]")
-            if unplaced:
-                rows.append(f"\n  Auto-assigned at combat start: {', '.join(unplaced)}")
-            rows += [
-                "",
-                "  Commands:",
-                "    FORMATION <name> FRONT <1-3>  — place in front row",
-                "    FORMATION <name> BACK  <1-3>  — place in back row",
-                "    FORMATION <name> AUTO         — reset to auto-assign",
-                "",
-                "  Note: front row = melee range; back row = ranged/magic only.",
-                "  Back row is shielded while 2+ melee guards hold the front.",
-            ]
-            return "\n".join(rows)
-
-        if not args:
-            await self._send(_render_formation())
-            return
-
-        # Parse: <name> FRONT|BACK|AUTO [col]
-        parts = args.split()
-        if len(parts) < 2:
-            await self._send("  Usage: FORMATION <name> FRONT|BACK <1-3>  or  FORMATION <name> AUTO\n")
-            return
-
-        # Find member — name may be multi-word, so consume until we hit a keyword
-        ROW_KEYWORDS = {"FRONT", "BACK", "AUTO"}
-        row_kw_idx = None
-        for i, p in enumerate(parts):
-            if p.upper() in ROW_KEYWORDS:
-                row_kw_idx = i
-                break
-        if row_kw_idx is None or row_kw_idx == 0:
-            await self._send("  Usage: FORMATION <name> FRONT|BACK <1-3>\n")
-            return
-
-        name_str = " ".join(parts[:row_kw_idx]).lower()
-        row_kw = parts[row_kw_idx].upper()
-
-        target: Character | NPC | None = None
-        if name_str in (self.player.name.lower(), "me", "player"):
-            target = self.player
-        else:
-            for npc in self.party:
-                if name_str in npc.name.lower():
-                    target = npc
-                    break
-
-        if target is None:
-            await self._send(f"  '{name_str}' not found in your party.\n")
-            return
-
-        if row_kw == "AUTO":
-            target.grid_row = -1
-            target.grid_col = -1
-            await self._send(f"  {target.name}'s position reset to auto-assign.\n")
-            await self._send(_render_formation())
-            return
-
-        # Expect a column number after FRONT/BACK
-        if row_kw_idx + 1 >= len(parts):
-            await self._send(f"  Specify a column (1-3): FORMATION {target.name} {row_kw} <1-3>\n")
-            return
-        try:
-            col_1based = int(parts[row_kw_idx + 1])
-        except ValueError:
-            await self._send("  Column must be a number 1-3.\n")
-            return
-        if col_1based not in (1, 2, 3):
-            await self._send("  Column must be 1, 2, or 3.\n")
-            return
-
-        new_row = FRONT_ROW if row_kw == "FRONT" else BACK_ROW
-        new_col = col_1based - 1  # convert to 0-indexed
-
-        # Check if another member already occupies that cell
-        for m in all_members:
-            if m is target:
-                continue
-            if m.grid_row == new_row and m.grid_col == new_col:
-                await self._send(
-                    f"  {m.name} already occupies {row_kw} column {col_1based}. "
-                    f"Move them first or choose another cell.\n"
-                )
-                return
-
-        target.grid_row = new_row
-        target.grid_col = new_col
-        row_label = "FRONT" if new_row == FRONT_ROW else "BACK"
-        await self._send(
-            f"  {target.name} placed in {row_label} row, column {col_1based}.\n"
-        )
-        await self._send(_render_formation())
+        await do_formation(self._send, self.player, self.party, args)
 
     async def _do_manage(self, name: str) -> None:
-        nl = name.lower().strip()
-        target: Character | NPC | None = None
-
-        if nl == self.player.name.lower() or nl == "player" or nl == "me":
-            target = self.player
-        else:
-            for npc in self.party:
-                if nl in npc.name.lower():
-                    target = npc
-                    break
-
-        if target is None:
-            await self._send(
-                f"  '{name}' not found. Try your own name or a companion's name.\n"
-            )
-            return
-
-        self._strategy_target = target
-        self._strategy_context = "campfire"
-        self.state = State.STRATEGY
-
-        # Build unlocked skills summary for the opening banner
-        if target.unlocked_skills:
-            skill_lines = ["  Unlocked skills:"]
-            for sid in target.unlocked_skills:
-                sk = get_skill(sid)
-                if sk:
-                    skill_lines.append(f"    {sid:<20} — {sk.name}  (MP:{sk.mp_cost})")
-        else:
-            skill_lines = ["  No skills unlocked yet."]
-
-        await self._send(
-            _box(
-                f"Strategy Editor: {target.name}  [{target.class_type.capitalize()}]",
-                [
-                    *skill_lines,
-                    "",
-                    list_strategies(target),
-                    "",
-                    "  Commands: SKILLS | STRATEGY LIST | STRATEGY ADD | STRATEGY REMOVE | DONE",
-                ],
-            )
+        target = await do_manage(
+            self._send, self.player, self.party, name, get_skill, list_strategies
         )
+        if target is not None:
+            self._strategy_target = target
+            self._strategy_context = "campfire"
+            self.state = State.STRATEGY
 
     # ═══════════════════════════════════════════════════════════════════
     # SAVE / LOAD
@@ -2792,154 +1537,24 @@ class GameSession:
     # ═══════════════════════════════════════════════════════════════════
 
     async def _do_time(self) -> None:
-        if not self.clock:
-            await self._send("  (No world clock running.)\n")
-            return
-        c = self.clock
-        await self._send(
-            _box("TIME", [
-                f"  It is {c.time_of_day_label()} ({c.time_string()}).",
-                f"  Day {c.game_day + 1} — {c.moon_phase_name.capitalize()}.",
-            ])
-        )
+        await do_time(self._send, self.clock)
 
     async def _do_weather(self) -> None:
-        if not self.clock:
-            await self._send("  (No world clock running.)\n")
-            return
         room = self.world.get_room(self.current_room_id)
-        if room and room.room_type == "underground":
-            await self._send("  Deep underground, the weather of the surface world cannot reach you.\n")
-            return
-        c = self.clock
-        temp_label = c.temperature_label(
-            room.room_type if room else "outdoor",
-            room.base_temp_f if room else 65.0,
-        )
-        await self._send(
-            _box("WEATHER", [
-                f"  Weather  : {c.current_weather.capitalize()}",
-                f"  Temp     : {temp_label}",
-            ])
-        )
+        await do_weather(self._send, self.clock, room)
 
     async def _do_light(self) -> None:
-        if not self.clock:
-            await self._send("  (No world clock running.)\n")
-            return
         room = self.world.get_room(self.current_room_id)
-        rt = room.room_type if room else "outdoor"
-        carried = self._carried_light()
-        eff = self.clock.effective_light(rt, carried)
-        ll = light_label(eff)
-        lines = [f"  Lighting : {ll}"]
-        if self._lit_sources:
-            now = self.clock.total_minutes
-            for item_id, expiry in self._lit_sources.items():
-                item = get_item(item_id)
-                iname = item.name if item else item_id
-                remaining = max(0, expiry - now)
-                if item and item.effect_params.get("fuel_minutes", 0) < 0:
-                    # Lantern — fueled by oil, no numeric expiry shown
-                    lines.append(f"  Source   : {iname} (burning)")
-                elif remaining > 0:
-                    lines.append(f"  Source   : {iname} ({remaining} min remaining)")
-                else:
-                    lines.append(f"  Source   : {iname} (burned out)")
-        else:
-            lines.append("  Source   : none (no lit light sources)")
-        await self._send(_box("LIGHT", lines))
+        await do_light(self._send, self.clock, room, self._lit_sources, self._carried_light)
 
     async def _do_envdetails(self) -> None:
-        """Show all environmental details with numeric values."""
-        if not self.clock:
-            await self._send("  (No world clock running.)\n")
-            return
-        c = self.clock
         room = self.world.get_room(self.current_room_id)
-        rt = room.room_type if room else "outdoor"
-        bt = room.base_temp_f if room else 65.0
-        carried = self._carried_light()
-        eff_light = c.effective_light(rt, carried)
-        temp_f = c.temperature_f(rt, bt)
-        lines = [
-            f"  Time          : {c.time_string()}  (Day {c.game_day + 1})",
-            f"  Period        : {c.time_of_day_label().capitalize()}",
-            f"  Moon          : {c.moon_phase_name.capitalize()}  (night light: {round(c.moon_light * 100)}%)",
-            f"  Weather       : {c.current_weather.capitalize()}",
-            f"  Temperature   : {round(temp_f)}°F  ({c.temperature_label(rt, bt)})",
-            f"  Ambient light : {round(c.ambient_light(rt) * 100)}%",
-            f"  Carried light : {round(carried * 100)}%",
-            f"  Effective     : {round(eff_light * 100)}%  ({light_label(eff_light)})",
-            f"  Room type     : {rt.capitalize()}",
-        ]
-        await self._send(_box("ENVIRONMENT DETAILS", lines))
+        await do_envdetails(self._send, self.clock, room, self._carried_light)
 
     async def _do_light_source(self, args: str, extinguish: bool) -> None:
-        """Light or extinguish a carried light source (torch, lantern)."""
-        if not self.clock:
-            await self._send("  (No world clock running.)\n")
-            return
-        item_name = args.lower().strip()
-        if not item_name:
-            verb = "extinguish" if extinguish else "light"
-            await self._send(f"  Usage: {verb.upper()} <item name>\n")
-            return
-
-        # Collect all party inventory
-        all_inv: list[tuple[str, str]] = []  # (owner_name, item_id)
-        if self.player:
-            for iid in self.player.inventory:
-                all_inv.append((self.player.name, iid))
-        for npc in self.party:
-            for iid in npc.inventory:
-                all_inv.append((npc.name, iid))
-
-        for owner, item_id in all_inv:
-            item = get_item(item_id)
-            if not item or item_name not in item.name.lower():
-                continue
-            if item.effect_type != "light_source":
-                await self._send(f"  {item.name} is not a light source.\n")
-                return
-            if extinguish:
-                if item_id in self._lit_sources:
-                    del self._lit_sources[item_id]
-                    await self._send(f"  You extinguish the {item.name}.\n")
-                else:
-                    await self._send(f"  {item.name} is not lit.\n")
-                return
-            else:
-                # Lighting up
-                if item_id in self._lit_sources:
-                    await self._send(f"  {item.name} is already lit.\n")
-                    return
-                fuel_minutes = item.effect_params.get("fuel_minutes", 0)
-                if fuel_minutes < 0:
-                    # Lantern needs oil — check for oil flask in party inventory
-                    oil_ids = [oid for _, oid in all_inv if oid == "oil_flask"]
-                    if not oil_ids:
-                        await self._send(
-                            f"  The {item.name} is empty. You need an Oil Flask to fill it.\n"
-                        )
-                        return
-                    # Consume one oil flask and grant 90 minutes of light
-                    oil_id = oil_ids[0]
-                    if self.player and oil_id in self.player.inventory:
-                        self.player.inventory.remove(oil_id)
-                    else:
-                        for npc in self.party:
-                            if oil_id in npc.inventory:
-                                npc.inventory.remove(oil_id)
-                                break
-                    fuel_minutes = 90
-                    await self._send(f"  You fill and light the {item.name} with oil.\n")
-                else:
-                    await self._send(f"  You light the {item.name}.\n")
-                expiry = self.clock.total_minutes + fuel_minutes
-                self._lit_sources[item_id] = expiry
-                return
-        await self._send(f"  No light source named '{args}' found in party inventory.\n")
+        await do_light_source(
+            self._send, self.player, self.party, self._lit_sources, self.clock, args, extinguish
+        )
 
     # ═══════════════════════════════════════════════════════════════════
     # UTILITY SKILLS (USE command)
@@ -3051,13 +1666,4 @@ class GameSession:
     # ═══════════════════════════════════════════════════════════════════
 
     async def _send_help(self, topic: str = "") -> None:
-        topic = topic.strip().upper()
-
-        if not topic:
-            await self._send(_help_for_state(self.state))
-        elif topic in _HELP_TOPICS:
-            await self._send(_HELP_TOPICS[topic])
-        else:
-            await self._send(
-                f"  No help found for '{topic}'. Type HELP to see available commands."
-            )
+        await send_help(self._send, topic, self.state)
