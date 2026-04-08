@@ -180,7 +180,7 @@ def test_use_skill_blocked_in_combat_state(make_nav_session):
     s.player.inventory = ["lockpick"]
     s.state = State.COMBAT
     output = run(s, "USE lockpick")
-    assert "navigation" in output.lower() or "cannot" in output.lower() or "outside" in output.lower()
+    assert "cannot" in output.lower() and "utility skills" in output.lower()
 
 
 def test_use_skill_blocked_in_campfire_state(make_nav_session):
@@ -191,7 +191,7 @@ def test_use_skill_blocked_in_campfire_state(make_nav_session):
     s.player.inventory = ["lockpick"]
     s.state = State.CAMPFIRE
     output = run(s, "USE lockpick")
-    assert "navigation" in output.lower() or "cannot" in output.lower() or "outside" in output.lower()
+    assert "navigation" in output.lower()
 
 
 # ── Phase D: USE command — skill validation ───────────────────────────────────
@@ -201,7 +201,7 @@ def test_use_unknown_skill_shows_error(make_nav_session):
     _load_skills_once()
     s = make_nav_session(class_type="thief")
     output = run(s, "USE nonexistent_skill")
-    assert "unknown" in output.lower() or "not found" in output.lower() or "no skill" in output.lower()
+    assert "unknown skill" in output.lower()
 
 
 def test_use_unlearned_skill_shows_error(make_nav_session):
@@ -210,7 +210,7 @@ def test_use_unlearned_skill_shows_error(make_nav_session):
     s = make_nav_session(class_type="thief")
     s.player.unlocked_skills = {}
     output = run(s, "USE lockpick")
-    assert "not unlocked" in output.lower() or "haven't learned" in output.lower() or "unlock" in output.lower()
+    assert "haven't unlocked" in output.lower()
 
 
 def test_use_combat_skill_with_use_command_shows_error(make_nav_session):
@@ -219,7 +219,7 @@ def test_use_combat_skill_with_use_command_shows_error(make_nav_session):
     s = make_nav_session(class_type="thief")
     s.player.unlocked_skills = {"backstab": 1}
     output = run(s, "USE backstab")
-    assert "combat" in output.lower() or "utility" in output.lower() or "strategy" in output.lower()
+    assert "combat skill" in output.lower()
 
 
 # ── Phase D: USE command — MP/stamina cost ────────────────────────────────────
@@ -243,7 +243,7 @@ def test_use_detect_traps_blocked_without_enough_mp(make_nav_session):
     s = make_nav_session(class_type="thief", mp=0)
     s.player.unlocked_skills = {"detect_traps": 1}
     output = run(s, "USE detect_traps")
-    assert "mana" in output.lower() or "mp" in output.lower() or "not enough" in output.lower()
+    assert "not enough mana" in output.lower()
 
 
 def test_use_lockpick_deducts_stamina(make_nav_session):
@@ -267,7 +267,7 @@ def test_use_lockpick_blocked_without_enough_stamina(make_nav_session):
     s.player.unlocked_skills = {"lockpick": 1}
     s.player.inventory = ["lockpick"]
     output = run(s, "USE lockpick")
-    assert "stamina" in output.lower() or "exhausted" in output.lower() or "not enough" in output.lower()
+    assert "not enough stamina" in output.lower()
 
 
 # ── Phase D: USE command — item requirements ─────────────────────────────────
@@ -279,7 +279,7 @@ def test_use_lockpick_blocked_without_lockpick_item(make_nav_session):
     s.player.unlocked_skills = {"lockpick": 1}
     s.player.inventory = []   # no lockpick item
     output = run(s, "USE lockpick")
-    assert "lockpick" in output.lower() or "require" in output.lower() or "need" in output.lower()
+    assert "you need" in output.lower() and "lockpick" in output.lower()
 
 
 def test_use_lockpick_succeeds_when_npc_party_member_has_lockpick(make_nav_session):
@@ -296,7 +296,7 @@ def test_use_lockpick_succeeds_when_npc_party_member_has_lockpick(make_nav_sessi
 
     output = run(s, "USE lockpick")
     # should not show missing-item error
-    assert "lockpick" not in output.lower() or "unlocked" in output.lower() or "success" in output.lower() or "no locked" in output.lower()
+    assert "you need a lockpick" not in output.lower()
 
 
 # ── Phase D: USE command — utility effects ───────────────────────────────────
@@ -337,7 +337,8 @@ def test_skills_utility_shows_only_utility_skills(make_nav_session):
     s.player.unlocked_skills = {"lockpick": 1, "detect_traps": 1, "backstab": 1}
     s.state = State.NAVIGATION
     output = run(s, "SKILLS UTILITY")
-    assert "lockpick" in output.lower() or "detect_traps" in output.lower()
+    assert "lockpick" in output.lower()
+    assert "detect traps" in output.lower()
     assert "backstab" not in output.lower()
 
 
