@@ -11,33 +11,14 @@ def make_char(name="Tester", class_type="warrior"):
 
 # ── Phase A: Default field values ────────────────────────────────────────────
 
-def test_character_has_hunger_default_100():
+def test_character_initializes_with_survival_defaults():
+    """All survival stats should initialize to their max values."""
     c = make_char()
     assert c.hunger == 100.0
-
-
-def test_character_has_thirst_default_100():
-    c = make_char()
-    assert c.thirst == 100.0
-
-
-def test_character_has_stamina_default_100():
-    c = make_char()
-    assert c.stamina == 100.0
-
-
-def test_character_has_max_hunger_100():
-    c = make_char()
     assert c.max_hunger == 100.0
-
-
-def test_character_has_max_thirst_100():
-    c = make_char()
+    assert c.thirst == 100.0
     assert c.max_thirst == 100.0
-
-
-def test_character_has_max_stamina_100():
-    c = make_char()
+    assert c.stamina == 100.0
     assert c.max_stamina == 100.0
 
 
