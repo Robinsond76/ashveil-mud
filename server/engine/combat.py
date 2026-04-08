@@ -174,6 +174,7 @@ class CombatSession:
         self.survival_multiplier: float = survival_multiplier
         self._task: asyncio.Task | None = None
         self.result: CombatResult | None = None  # set after run_and_get_result() completes
+        self._ended = asyncio.Event()  # set atomically when combat reaches terminal state
 
     @staticmethod
     def _assign_positions(combatants: list["Combatant"]) -> list["Combatant"]:
@@ -408,7 +409,7 @@ class CombatSession:
         initial_delay = actor.cooldown * COMBAT_TICK_INTERVAL
         try:
             await asyncio.sleep(initial_delay)
-            while self.state == CombatState.ACTIVE and actor.is_alive:
+            while self.state == CombatState.ACTIVE and not self._ended.is_set() and actor.is_alive:
                 # Tick status effects for this combatant
                 log: list[str] = []
                 stunned = self._tick_status_effects(actor, log)
@@ -438,10 +439,14 @@ class CombatSession:
     def _check_combat_end(self) -> None:
         if self.state != CombatState.ACTIVE:
             return
+        if self._ended.is_set():
+            return  # Already transitioning — prevent double-fire
         if not any(c.is_alive for c in self.enemy_combatants):
             self.state = CombatState.VICTORY
+            self._ended.set()
         elif not any(c.is_alive for c in self.player_combatants):
             self.state = CombatState.DEFEAT
+            self._ended.set()
 
     # ── Action dispatcher ─────────────────────────────────────────────────────
 
