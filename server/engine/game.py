@@ -52,6 +52,11 @@ from server.engine.inventory_ops import (
     do_pick_up, do_give, do_load_cart, do_unload_cart,
     auto_assign_item, auto_assign_item_with_message,
 )
+from server.engine.survival import (
+    party_survival_aggregate, apply_survival_penalties,
+    drain_survival_tick, sitting_stamina_tick,
+    do_survival_status, do_eat, do_drink, do_buffs,
+)
 from server.engine.world import WorldMap
 from server.engine.world_clock import WorldClock, light_label
 
@@ -182,59 +187,16 @@ class GameSession:
     # ── Survival helpers ──────────────────────────────────────────────────────
 
     def _party_survival_aggregate(self) -> tuple[float, float, float]:
-        """Return (hunger_pct, thirst_pct, stamina_pct) averaged across the whole party."""
-        members = [self.player] + list(self.party)
-        total_hunger  = sum(m.hunger  for m in members)
-        total_thirst  = sum(m.thirst  for m in members)
-        total_stamina = sum(m.stamina for m in members)
-        total_max_h   = sum(m.max_hunger  for m in members)
-        total_max_t   = sum(m.max_thirst  for m in members)
-        total_max_s   = sum(m.max_stamina for m in members)
-        return (
-            total_hunger  / total_max_h if total_max_h else 1.0,
-            total_thirst  / total_max_t if total_max_t else 1.0,
-            total_stamina / total_max_s if total_max_s else 1.0,
-        )
+        return party_survival_aggregate(self.player, self.party)
 
     def _apply_survival_penalties(self) -> tuple[float, bool]:
-        """Return (combat_stat_multiplier, movement_blocked) based on party aggregate."""
-        hunger_pct, thirst_pct, stamina_pct = self._party_survival_aggregate()
-        multiplier = 1.0
-        blocked = False
-
-        # Stamina penalties
-        if stamina_pct <= 0.10:
-            blocked = True
-        elif stamina_pct <= 0.30:
-            multiplier *= 0.85
-
-        # Hunger + thirst combined (average of the two)
-        ht_avg = (hunger_pct + thirst_pct) / 2.0
-        if ht_avg < 0.20:
-            multiplier *= 0.75
-        elif ht_avg < 0.40:
-            multiplier *= 0.90
-
-        return multiplier, blocked
+        return apply_survival_penalties(self.player, self.party)
 
     def _drain_survival_tick(self, temp_label: str) -> None:
-        """Decrement hunger and thirst for every party member by one game-minute's drain."""
-        members = [self.player] + list(self.party)
-        for m in members:
-            hunger_drain = m.hunger_drain_rate(self.clock)
-            thirst_drain = m.thirst_drain_rate(temp_label, self.clock)
-            m.hunger = max(0.0, m.hunger - hunger_drain)
-            m.thirst = max(0.0, m.thirst - thirst_drain)
+        drain_survival_tick(self.player, self.party, self.clock, temp_label)
 
     def _sitting_stamina_tick(self) -> None:
-        """Restore stamina per game-minute while sitting (out of combat).
-        Base: +1/min. With energised buff: +1.5/min."""
-        if not self._sitting:
-            return
-        members = [self.player] + list(self.party)
-        for m in members:
-            recovery = 1.5 if (self.clock and "energised" in m.get_active_buffs(self.clock)) else 1.0
-            m.stamina = min(m.max_stamina, m.stamina + recovery)
+        sitting_stamina_tick(self.player, self.party, self.clock, self._sitting)
 
     def _carried_light(self) -> float:
         """
@@ -1227,103 +1189,16 @@ class GameSession:
         await self._send(_box("PARTY", lines))
 
     async def _do_survival_status(self) -> None:
-        h_pct, t_pct, s_pct = self._party_survival_aggregate()
-        lines = [
-            f"  Stamina : {s_pct * 100:.0f}%",
-            f"  Hunger  : {h_pct * 100:.0f}%",
-            f"  Thirst  : {t_pct * 100:.0f}%",
-        ]
-        await self._send(_box("SURVIVAL STATUS", lines))
+        await do_survival_status(self._send, self.player, self.party)
 
     async def _do_eat(self, args: str) -> None:
-        item_name = args.lower().strip()
-        if not item_name:
-            await self._send("  Eat what? Usage: EAT <item>\n")
-            return
-        members = [self.player] + list(self.party)
-        for carrier in members:
-            for item_id in list(carrier.inventory):
-                item = get_item(item_id)
-                if not item:
-                    continue
-                if item_name in item.name.lower() or item_name == item_id.lower():
-                    if item.effect_type != "food":
-                        await self._send(f"  You can't eat {item.name}.\n")
-                        return
-                    carrier.inventory.remove(item_id)
-                    hunger_gain = item.effect_params.get("hunger", 0)
-                    thirst_gain = item.effect_params.get("thirst", 0)
-                    carrier.hunger = min(carrier.max_hunger, carrier.hunger + hunger_gain)
-                    carrier.thirst = min(carrier.max_thirst, carrier.thirst + thirst_gain)
-                    # Apply buff to all party members
-                    buff = item.effect_params.get("buff")
-                    if buff and self.clock:
-                        duration = item.effect_params.get("buff_duration", 0)
-                        for m in members:
-                            m.apply_food_buff(buff, duration, self.clock)
-                    msg = f"  You eat the {item.name}."
-                    if hunger_gain:
-                        msg += f" (Hunger +{hunger_gain})"
-                    if thirst_gain:
-                        msg += f" (Thirst +{thirst_gain})"
-                    if buff:
-                        msg += f" [{buff} buff applied!]"
-                    await self._send(msg + "\n")
-                    return
-        await self._send(f"  You don't have '{item_name}' in your inventory.\n")
+        await do_eat(self._send, self.player, self.party, self.clock, args)
 
     async def _do_drink(self, args: str) -> None:
-        item_name = args.lower().strip()
-        if not item_name:
-            await self._send("  Drink what? Usage: DRINK <item>\n")
-            return
-        members = [self.player] + list(self.party)
-        for carrier in members:
-            for item_id in list(carrier.inventory):
-                item = get_item(item_id)
-                if not item:
-                    continue
-                if item_name in item.name.lower() or item_name == item_id.lower():
-                    # Accept food-type items (some drinks have hunger 0 / thirst > 0)
-                    if item.effect_type != "food":
-                        await self._send(f"  You can't drink {item.name}.\n")
-                        return
-                    thirst_gain = item.effect_params.get("thirst", 0)
-                    if thirst_gain == 0:
-                        await self._send(f"  {item.name} doesn't restore thirst.\n")
-                        return
-                    carrier.inventory.remove(item_id)
-                    hunger_gain = item.effect_params.get("hunger", 0)
-                    carrier.thirst = min(carrier.max_thirst, carrier.thirst + thirst_gain)
-                    if hunger_gain:
-                        carrier.hunger = min(carrier.max_hunger, carrier.hunger + hunger_gain)
-                    buff = item.effect_params.get("buff")
-                    if buff and self.clock:
-                        duration = item.effect_params.get("buff_duration", 0)
-                        for m in members:
-                            m.apply_food_buff(buff, duration, self.clock)
-                    msg = f"  You drink the {item.name}. (Thirst +{thirst_gain})"
-                    if buff:
-                        msg += f" [{buff} buff applied!]"
-                    await self._send(msg + "\n")
-                    return
-        await self._send(f"  You don't have '{item_name}' in your inventory.\n")
+        await do_drink(self._send, self.player, self.party, self.clock, args)
 
     async def _do_buffs(self) -> None:
-        if not self.clock:
-            await self._send("  No active buffs.\n")
-            return
-        members = [self.player] + list(self.party)
-        lines: list[str] = []
-        for m in members:
-            active = m.get_active_buffs(self.clock)
-            for buff_name in active:
-                remaining = m.active_buffs[buff_name] - self.clock.total_minutes
-                lines.append(f"  {m.name}: {buff_name} ({remaining} min remaining)")
-        if not lines:
-            await self._send("  No active buffs.\n")
-        else:
-            await self._send(_box("ACTIVE BUFFS", lines))
+        await do_buffs(self._send, self.player, self.party, self.clock)
 
     async def _do_talk(self, args: str) -> None:
         name = args.lower().strip()
