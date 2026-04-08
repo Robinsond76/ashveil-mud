@@ -34,6 +34,7 @@ from server.engine.items import equipped_weapon
 from server.engine.npc import NPC
 from server.engine.skills import get_skill
 from server.engine.strategy import evaluate_strategy
+from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem, CombatResult
 from server.engine.world_clock import lighting_combat_penalties
 
 
@@ -156,7 +157,6 @@ class CombatSession:
         player_party: list[Character | NPC],   # player + companions
         enemy_party: list[NPC],
         send: Callable[[str], Awaitable[None]],
-        on_end: Callable[[CombatState, list[str]], Awaitable[None]],
         lighting: float = 1.0,   # effective light level [0.0, 1.0] at combat start
         survival_multiplier: float = 1.0,  # from GameSession._apply_survival_penalties()
     ) -> None:
@@ -169,11 +169,12 @@ class CombatSession:
         self.state = CombatState.ACTIVE
         self.tick_counter = 0
         self._send = send
-        self._on_end = on_end
         self._lighting = lighting
         self._hit_penalty, self._dodge_penalty = lighting_combat_penalties(lighting)
         self.survival_multiplier: float = survival_multiplier
         self._task: asyncio.Task | None = None
+        self.result: CombatResult | None = None  # set after run_and_get_result() completes
+        self._ended = asyncio.Event()  # set atomically when combat reaches terminal state
 
     @staticmethod
     def _assign_positions(combatants: list["Combatant"]) -> list["Combatant"]:
@@ -183,6 +184,11 @@ class CombatSession:
         Conflicts (two chars want the same cell) are resolved by bumping the
         auto-assigned one to the next free cell.
         """
+        MAX_GRID_SLOTS = 6  # 2 rows × 3 columns
+        if len(combatants) > MAX_GRID_SLOTS:
+            raise ValueError(
+                f"Party of {len(combatants)} exceeds grid capacity ({MAX_GRID_SLOTS} slots)."
+            )
         occupied: set[tuple[int, int]] = set()
         auto_queue: list[Combatant] = []
 
@@ -360,6 +366,11 @@ class CombatSession:
     def start(self) -> None:
         self._task = asyncio.get_event_loop().create_task(self._run())
 
+    async def run_and_get_result(self) -> CombatResult:
+        """Run combat to completion and return CombatResult."""
+        await self._run()
+        return self.result  # type: ignore[return-value]  # always set by _run()
+
     async def stop(self) -> None:
         if self._task and not self._task.done():
             self._task.cancel()
@@ -389,7 +400,10 @@ class CombatSession:
         await asyncio.gather(*combatant_tasks, return_exceptions=True)
         if self.state != CombatState.ACTIVE:
             summary = self._build_end_summary()
-            await self._on_end(self.state, summary)
+            self.result = CombatResult(
+                state=self.state.value,
+                summary=summary,
+            )
 
     async def _combatant_loop(self, actor: Combatant) -> None:
         """Independent action loop for one combatant.
@@ -400,7 +414,7 @@ class CombatSession:
         initial_delay = actor.cooldown * COMBAT_TICK_INTERVAL
         try:
             await asyncio.sleep(initial_delay)
-            while self.state == CombatState.ACTIVE and actor.is_alive:
+            while self.state == CombatState.ACTIVE and not self._ended.is_set() and actor.is_alive:
                 # Tick status effects for this combatant
                 log: list[str] = []
                 stunned = self._tick_status_effects(actor, log)
@@ -430,10 +444,14 @@ class CombatSession:
     def _check_combat_end(self) -> None:
         if self.state != CombatState.ACTIVE:
             return
+        if self._ended.is_set():
+            return  # Already transitioning — prevent double-fire
         if not any(c.is_alive for c in self.enemy_combatants):
             self.state = CombatState.VICTORY
+            self._ended.set()
         elif not any(c.is_alive for c in self.player_combatants):
             self.state = CombatState.DEFEAT
+            self._ended.set()
 
     # ── Action dispatcher ─────────────────────────────────────────────────────
 
@@ -455,11 +473,10 @@ class CombatSession:
             log.append(f"  {actor.name} looks for an opening but the enemy line holds.")
             return
 
-        action_str, target_char = evaluate_strategy(actor.character, allies, enemies)
-        action_upper = action_str.strip().upper()
+        action, target_char = evaluate_strategy(actor.character, allies, enemies)
 
         # --- DEFEND ---
-        if action_upper == "DEFEND":
+        if isinstance(action, Defend):
             if not hasattr(actor.character, "status_effects"):
                 actor.character.status_effects = {}  # type: ignore[attr-defined]
             actor.character.status_effects["defending"] = 1  # type: ignore[attr-defined]
@@ -473,7 +490,7 @@ class CombatSession:
             return
 
         # --- FLEE ---
-        if action_upper == "FLEE":
+        if isinstance(action, Flee):
             # Fleeing costs 5 stamina (player-side characters only)
             if actor.is_player_side and hasattr(actor.character, "stamina"):
                 actor.character.stamina = max(0.0, actor.character.stamina - 5.0)
@@ -495,18 +512,16 @@ class CombatSession:
             return
 
         # --- USE_SKILL ---
-        if action_upper.startswith("USE_SKILL"):
-            skill_id = action_upper[len("USE_SKILL"):].strip().lower()
-            self._resolve_skill(actor, skill_id, target_char, allies, enemies, log)
+        if isinstance(action, UseSkill):
+            self._resolve_skill(actor, action.skill_id, target_char, allies, enemies, log)
             return
 
         # --- USE_ITEM ---
-        if action_upper.startswith("USE_ITEM"):
-            item_id = action_upper[len("USE_ITEM"):].strip().lower()
-            self._resolve_item(actor, item_id, target_char, log)
+        if isinstance(action, UseItem):
+            self._resolve_item(actor, action.item_id, target_char, log)
             return
 
-        # --- ATTACK (default) ---
+        # --- ATTACK (default — Attack instance or anything unrecognised) ---
         self._resolve_attack(actor.character, target_char, log,
                              is_player_side=actor.is_player_side)
 

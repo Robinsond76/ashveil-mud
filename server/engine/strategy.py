@@ -37,6 +37,8 @@ import random
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem
+
 if TYPE_CHECKING:
     from server.engine.character import Character
 
@@ -187,11 +189,11 @@ def evaluate_strategy(
     actor: "Character",
     allies: list["Character"],
     enemies: list["Character"],
-) -> tuple[str, "Character | None"]:
+) -> tuple[object, "Character | None"]:
     """
     Walk the actor's strategy rules in priority order.
-    Returns (action_str, resolved_target) for the first matching rule.
-    Falls back to ("ATTACK", nearest enemy) if nothing matches.
+    Returns (Action, resolved_target) for the first matching rule.
+    Falls back to (Attack(), nearest enemy) if nothing matches.
     """
     rules = sorted(
         [StrategyRule.from_dict(r) for r in actor.strategies],
@@ -201,11 +203,26 @@ def evaluate_strategy(
     for rule in rules:
         if evaluate_condition(rule.condition, actor, allies, enemies):
             target = resolve_target(rule.target, actor, allies, enemies)
-            return rule.action, target
+            action_upper = rule.action.strip().upper()
+            if action_upper == "ATTACK":
+                return Attack(target=target), target
+            if action_upper == "DEFEND":
+                return Defend(), None
+            if action_upper == "FLEE":
+                return Flee(), None
+            if action_upper.startswith("USE_SKILL"):
+                skill_id = action_upper[len("USE_SKILL"):].strip().lower()
+                return UseSkill(skill_id=skill_id, target=target), target
+            if action_upper.startswith("USE_ITEM"):
+                item_id = action_upper[len("USE_ITEM"):].strip().lower()
+                return UseItem(item_id=item_id, target=target), target
+            # Unknown action — fall through to default
+            break
 
     # Fallback
     alive_enemies = _alive(enemies)
-    return "ATTACK", alive_enemies[0] if alive_enemies else None
+    default_target = alive_enemies[0] if alive_enemies else None
+    return Attack(target=default_target), default_target
 
 
 # ── Strategy editor helpers ───────────────────────────────────────────────────

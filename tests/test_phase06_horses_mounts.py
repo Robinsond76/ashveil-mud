@@ -384,7 +384,9 @@ class TestPhaseD_CombatDismount:
         from unittest.mock import patch
         with patch("server.engine.game.CombatSession") as MockCombat:
             mock_cs = MagicMock()
-            mock_cs.start = MagicMock()
+            from server.engine.actions import CombatResult as _CR
+            mock_cs.run_and_get_result = AsyncMock(return_value=_CR(state='defeat', summary=[]))
+            mock_cs.collect_rewards = MagicMock()
             MockCombat.return_value = mock_cs
 
             encounter_group = MagicMock()
@@ -418,7 +420,9 @@ class TestPhaseD_CombatDismount:
         from unittest.mock import patch
         with patch("server.engine.game.CombatSession") as MockCombat:
             mock_cs = MagicMock()
-            mock_cs.start = MagicMock()
+            from server.engine.actions import CombatResult as _CR
+            mock_cs.run_and_get_result = AsyncMock(return_value=_CR(state='defeat', summary=[]))
+            mock_cs.collect_rewards = MagicMock()
             MockCombat.return_value = mock_cs
 
             encounter_group = MagicMock()
@@ -452,7 +456,9 @@ class TestPhaseD_CombatDismount:
         from unittest.mock import patch
         with patch("server.engine.game.CombatSession") as MockCombat:
             mock_cs = MagicMock()
-            mock_cs.start = MagicMock()
+            from server.engine.actions import CombatResult as _CR
+            mock_cs.run_and_get_result = AsyncMock(return_value=_CR(state='defeat', summary=[]))
+            mock_cs.collect_rewards = MagicMock()
             MockCombat.return_value = mock_cs
 
             encounter_group = MagicMock()
@@ -485,7 +491,9 @@ class TestPhaseD_CombatDismount:
         from unittest.mock import patch
         with patch("server.engine.game.CombatSession") as MockCombat:
             mock_cs = MagicMock()
-            mock_cs.start = MagicMock()
+            from server.engine.actions import CombatResult as _CR
+            mock_cs.run_and_get_result = AsyncMock(return_value=_CR(state='defeat', summary=[]))
+            mock_cs.collect_rewards = MagicMock()
             MockCombat.return_value = mock_cs
 
             encounter_group = MagicMock()

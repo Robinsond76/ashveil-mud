@@ -54,14 +54,12 @@ def make_monster(name="Goblin", hp=50):
 
 def test_combat_session_accepts_survival_multiplier():
     send = AsyncMock()
-    on_end = AsyncMock()
     player = make_warrior()
     enemy = make_monster()
     session = CombatSession(
         player_party=[player],
         enemy_party=[enemy],
         send=send,
-        on_end=on_end,
         survival_multiplier=0.75,
     )
     assert session.survival_multiplier == 0.75
@@ -69,14 +67,12 @@ def test_combat_session_accepts_survival_multiplier():
 
 def test_combat_session_default_survival_multiplier_is_1():
     send = AsyncMock()
-    on_end = AsyncMock()
     player = make_warrior()
     enemy = make_monster()
     session = CombatSession(
         player_party=[player],
         enemy_party=[enemy],
         send=send,
-        on_end=on_end,
     )
     assert session.survival_multiplier == 1.0
 
@@ -87,7 +83,6 @@ def test_player_damage_is_scaled_by_survival_multiplier():
     random.seed(42)
 
     send = AsyncMock()
-    on_end = AsyncMock()
     attacker = make_warrior("Hero", hp=200)
     target = make_monster("Goblin", hp=10000)  # huge HP so it can't die
 
@@ -95,7 +90,6 @@ def test_player_damage_is_scaled_by_survival_multiplier():
         player_party=[attacker],
         enemy_party=[target],
         send=send,
-        on_end=on_end,
         survival_multiplier=0.0,
     )
     log: list[str] = []
@@ -115,7 +109,6 @@ def test_enemy_damage_not_scaled_by_survival_multiplier():
     random.seed(42)
 
     send = AsyncMock()
-    on_end = AsyncMock()
     player = make_warrior("Hero", hp=10000)
     enemy = make_monster("Goblin", hp=200)
 
@@ -123,7 +116,6 @@ def test_enemy_damage_not_scaled_by_survival_multiplier():
         player_party=[player],
         enemy_party=[enemy],
         send=send,
-        on_end=on_end,
         survival_multiplier=0.0,
     )
     log: list[str] = []
@@ -150,7 +142,6 @@ def test_flee_action_drains_5_stamina_from_player_characters():
         player_party=[warrior],
         enemy_party=[enemy],
         send=send_fn,
-        on_end=AsyncMock(),
         survival_multiplier=1.0,
     )
     log: list[str] = []

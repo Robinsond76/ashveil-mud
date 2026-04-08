@@ -31,7 +31,7 @@ from server.config import (
     STAT_POINT_BUY_BUDGET,
 )
 from server.engine.character import Character, MODIFIER_CATALOGUE, XP_TABLE
-from server.engine.combat import CombatSession, CombatState
+from server.engine.combat import CombatSession
 from server.engine.items import (
     get_item,
     equipped_weapon, total_equipped_weight,
@@ -1326,28 +1326,22 @@ class GameSession:
             self._mounted = False
             await self._send("  The party dismounts as combat begins.\n")
 
-        async def on_combat_end(state: CombatState, summary: list[str]) -> None:
-            await self._send("\n".join(summary))
-            if state == CombatState.VICTORY:
-                self._current_encounter_group.mark_defeated()
-                self._combat.collect_rewards(player_party, self.class_defs)
-                # Stream level-up messages
-                for char in player_party:
-                    xp_msg = char.gain_xp(0, 0, 0)  # already awarded in collect_rewards
-                await self._end_combat_victory()
-            else:
-                await self._end_combat_defeat()
-            self._combat = None
-
         self._combat = CombatSession(
             player_party=player_party,
             enemy_party=enemy_npcs,
             send=self._send,
-            on_end=on_combat_end,
             lighting=self._effective_light(),
             survival_multiplier=self._apply_survival_penalties()[0],
         )
-        self._combat.start()
+        result = await self._combat.run_and_get_result()
+        await self._send("\n".join(result.summary))
+        if result.state == "victory":
+            self._current_encounter_group.mark_defeated()
+            self._combat.collect_rewards(player_party, self.class_defs)
+            await self._end_combat_victory()
+        else:
+            await self._end_combat_defeat()
+        self._combat = None
 
     async def _end_combat_victory(self) -> None:
         self.state = State.NAVIGATION
