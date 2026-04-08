@@ -28,6 +28,8 @@ from server.config import (
     MAX_STAT,
     MIN_STAT,
     MODIFIER_BONUS_PER_LEVEL,
+    MOUNT_STAMINA_REDUCTION,
+    STAMINA_DRAIN_PER_MOVE,
     STAT_POINT_BUY_BUDGET,
 )
 from server.engine.character import Character, MODIFIER_CATALOGUE, XP_TABLE
@@ -237,7 +239,7 @@ class GameSession:
         horse_count = self._horse_count()
         party_size = max(1, 1 + len(self.party))  # player + npcs
         ratio = min(1.0, horse_count / party_size)
-        return 1.0 - (0.60 * ratio)
+        return 1.0 - (MOUNT_STAMINA_REDUCTION * ratio)
 
     # ═══════════════════════════════════════════════════════════════════
     # Entry point
@@ -844,7 +846,7 @@ class GameSession:
             members = [self.player] + list(self.party)
             mount_mult = self._stamina_multiplier()
             for m in members:
-                drain = 2.0 * mount_mult
+                drain = STAMINA_DRAIN_PER_MOVE * mount_mult
                 if self.clock and "fortified" in m.get_active_buffs(self.clock):
                     drain *= 0.7
                 m.stamina = max(0.0, m.stamina - drain)

@@ -23,11 +23,17 @@ from typing import Awaitable, Callable
 
 from server.config import (
     BASE_COOLDOWN_TICKS,
+    COMBAT_INITIAL_DELAY,
+    COMBAT_MIN_SLEEP,
     COMBAT_TICK_INTERVAL,
+    CRITICAL_DAMAGE_MULTIPLIER,
+    CRITICAL_HIT_CHANCE,
     DEBUG_NO_DEATH_PENALTY,
     DEBUG_RESPAWN_ROOM_ID,
     DEATH_GOLD_LOSS_PCT,
     DEATH_XP_LOSS_PCT,
+    FLEE_SUCCESS_RATE,
+    STAMINA_DRAIN_FLEE,
 )
 from server.engine.character import Character
 from server.engine.items import equipped_weapon
@@ -391,7 +397,7 @@ class CombatSession:
         try:
             # Poll until combat ends; each combatant loop calls _check_combat_end()
             while self.state == CombatState.ACTIVE:
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(COMBAT_INITIAL_DELAY)
         except asyncio.CancelledError:
             pass
         # Cancel all running combatant tasks
@@ -437,7 +443,7 @@ class CombatSession:
                 interval = actor.character.action_interval * COMBAT_TICK_INTERVAL
                 bonus = actor._next_action_bonus
                 actor._next_action_bonus = 0.0
-                await asyncio.sleep(max(0.3, interval - bonus))
+                await asyncio.sleep(max(COMBAT_MIN_SLEEP, interval - bonus))
         except asyncio.CancelledError:
             pass
 
@@ -491,10 +497,10 @@ class CombatSession:
 
         # --- FLEE ---
         if isinstance(action, Flee):
-            # Fleeing costs 5 stamina (player-side characters only)
+            # Fleeing costs stamina (player-side characters only)
             if actor.is_player_side and hasattr(actor.character, "stamina"):
-                actor.character.stamina = max(0.0, actor.character.stamina - 5.0)
-            if random.random() < 0.4:
+                actor.character.stamina = max(0.0, actor.character.stamina - STAMINA_DRAIN_FLEE)
+            if random.random() < FLEE_SUCCESS_RATE:
                 log.append(
                     random.choice([
                         f"  {actor.name} breaks from the line and flees into the darkness!",
@@ -568,14 +574,14 @@ class CombatSession:
         survival_mult = self.survival_multiplier if is_player_side else 1.0
         dmg = attacker.roll_damage(multiplier=survival_mult)
 
-        # Critical hit (10% chance, 150% damage)
-        crit = random.random() < 0.10
+        # Critical hit
+        crit = random.random() < CRITICAL_HIT_CHANCE
         if crit:
-            dmg = round(dmg * 1.5)
+            dmg = round(dmg * CRITICAL_DAMAGE_MULTIPLIER)
 
         # Berserker rage bonus
         if "berserker" in getattr(attacker, "status_effects", {}):
-            dmg = round(dmg * 1.5)
+            dmg = round(dmg * CRITICAL_DAMAGE_MULTIPLIER)
 
         actual = target.take_damage(dmg)
         verb = _attack_verb(wtype)

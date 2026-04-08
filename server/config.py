@@ -38,3 +38,38 @@ GAME_START_HOUR: int = 8             # world starts at 8:00 AM on day 1
 WEATHER_MIN_DURATION: int = 90       # game minutes before weather can change again
 WEATHER_MAX_DURATION: int = 240      # game minutes maximum between changes
 WEATHER_WARN_MINUTES: int = 60       # game minutes advance warning before change
+
+# ── Combat tuning (extracted from combat.py) ─────────────────────────────────
+FLEE_SUCCESS_RATE: float = 0.40          # chance a flee attempt succeeds
+CRITICAL_DAMAGE_MULTIPLIER: float = 1.5  # crit hit damage multiplier
+CRITICAL_HIT_CHANCE: float = 0.10        # base crit probability per attack
+COMBAT_INITIAL_DELAY: float = 0.1        # seconds before first poll tick in _run()
+COMBAT_MIN_SLEEP: float = 0.3            # minimum seconds between combatant actions
+STAMINA_DRAIN_FLEE: float = 5.0          # stamina cost to attempt a flee
+
+# ── Movement & survival (extracted from game.py) ──────────────────────────────
+STAMINA_DRAIN_PER_MOVE: float = 2.0      # stamina drained per room move
+SIT_STAMINA_RECOVERY_RATE: float = 1.0   # stamina recovered per tick while sitting
+MOUNT_STAMINA_REDUCTION: float = 0.60    # fraction of stamina saving granted by horses
+
+# ── XP progression (extracted from character.py) ─────────────────────────────
+# XP_TABLE[level] = total XP needed to reach that level (level 1 = 0)
+XP_TABLE: list[int] = [
+    0,      # level 1
+    300,    # level 2
+    900,    # level 3
+    2100,   # level 4
+    4500,   # level 5
+    9000,   # level 6
+    16000,  # level 7
+    27000,  # level 8
+    42000,  # level 9
+    66000,  # level 10
+]
+
+# ── Save versioning ───────────────────────────────────────────────────────────
+SAVE_SCHEMA_VERSION: int = 1
+
+# ── Grid limits ───────────────────────────────────────────────────────────────
+MAX_PARTY_SIZE: int = 5     # 1 player + 4 companions
+MAX_GRID_SLOTS: int = 6     # 2 rows × 3 columns

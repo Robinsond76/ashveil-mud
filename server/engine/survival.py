@@ -1,6 +1,7 @@
 """Survival system — extracted from GameSession."""
 from __future__ import annotations
 
+from server.config import SIT_STAMINA_RECOVERY_RATE
 
 def _box(title: str, lines: list[str]) -> str:
     width = 60
@@ -62,7 +63,7 @@ def sitting_stamina_tick(player, party, clock, is_sitting: bool) -> None:
         return
     members = [player] + list(party)
     for m in members:
-        recovery = 1.5 if (clock and "energised" in m.get_active_buffs(clock)) else 1.0
+        recovery = 1.5 if (clock and "energised" in m.get_active_buffs(clock)) else SIT_STAMINA_RECOVERY_RATE
         m.stamina = min(m.max_stamina, m.stamina + recovery)
 
 

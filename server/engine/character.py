@@ -19,6 +19,7 @@ from server.config import (
     MODIFIER_BONUS_PER_LEVEL,
     WEIGHT_DIVISOR,
     BASE_COOLDOWN_TICKS,
+    XP_TABLE,
 )
 from server.engine.items import (
     EQUIPMENT_SLOTS,
@@ -30,20 +31,8 @@ from server.engine.items import (
 )
 
 
-# ── XP thresholds ─────────────────────────────────────────────────────────── 
-# XP_TABLE[level] = total XP needed to reach that level (level 1 = 0)
-XP_TABLE: list[int] = [
-    0,      # level 1
-    300,    # level 2
-    900,    # level 3
-    2100,   # level 4
-    4500,   # level 5
-    9000,   # level 6
-    16000,  # level 7
-    27000,  # level 8
-    42000,  # level 9
-    66000,  # level 10
-]
+# ── XP thresholds — imported from config.py ──────────────────────────────────
+# See server/config.py: XP_TABLE[level] = total XP needed to reach that level
 
 
 # ── Modifier catalogue ───────────────────────────────────────────────────────
