@@ -34,6 +34,7 @@ from server.engine.items import equipped_weapon
 from server.engine.npc import NPC
 from server.engine.skills import get_skill
 from server.engine.strategy import evaluate_strategy
+from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem
 from server.engine.world_clock import lighting_combat_penalties
 
 
@@ -455,11 +456,10 @@ class CombatSession:
             log.append(f"  {actor.name} looks for an opening but the enemy line holds.")
             return
 
-        action_str, target_char = evaluate_strategy(actor.character, allies, enemies)
-        action_upper = action_str.strip().upper()
+        action, target_char = evaluate_strategy(actor.character, allies, enemies)
 
         # --- DEFEND ---
-        if action_upper == "DEFEND":
+        if isinstance(action, Defend):
             if not hasattr(actor.character, "status_effects"):
                 actor.character.status_effects = {}  # type: ignore[attr-defined]
             actor.character.status_effects["defending"] = 1  # type: ignore[attr-defined]
@@ -473,7 +473,7 @@ class CombatSession:
             return
 
         # --- FLEE ---
-        if action_upper == "FLEE":
+        if isinstance(action, Flee):
             # Fleeing costs 5 stamina (player-side characters only)
             if actor.is_player_side and hasattr(actor.character, "stamina"):
                 actor.character.stamina = max(0.0, actor.character.stamina - 5.0)
@@ -495,18 +495,16 @@ class CombatSession:
             return
 
         # --- USE_SKILL ---
-        if action_upper.startswith("USE_SKILL"):
-            skill_id = action_upper[len("USE_SKILL"):].strip().lower()
-            self._resolve_skill(actor, skill_id, target_char, allies, enemies, log)
+        if isinstance(action, UseSkill):
+            self._resolve_skill(actor, action.skill_id, target_char, allies, enemies, log)
             return
 
         # --- USE_ITEM ---
-        if action_upper.startswith("USE_ITEM"):
-            item_id = action_upper[len("USE_ITEM"):].strip().lower()
-            self._resolve_item(actor, item_id, target_char, log)
+        if isinstance(action, UseItem):
+            self._resolve_item(actor, action.item_id, target_char, log)
             return
 
-        # --- ATTACK (default) ---
+        # --- ATTACK (default — Attack instance or anything unrecognised) ---
         self._resolve_attack(actor.character, target_char, log,
                              is_player_side=actor.is_player_side)
 
