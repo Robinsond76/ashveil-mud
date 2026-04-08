@@ -15,7 +15,6 @@ Input arrives via `handle_input(raw_text)`.
 from __future__ import annotations
 
 import json
-import math
 import os
 import random
 from enum import Enum
@@ -30,12 +29,11 @@ from server.config import (
     MIN_STAT,
     MODIFIER_BONUS_PER_LEVEL,
     STAT_POINT_BUY_BUDGET,
-    WEIGHT_DIVISOR,
 )
 from server.engine.character import Character, MODIFIER_CATALOGUE, XP_TABLE
 from server.engine.combat import CombatSession, CombatState
 from server.engine.items import (
-    EQUIPMENT_SLOTS, all_items, get_item,
+    get_item,
     equipped_weapon, total_equipped_weight,
 )
 from server.engine.npc import NPC, spawn_npc
@@ -65,7 +63,7 @@ from server.engine.survival import (
     do_survival_status, do_eat, do_drink, do_buffs,
 )
 from server.engine.world import WorldMap
-from server.engine.world_clock import WorldClock, light_label
+from server.engine.world_clock import WorldClock
 
 
 class State(Enum):
