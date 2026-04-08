@@ -52,6 +52,7 @@ from server.engine.inventory_ops import (
     do_pick_up, do_give, do_load_cart, do_unload_cart,
     auto_assign_item, auto_assign_item_with_message,
 )
+from server.engine.campfire import do_formation, do_manage
 from server.engine.chat import do_say, do_emote, do_shout
 from server.engine.survival import (
     party_survival_aggregate, apply_survival_penalties,
@@ -1528,171 +1529,16 @@ class GameSession:
         await self._send(f"  Unknown campfire command '{text}'. Type HELP.\n")
 
     async def _do_formation(self, args: str) -> None:
-        """Show or change party battle formation.
-        Usage:
-          FORMATION            — show current grid
-          FORMATION <name> FRONT <col>   — place member in front row, column 1-3
-          FORMATION <name> BACK <col>    — place member in back row, column 1-3
-          FORMATION <name> AUTO          — reset to auto-assign
-        """
-        from server.engine.combat import FRONT_ROW, BACK_ROW, MELEE_CLASSES
-
-        all_members: list[Character | NPC] = [self.player] + self.party
-
-        def _render_formation() -> str:
-            grid: dict[tuple[int, int], str] = {}
-            unplaced: list[str] = []
-            for m in all_members:
-                r, c = m.grid_row, m.grid_col
-                if r in (FRONT_ROW, BACK_ROW) and 0 <= c <= 2:
-                    grid[(r, c)] = m.name[:12]
-                else:
-                    unplaced.append(m.name)
-            rows = ["  Party formation (2 rows x 3 columns):", ""]
-            for row_idx, row_label in ((FRONT_ROW, "FRONT"), (BACK_ROW, "BACK ")):
-                cells = []
-                for col in range(3):
-                    entry = grid.get((row_idx, col), "------")
-                    cells.append(f"{entry:<12}")
-                rows.append(f"  {row_label}  [ {' | '.join(cells)} ]")
-                rows.append(f"           [ col 1       | col 2       | col 3       ]")
-            if unplaced:
-                rows.append(f"\n  Auto-assigned at combat start: {', '.join(unplaced)}")
-            rows += [
-                "",
-                "  Commands:",
-                "    FORMATION <name> FRONT <1-3>  — place in front row",
-                "    FORMATION <name> BACK  <1-3>  — place in back row",
-                "    FORMATION <name> AUTO         — reset to auto-assign",
-                "",
-                "  Note: front row = melee range; back row = ranged/magic only.",
-                "  Back row is shielded while 2+ melee guards hold the front.",
-            ]
-            return "\n".join(rows)
-
-        if not args:
-            await self._send(_render_formation())
-            return
-
-        # Parse: <name> FRONT|BACK|AUTO [col]
-        parts = args.split()
-        if len(parts) < 2:
-            await self._send("  Usage: FORMATION <name> FRONT|BACK <1-3>  or  FORMATION <name> AUTO\n")
-            return
-
-        # Find member — name may be multi-word, so consume until we hit a keyword
-        ROW_KEYWORDS = {"FRONT", "BACK", "AUTO"}
-        row_kw_idx = None
-        for i, p in enumerate(parts):
-            if p.upper() in ROW_KEYWORDS:
-                row_kw_idx = i
-                break
-        if row_kw_idx is None or row_kw_idx == 0:
-            await self._send("  Usage: FORMATION <name> FRONT|BACK <1-3>\n")
-            return
-
-        name_str = " ".join(parts[:row_kw_idx]).lower()
-        row_kw = parts[row_kw_idx].upper()
-
-        target: Character | NPC | None = None
-        if name_str in (self.player.name.lower(), "me", "player"):
-            target = self.player
-        else:
-            for npc in self.party:
-                if name_str in npc.name.lower():
-                    target = npc
-                    break
-
-        if target is None:
-            await self._send(f"  '{name_str}' not found in your party.\n")
-            return
-
-        if row_kw == "AUTO":
-            target.grid_row = -1
-            target.grid_col = -1
-            await self._send(f"  {target.name}'s position reset to auto-assign.\n")
-            await self._send(_render_formation())
-            return
-
-        # Expect a column number after FRONT/BACK
-        if row_kw_idx + 1 >= len(parts):
-            await self._send(f"  Specify a column (1-3): FORMATION {target.name} {row_kw} <1-3>\n")
-            return
-        try:
-            col_1based = int(parts[row_kw_idx + 1])
-        except ValueError:
-            await self._send("  Column must be a number 1-3.\n")
-            return
-        if col_1based not in (1, 2, 3):
-            await self._send("  Column must be 1, 2, or 3.\n")
-            return
-
-        new_row = FRONT_ROW if row_kw == "FRONT" else BACK_ROW
-        new_col = col_1based - 1  # convert to 0-indexed
-
-        # Check if another member already occupies that cell
-        for m in all_members:
-            if m is target:
-                continue
-            if m.grid_row == new_row and m.grid_col == new_col:
-                await self._send(
-                    f"  {m.name} already occupies {row_kw} column {col_1based}. "
-                    f"Move them first or choose another cell.\n"
-                )
-                return
-
-        target.grid_row = new_row
-        target.grid_col = new_col
-        row_label = "FRONT" if new_row == FRONT_ROW else "BACK"
-        await self._send(
-            f"  {target.name} placed in {row_label} row, column {col_1based}.\n"
-        )
-        await self._send(_render_formation())
+        await do_formation(self._send, self.player, self.party, args)
 
     async def _do_manage(self, name: str) -> None:
-        nl = name.lower().strip()
-        target: Character | NPC | None = None
-
-        if nl == self.player.name.lower() or nl == "player" or nl == "me":
-            target = self.player
-        else:
-            for npc in self.party:
-                if nl in npc.name.lower():
-                    target = npc
-                    break
-
-        if target is None:
-            await self._send(
-                f"  '{name}' not found. Try your own name or a companion's name.\n"
-            )
-            return
-
-        self._strategy_target = target
-        self._strategy_context = "campfire"
-        self.state = State.STRATEGY
-
-        # Build unlocked skills summary for the opening banner
-        if target.unlocked_skills:
-            skill_lines = ["  Unlocked skills:"]
-            for sid in target.unlocked_skills:
-                sk = get_skill(sid)
-                if sk:
-                    skill_lines.append(f"    {sid:<20} — {sk.name}  (MP:{sk.mp_cost})")
-        else:
-            skill_lines = ["  No skills unlocked yet."]
-
-        await self._send(
-            _box(
-                f"Strategy Editor: {target.name}  [{target.class_type.capitalize()}]",
-                [
-                    *skill_lines,
-                    "",
-                    list_strategies(target),
-                    "",
-                    "  Commands: SKILLS | STRATEGY LIST | STRATEGY ADD | STRATEGY REMOVE | DONE",
-                ],
-            )
+        target = await do_manage(
+            self._send, self.player, self.party, name, get_skill, list_strategies
         )
+        if target is not None:
+            self._strategy_target = target
+            self._strategy_context = "campfire"
+            self.state = State.STRATEGY
 
     # ═══════════════════════════════════════════════════════════════════
     # SAVE / LOAD
