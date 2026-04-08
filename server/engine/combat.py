@@ -34,7 +34,7 @@ from server.engine.items import equipped_weapon
 from server.engine.npc import NPC
 from server.engine.skills import get_skill
 from server.engine.strategy import evaluate_strategy
-from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem
+from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem, CombatResult
 from server.engine.world_clock import lighting_combat_penalties
 
 
@@ -157,7 +157,6 @@ class CombatSession:
         player_party: list[Character | NPC],   # player + companions
         enemy_party: list[NPC],
         send: Callable[[str], Awaitable[None]],
-        on_end: Callable[[CombatState, list[str]], Awaitable[None]],
         lighting: float = 1.0,   # effective light level [0.0, 1.0] at combat start
         survival_multiplier: float = 1.0,  # from GameSession._apply_survival_penalties()
     ) -> None:
@@ -170,11 +169,11 @@ class CombatSession:
         self.state = CombatState.ACTIVE
         self.tick_counter = 0
         self._send = send
-        self._on_end = on_end
         self._lighting = lighting
         self._hit_penalty, self._dodge_penalty = lighting_combat_penalties(lighting)
         self.survival_multiplier: float = survival_multiplier
         self._task: asyncio.Task | None = None
+        self.result: CombatResult | None = None  # set after run_and_get_result() completes
 
     @staticmethod
     def _assign_positions(combatants: list["Combatant"]) -> list["Combatant"]:
@@ -361,6 +360,11 @@ class CombatSession:
     def start(self) -> None:
         self._task = asyncio.get_event_loop().create_task(self._run())
 
+    async def run_and_get_result(self) -> CombatResult:
+        """Run combat to completion and return CombatResult."""
+        await self._run()
+        return self.result  # type: ignore[return-value]  # always set by _run()
+
     async def stop(self) -> None:
         if self._task and not self._task.done():
             self._task.cancel()
@@ -390,7 +394,10 @@ class CombatSession:
         await asyncio.gather(*combatant_tasks, return_exceptions=True)
         if self.state != CombatState.ACTIVE:
             summary = self._build_end_summary()
-            await self._on_end(self.state, summary)
+            self.result = CombatResult(
+                state=self.state.value,
+                summary=summary,
+            )
 
     async def _combatant_loop(self, actor: Combatant) -> None:
         """Independent action loop for one combatant.

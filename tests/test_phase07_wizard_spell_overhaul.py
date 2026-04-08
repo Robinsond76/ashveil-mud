@@ -425,7 +425,6 @@ class TestPhaseF_Interruption:
             player_party=[mage],
             enemy_party=[npc],
             send=AsyncMock(),
-            on_end=AsyncMock(),
         )
         mage_combatant = session.player_combatants[0]
         return session, mage_combatant, mage
@@ -531,7 +530,6 @@ class TestPhaseH_ZeroMana:
             player_party=[mage],
             enemy_party=[npc],
             send=AsyncMock(),
-            on_end=AsyncMock(),
         )
         mage_combatant = session.player_combatants[0]
         return session, mage_combatant, mage, npc
