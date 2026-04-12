@@ -53,6 +53,12 @@ BACK_ROW = 1
 MELEE_CLASSES = {"warrior", "thief"}
 RANGED_WEAPON_TYPES = {"bow", "staff"}
 
+# Basic attack spell per caster class — tried before melee when an expensive spell fails MP check.
+CASTER_BASIC_SPELLS: dict[str, str] = {
+    "mage": "arcane_bolt",
+    "cleric": "smite",
+}
+
 
 def _is_ranged_attacker(char: "Character | NPC") -> bool:
     """True if the character's equipped weapon is ranged/magical, or they are a caster class."""
@@ -416,8 +422,8 @@ class CombatSession:
         Sleeps for the character's action interval between acts,
         producing a continuous real-time stream of individual messages.
         """
-        # Stagger first action by the pre-set initial cooldown
-        initial_delay = actor.cooldown * COMBAT_TICK_INTERVAL
+        # Stagger first action by the pre-set initial cooldown (already in seconds)
+        initial_delay = actor.cooldown
         try:
             await asyncio.sleep(initial_delay)
             while self.state == CombatState.ACTIVE and not self._ended.is_set() and actor.is_alive:
@@ -440,7 +446,7 @@ class CombatSession:
                         break
 
                 # Sleep until next action, honouring any speed-up bonus
-                interval = actor.character.action_interval * COMBAT_TICK_INTERVAL
+                interval = actor.character.action_interval
                 bonus = actor._next_action_bonus
                 actor._next_action_bonus = 0.0
                 await asyncio.sleep(max(COMBAT_MIN_SLEEP, interval - bonus))
@@ -619,6 +625,22 @@ class CombatSession:
             log.append(f"  {char.name} doesn't know '{skill.name}'.")
             return
         if char.mp < skill.mp_cost:
+            # Cascade: try the class's basic spell before falling to melee.
+            # Guard: don't cascade if the failing spell IS the basic spell (prevents infinite loop).
+            basic_spell_id = CASTER_BASIC_SPELLS.get(char.class_type)
+            if (
+                basic_spell_id
+                and basic_spell_id != skill_id
+                and basic_spell_id in char.unlocked_skills
+            ):
+                basic_skill = get_skill(basic_spell_id)
+                if basic_skill and char.mp >= basic_skill.mp_cost:
+                    log.append(
+                        f"  {char.name} is low on MP — casting {basic_skill.name}"
+                        f" instead of {skill.name}."
+                    )
+                    self._resolve_skill(actor, basic_spell_id, target, allies, enemies, log)
+                    return
             log.append(f"  {char.name} has insufficient MP for {skill.name}. Attacking instead.")
             self._resolve_attack(char, target, log)
             return

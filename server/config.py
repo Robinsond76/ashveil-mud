@@ -12,10 +12,13 @@ DEATH_XP_LOSS_PCT: float = 0.10   # 10% of current XP lost
 DEATH_GOLD_LOSS_PCT: float = 0.25  # 25% of gold lost
 
 # ── Combat ──────────────────────────────────────────────────────────────────
-COMBAT_TICK_INTERVAL: float = 1.5  # Seconds between combat ticks
-BASE_COOLDOWN_TICKS: int = 8       # Ticks before a speed-1 combatant acts
-                                    # A speed-N combatant acts every
-                                    # BASE_COOLDOWN_TICKS / N ticks (min 1)
+COMBAT_TICK_INTERVAL: float = 1.5  # Seconds between combat ticks (used by battle_cry only)
+BASE_COOLDOWN_TICKS: int = 8       # Legacy — kept for combat.py import; no longer drives interval
+BASE_ATTACK_SPEED: float = 48.0    # Numerator for attack interval (seconds):
+                                    #   interval = BASE_ATTACK_SPEED / effective_speed
+                                    # AGI 16 → 3.0 s | AGI 12 + 20 lb gear → 4.8 s
+MIN_ATTACK_INTERVAL: float = 2.0   # Fastest any combatant may attack (seconds)
+MAX_ATTACK_INTERVAL: float = 8.0   # Slowest any combatant may attack (seconds)
 
 # ── Character / items ───────────────────────────────────────────────────────
 WEIGHT_DIVISOR: int = 10            # Each WEIGHT_DIVISOR units of gear weight

@@ -49,7 +49,14 @@
     "base_hp": 25,
     "base_mp": 60,
     "recommended_modifiers": ["fire_intensity", "frost_intensity", "lightning_intensity"],
+    "basic_spell": "arcane_bolt",
+    "starter_skills": ["arcane_bolt"],
     "skill_tree": [
+      {
+        "id": "arcane_bolt",
+        "unlock_cost": 0,
+        "prerequisites": []
+      },
       {
         "id": "fireball",
         "unlock_cost": 1,
@@ -83,8 +90,7 @@
     ],
     "default_strategies": [
       { "priority": 1, "condition": "HP_SELF < 20%", "action": "DEFEND", "target": "SELF" },
-      { "priority": 2, "condition": "MP_SELF < 10%", "action": "ATTACK", "target": "NEAREST_ENEMY" },
-      { "priority": 3, "condition": "ALWAYS", "action": "USE_SKILL fireball", "target": "STRONGEST_ENEMY" }
+      { "priority": 2, "condition": "ALWAYS", "action": "USE_SKILL arcane_bolt", "target": "NEAREST_ENEMY" }
     ]
   },
   "thief": {
@@ -137,6 +143,8 @@
     "base_hp": 40,
     "base_mp": 45,
     "recommended_modifiers": ["heal_power", "mace_prof", "curse_intensity"],
+    "basic_spell": "smite",
+    "starter_skills": ["heal", "smite"],
     "skill_tree": [
       {
         "id": "heal",
@@ -172,7 +180,7 @@
     "default_strategies": [
       { "priority": 1, "condition": "HP_ALLY < 30%", "action": "USE_SKILL heal", "target": "LOWEST_HP_ALLY" },
       { "priority": 2, "condition": "HP_SELF < 30%", "action": "USE_SKILL heal", "target": "SELF" },
-      { "priority": 3, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+      { "priority": 3, "condition": "ALWAYS", "action": "USE_SKILL smite", "target": "NEAREST_ENEMY" }
     ]
   }
 }

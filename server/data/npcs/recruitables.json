@@ -40,15 +40,14 @@
       "feet": "leather_boots"
     },
     "inventory": ["mana_potion", "mana_potion"],
-    "unlocked_skills": { "fireball": 1 },
+    "unlocked_skills": { "fireball": 1, "arcane_bolt": 1 },
     "modifiers": { "fire_intensity": 1 },
     "is_recruitable": true,
     "recruit_dialogue": "Lyria looks up from a worn grimoire, firelight dancing in her eyes.\n\"You seem capable enough. I need someone to stand between me and sharp objects while I work.\"\n\"Join your party? (YES/NO)\"",
     "room_flavor": "A young woman in a singed robe named Lyria sits reading by a lantern. Arcane symbols float around her fingers.",
     "default_strategies": [
       { "priority": 1, "condition": "HP_SELF < 20%", "action": "DEFEND", "target": "SELF" },
-      { "priority": 2, "condition": "MP_SELF < 10%", "action": "ATTACK", "target": "NEAREST_ENEMY" },
-      { "priority": 3, "condition": "ALWAYS", "action": "USE_SKILL fireball", "target": "STRONGEST_ENEMY" }
+      { "priority": 2, "condition": "ALWAYS", "action": "USE_SKILL fireball", "target": "STRONGEST_ENEMY" }
     ]
   },
   {
@@ -99,33 +98,7 @@
     "default_strategies": [
       { "priority": 1, "condition": "HP_ALLY < 30%", "action": "USE_SKILL heal", "target": "LOWEST_HP_ALLY" },
       { "priority": 2, "condition": "HP_SELF < 30%", "action": "USE_SKILL heal", "target": "SELF" },
-      { "priority": 3, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
-    ]
-  },
-  {
-    "id": "recruit_brom",
-    "name": "Brom",
-    "title": "the Axeman",
-    "class_type": "warrior",
-    "level": 3,
-    "stats": { "STR": 17, "DEX": 9, "CON": 15, "INT": 6, "WIS": 7, "AGI": 10 },
-    "equipment": {
-      "weapon": "battle_axe",
-      "body": "chainmail",
-      "head": "iron_helm",
-      "hands": "iron_gauntlets",
-      "feet": "iron_boots"
-    },
-    "inventory": ["health_potion"],
-    "unlocked_skills": { "power_strike": 1, "whirlwind": 1 },
-    "modifiers": { "axe_prof": 2 },
-    "is_recruitable": true,
-    "recruit_dialogue": "Brom scratches the back of his head and grins broadly.\n\"Aye, I could use the coin. And the fighting. Mostly the fighting.\"\n\"Join up? (YES/NO)\"",
-    "room_flavor": "A mountain of a man named Brom sits on a crate, twirling a battle axe with unsettling ease.",
-    "default_strategies": [
-      { "priority": 1, "condition": "HP_SELF < 25%", "action": "DEFEND", "target": "SELF" },
-      { "priority": 2, "condition": "ENEMY_COUNT > 2", "action": "USE_SKILL whirlwind", "target": "NEAREST_ENEMY" },
-      { "priority": 3, "condition": "ALWAYS", "action": "USE_SKILL power_strike", "target": "NEAREST_ENEMY" }
+{ "priority": 3, "condition": "ALWAYS", "action": "USE_SKILL smite", "target": "NEAREST_ENEMY" }
     ]
   },
   {
@@ -143,7 +116,7 @@
       "feet": "leather_boots"
     },
     "inventory": ["mana_potion", "mana_potion", "health_potion"],
-    "unlocked_skills": { "frost_bolt": 1, "blizzard": 1 },
+    "unlocked_skills": { "frost_bolt": 1, "blizzard": 1, "arcane_bolt": 1 },
     "modifiers": { "frost_intensity": 2 },
     "is_recruitable": true,
     "recruit_dialogue": "Vex taps her staff against the floor with a crisp clack.\n\"I've been looking for a group worthy of my expertise. You'll have to do.\"\n\"I warn you: I don't bodyguard. Keep enemies away from me. Deal? (YES/NO)\"",
@@ -151,8 +124,7 @@
     "default_strategies": [
       { "priority": 1, "condition": "HP_SELF < 20%", "action": "DEFEND", "target": "SELF" },
       { "priority": 2, "condition": "ENEMY_COUNT > 2", "action": "USE_SKILL blizzard", "target": "NEAREST_ENEMY" },
-      { "priority": 3, "condition": "MP_SELF < 15%", "action": "ATTACK", "target": "NEAREST_ENEMY" },
-      { "priority": 4, "condition": "ALWAYS", "action": "USE_SKILL frost_bolt", "target": "STRONGEST_ENEMY" }
+      { "priority": 3, "condition": "ALWAYS", "action": "USE_SKILL frost_bolt", "target": "STRONGEST_ENEMY" }
     ]
   },
   {
@@ -206,7 +178,7 @@
       { "priority": 2, "condition": "HP_ALLY < 25%", "action": "USE_SKILL mass_heal", "target": "LOWEST_HP_ALLY" },
       { "priority": 3, "condition": "HP_ALLY < 50%", "action": "USE_SKILL heal", "target": "LOWEST_HP_ALLY" },
       { "priority": 4, "condition": "HP_SELF < 35%", "action": "USE_SKILL heal", "target": "SELF" },
-      { "priority": 5, "condition": "ALWAYS", "action": "ATTACK", "target": "NEAREST_ENEMY" }
+      { "priority": 5, "condition": "ALWAYS", "action": "USE_SKILL smite", "target": "NEAREST_ENEMY" }
     ]
   }
 ]

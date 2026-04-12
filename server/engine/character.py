@@ -18,7 +18,9 @@ from typing import Any
 from server.config import (
     MODIFIER_BONUS_PER_LEVEL,
     WEIGHT_DIVISOR,
-    BASE_COOLDOWN_TICKS,
+    BASE_ATTACK_SPEED,
+    MIN_ATTACK_INTERVAL,
+    MAX_ATTACK_INTERVAL,
     XP_TABLE,
 )
 from server.engine.items import (
@@ -170,8 +172,13 @@ class Character:
 
     @property
     def action_interval(self) -> float:
-        """Ticks between actions (float, used by CombatSession)."""
-        return BASE_COOLDOWN_TICKS / self.effective_speed
+        """Seconds between attacks for this character.
+
+        Formula: BASE_ATTACK_SPEED / effective_speed, clamped to [MIN, MAX].
+        AGI 16, no gear → 3.0 s  |  AGI 12, 20 lb gear → 4.8 s
+        """
+        raw = BASE_ATTACK_SPEED / self.effective_speed
+        return max(MIN_ATTACK_INTERVAL, min(MAX_ATTACK_INTERVAL, raw))
 
     @property
     def defense(self) -> int:
@@ -422,7 +429,7 @@ class Character:
             f"  Gold   : {self.gold}g",
             f"  STR {self.STR:2d}  DEX {self.DEX:2d}  CON {self.CON:2d}",
             f"  INT {self.INT:2d}  WIS {self.WIS:2d}  AGI {self.AGI:2d}",
-            f"  Speed  : {self.effective_speed}  (AGI {self.AGI} - wt penalty {math.floor(total_equipped_weight(self.equipment)/WEIGHT_DIVISOR)})",
+            f"  Speed  : {self.effective_speed}  →  {self.action_interval:.1f}s/attack  (AGI {self.AGI} - wt penalty {math.floor(total_equipped_weight(self.equipment)/WEIGHT_DIVISOR)})",
             f"  Defense: {self.defense}",
             f"  Weapon : {weapon_name}",
         ]

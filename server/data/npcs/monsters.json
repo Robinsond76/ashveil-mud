@@ -48,7 +48,7 @@
     "stats": { "STR": 6, "DEX": 9, "CON": 7, "INT": 13, "WIS": 11, "AGI": 10 },
     "equipment": { "weapon": "oak_staff", "body": "cloth_robe" },
     "inventory": [],
-    "unlocked_skills": { "fireball": 1 },
+    "unlocked_skills": { "fireball": 1, "arcane_bolt": 1 },
     "modifiers": { "fire_intensity": 1 },
     "loot_table": [
       { "item_id": "mana_potion", "chance": 30 },
@@ -148,7 +148,7 @@
     "stats": { "STR": 6, "DEX": 10, "CON": 8, "INT": 16, "WIS": 13, "AGI": 11 },
     "equipment": { "weapon": "arcane_staff", "body": "cloth_robe" },
     "inventory": [],
-    "unlocked_skills": { "fireball": 1, "frost_bolt": 1 },
+    "unlocked_skills": { "fireball": 1, "frost_bolt": 1, "arcane_bolt": 1 },
     "modifiers": { "fire_intensity": 2 },
     "loot_table": [
       { "item_id": "mana_potion", "chance": 40 },

@@ -482,6 +482,10 @@ class GameSession:
                 "target": strat_raw["target"],
             })
 
+        # Auto-unlock free starter skills for this class (e.g. mage cantrip arcane_bolt)
+        for skill_id in cd.get("starter_skills", []):
+            self.player.unlocked_skills[skill_id] = 1
+
         self.current_room_id = "town_square"
         self.last_campfire_room_id = "test_campfire"
         self.player.owner = self.player.name  # mark player as owning their own character
