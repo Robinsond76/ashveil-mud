@@ -1,5 +1,5 @@
 # Phase 2: Survival Stats — Hunger, Thirst & Stamina
-**Status: NOT STARTED**
+**Status: IMPLEMENTED**
 **Depends on: Phase 1 (temperature affects thirst rate)**
 
 ## Overview

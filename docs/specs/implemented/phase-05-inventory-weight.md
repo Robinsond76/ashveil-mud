@@ -1,5 +1,5 @@
 # Phase 5: Inventory & Weight Overhaul
-**Status: NOT STARTED**
+**Status: IMPLEMENTED**
 **Depends on: Phase 2 (stamina affected by carry weight), Phase 4 (food stacking)**
 
 ## Overview

@@ -1,5 +1,5 @@
 # Phase 7: Wizard & Spell Overhaul
-**Status: NOT STARTED**
+**Status: IMPLEMENTED**
 **Depends on: Phase 1 (combat system, lighting), Phase 3 (mana rework)**
 
 ## Overview

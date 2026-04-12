@@ -1,5 +1,5 @@
 # Phase 6: Horses & Mounts
-**Status: NOT STARTED**
+**Status: IMPLEMENTED**
 **Depends on: Phase 2 (stamina), Phase 5 (cart vehicle logic)**
 
 ## Overview

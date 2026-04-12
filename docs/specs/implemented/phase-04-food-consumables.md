@@ -1,5 +1,5 @@
 # Phase 4: Food & Consumables
-**Status: NOT STARTED**
+**Status: IMPLEMENTED**
 **Depends on: Phase 2 (survival stats), Phase 3 (stamina costs)**
 
 ## Overview

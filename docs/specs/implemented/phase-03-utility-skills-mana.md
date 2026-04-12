@@ -1,5 +1,5 @@
 # Phase 3: Utility Skills & Mana Rework
-**Status: NOT STARTED**
+**Status: IMPLEMENTED**
 **Depends on: Phase 2 (some utility skills consume stamina)**
 
 ## Overview
