@@ -13,7 +13,7 @@ Server runs at http://localhost:8081
 ## Architecture
 
 - **Entry point:** `server/main.py` — FastAPI app with WebSocket endpoint at `/ws`
-- **Game engine:** `server/engine/game.py` — GameSession (1855 lines, known god object)
+- **Game engine:** `server/engine/game.py` — GameSession coordinator (843 lines), state handlers in `server/engine/states/`
 - **Data:** JSON files in `server/data/` (rooms, items, NPCs, skills, classes)
 - **Client:** `client/` — browser terminal (index.html + terminal.js)
 
@@ -24,6 +24,10 @@ Server runs at http://localhost:8081
 - **String-based action dispatch:** `evaluate_strategy()` returns raw strings like `"USE_SKILL fireball"`, parsed in `_do_action()` with `.startswith()` checks
 - **Light sources not persisted:** `_lit_sources` in game.py not saved to Character.to_dict()
 - **Magic numbers hardcoded:** stamina drain rates (2.0), crit multiplier (1.5), flee chance (0.40), etc.
+
+## Recent Improvements (2026-04-18)
+
+- **A1: GameSession Decomposition** — Refactored 1,667-line `GameSession` into 6 stateless state handlers. `game.py` reduced to 843 lines. All 613 tests pass.
 
 ## Testing
 

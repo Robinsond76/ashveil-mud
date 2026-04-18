@@ -13,9 +13,9 @@ A comprehensive review of all 12 engine files and 17 test files identified **19 
 
 ### Critical (5)
 
-| ID | Finding | Primary File(s) | Plan |
-|----|---------|-----------------|------|
-| A1 | **God Object — `game.py` is 1,855 lines** with 65+ methods on `GameSession`, handling all states, all commands, survival, chat, mounts, cart, light, help topics (107 entries at line 72), and display | `server/engine/game.py` | [Improvement 01](docs/superpowers/plans/improvement-01-game-session-decomposition.md) |
+| ID | Finding | Primary File(s) | Plan | Status |
+|----|---------|-----------------|------|--------|
+| A1 | **God Object — `game.py` is 1,855 lines** with 65+ methods on `GameSession`, handling all states, all commands, survival, chat, mounts, cart, light, help topics (107 entries at line 72), and display | `server/engine/game.py` | [Improvement 01](docs/specs/implemented/phase-10-game-session-decomposition.md) | **COMPLETED**
 | A2 | **Character/NPC inheritance leaks** — `Character` dataclass carries `strategies`, `grid_row`, `grid_col`, `active_buffs` that are only meaningful in combat/NPC context; no shared `Combatant` protocol | `server/engine/character.py`, `server/engine/npc.py` | [Improvement 03](docs/superpowers/plans/improvement-03-data-model-cleanup.md) |
 | A3 | **Global mutable state without synchronization** — `WorldMap.room_occupants` (line 114), `WorldClock._subscribers`, and `_sessions` dict are mutated by concurrent async tasks with no `asyncio.Lock` | `server/engine/world.py`, `server/engine/world_clock.py`, `server/main.py` | [Improvement 04](docs/superpowers/plans/improvement-04-async-safety.md) |
 | A4 | **CombatSession ↔ GameSession bidirectional coupling** — `CombatSession.__init__()` (line 169) takes `on_end` callback that calls back into `GameSession._end_combat_victory/defeat`; cannot reuse combat independently | `server/engine/combat.py`, `server/engine/game.py` | [Improvement 02](docs/superpowers/plans/improvement-02-combat-architecture.md) |
