@@ -841,6 +841,7 @@ class GameSession:
             "party": self._get_party_context(),
             "map": self._get_map_context(),
             "inventory": self._get_inventory_context(),
+            "environment": self._get_environment_context(),
         }
         return context
 
@@ -947,6 +948,46 @@ class GameSession:
             "items": items,
             "has_more": len(self.player.inventory) > MAX_CONTEXT_INVENTORY_ITEMS,
             "equipment": self.player.equipment,
+        }
+
+    def _get_environment_context(self) -> dict[str, Any]:
+        """Get environment data (time, weather, temperature, visibility)."""
+        if not self.clock:
+            return {}
+
+        room = None
+        if self.current_room_id:
+            room = self.world.get_room(self.current_room_id)
+
+        # Get effective light for visibility calculation
+        eff_light = 1.0
+        if room:
+            eff_light = _effective_light_fn(
+                self.player, self.party, self._lit_sources, self.clock, room
+            )
+
+        # Determine visibility label
+        if eff_light >= 0.80:
+            visibility = "Bright"
+        elif eff_light >= 0.40:
+            visibility = "Dim"
+        elif eff_light >= 0.05:
+            visibility = "Dark"
+        else:
+            visibility = "Pitch Black"
+
+        # Get temperature label
+        temp_label = "Unknown"
+        if room:
+            temp_label = self.clock.temperature_label(room.room_type, room.base_temp_f)
+
+        return {
+            "time_of_day": self.clock.time_of_day_label(),
+            "time_string": self.clock.time_string(),
+            "weather": self.clock.current_weather,
+            "temperature": temp_label,
+            "visibility": visibility,
+            "room_type": room.room_type if room else "unknown",
         }
 
     async def _do_inventory(self, args: str = "") -> None:

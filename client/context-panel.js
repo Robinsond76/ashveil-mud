@@ -34,6 +34,7 @@
         ${this.renderPlayer(data.player)}
         ${this.renderParty(data.party)}
         ${this.renderMap(data.map)}
+        ${this.renderEnvironment(data.environment)}
         ${this.renderInventory(data.inventory)}
       `;
       
@@ -226,6 +227,68 @@
           <div class="inventory-list">
             ${items}
             ${moreIndicator}
+          </div>
+        </div>
+      `;
+    },
+    
+    renderEnvironment(environment) {
+      if (!environment) {
+        return `
+          <div class="context-section">
+            <div class="context-section-title">Environment</div>
+            <div class="empty-party">Unknown</div>
+          </div>
+        `;
+      }
+      
+      // Weather icons
+      const weatherIcons = {
+        'sunny': '☀',
+        'cloudy': '☁',
+        'rainy': '🌧',
+        'windy': '💨',
+        'stormy': '⛈'
+      };
+      
+      // Visibility icons
+      const visibilityIcons = {
+        'Bright': '☀',
+        'Dim': '⛅',
+        'Dark': '🌑',
+        'Pitch Black': '⚫'
+      };
+      
+      const weatherIcon = weatherIcons[environment.weather] || '☁';
+      const visibilityIcon = visibilityIcons[environment.visibility] || '◐';
+      
+      return `
+        <div class="context-section">
+          <div class="context-section-title">Environment</div>
+          
+          <div class="environment-row">
+            <span class="environment-icon">🕐</span>
+            <span class="environment-label">Time</span>
+            <span class="environment-value">${environment.time_string || '--:--'}</span>
+          </div>
+          <div class="environment-detail">${environment.time_of_day || 'Unknown'}</div>
+          
+          <div class="environment-row">
+            <span class="environment-icon">${weatherIcon}</span>
+            <span class="environment-label">Weather</span>
+            <span class="environment-value">${environment.weather || 'Unknown'}</span>
+          </div>
+          
+          <div class="environment-row">
+            <span class="environment-icon">🌡</span>
+            <span class="environment-label">Temp</span>
+            <span class="environment-value">${environment.temperature || 'Unknown'}</span>
+          </div>
+          
+          <div class="environment-row">
+            <span class="environment-icon">${visibilityIcon}</span>
+            <span class="environment-label">Light</span>
+            <span class="environment-value">${environment.visibility || 'Unknown'}</span>
           </div>
         </div>
       `;
