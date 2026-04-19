@@ -2,13 +2,29 @@
 
 ## Quick Start
 
+### First-time Setup
+
 ```powershell
 pip install -r requirements.txt
-uvicorn server.main:app --reload --port 8081
-pytest tests/
+```
+
+### Run the Server
+
+```powershell
+python3 -m uvicorn server.main:app --reload --port 8081
 ```
 
 Server runs at http://localhost:8081
+
+### Run Tests
+
+```powershell
+# If pytest is not in your PATH, use the full path:
+/Users/robinsondesouza/Library/Python/3.9/bin/pytest tests/
+
+# Or run via Python module:
+python3 -m pytest tests/
+```
 
 ## Architecture
 
@@ -31,7 +47,7 @@ Server runs at http://localhost:8081
 
 ## Testing
 
-- `pytest tests/` — all tests use `asyncio_mode = auto`
+- `/Users/robinsondesouza/Library/Python/3.9/bin/pytest tests/` — all tests use `asyncio_mode = auto`
 - Many test files are phase-named (test_phase02_*, test_phase03_*, etc.)
 - Known issues (see IMPROVEMENTS.md):
   - T1: Trivial pass tests that only check field initialization
@@ -48,6 +64,6 @@ Server runs at http://localhost:8081
 
 ## Working on This Repo
 
-- Run `pytest tests/` after every change
+- Run `/Users/robinsondesouza/Library/Python/3.9/bin/pytest tests/` after every change
 - Check IMPROVEMENTS.md before major refactors — execution order: 03 → 01 → 02 → 04 → 05 → 06 → 07
 - game.py is the main bottleneck; expect decomposition work to be complex
