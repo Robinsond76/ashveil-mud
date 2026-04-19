@@ -18,8 +18,10 @@ Input arrives via `await self.handle_input(raw_text)`.
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
-from unittest.mock import Mock, MagicMock, AsyncMock
+
+logger = logging.getLogger(__name__)
 
 from server.config import (
     DEBUG_NO_DEATH_PENALTY,
@@ -66,6 +68,9 @@ from server.engine.survival import (
     do_survival_status, do_eat, do_drink, do_buffs,
 )
 from server.engine.world import WorldMap
+
+# Context panel configuration
+MAX_CONTEXT_INVENTORY_ITEMS = 10  # Number of items to show in context panel (limit for performance)
 from server.engine.world_clock import WorldClock
 from server.engine.states import State, HANDLER_REGISTRY
 
@@ -814,8 +819,8 @@ class GameSession:
         if not hasattr(self.player, 'to_dict'):
             return
 
-        # Skip context updates in test environments (detected by mock send functions)
-        if isinstance(self._send_raw, (Mock, MagicMock, AsyncMock)):
+        # Skip context updates in test environments (detect by duck typing - mock objects have _mock_name)
+        if hasattr(self._send_raw, '_mock_name'):
             return
 
         try:
@@ -825,14 +830,12 @@ class GameSession:
                 "data": context
             })
             await self.send(json_msg)
-        except (TypeError, ValueError):
-            # Skip if context can't be serialized (e.g., mocked objects in tests)
-            pass
+        except (TypeError, ValueError) as e:
+            # Log serialization errors but don't crash - usually indicates mocked objects in tests
+            logger.debug(f"Failed to serialize context: {e}")
 
     def _gather_context(self) -> dict[str, Any]:
         """Gather all context data for the side panel."""
-        from server.engine.survival import party_survival_aggregate
-
         context = {
             "player": self._get_player_context(),
             "party": self._get_party_context(),
@@ -848,7 +851,6 @@ class GameSession:
 
         h_pct, t_pct, s_pct = 1.0, 1.0, 1.0
         if self.party:
-            from server.engine.survival import party_survival_aggregate
             h_pct, t_pct, s_pct = party_survival_aggregate(self.player, self.party)
 
         return {
@@ -931,7 +933,7 @@ class GameSession:
         from server.engine.items import get_item
 
         items = []
-        for item_id in self.player.inventory[:10]:  # Limit to first 10
+        for item_id in self.player.inventory[:MAX_CONTEXT_INVENTORY_ITEMS]:
             item = get_item(item_id)
             if item:
                 items.append({
@@ -943,6 +945,7 @@ class GameSession:
         return {
             "count": len(self.player.inventory),
             "items": items,
+            "has_more": len(self.player.inventory) > MAX_CONTEXT_INVENTORY_ITEMS,
             "equipment": self.player.equipment,
         }
 
