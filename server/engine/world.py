@@ -90,6 +90,57 @@ class Room:
         lines.append(f"{'═' * 60}")
         return "\n".join(lines)
 
+    def render_quick(
+        self,
+        item_names: dict[str, str],
+        npcs_present: list[str],
+        encounter_summary: list[str],
+        other_players: list[str],
+    ) -> str:
+        """
+        Compact room summary with color-coded highlights.
+        
+        Colors:
+          - Red (\\x1b[31m): Enemies/hostiles
+          - Green (\\x1b[32m): Items
+          - Yellow (\\x1b[33m): Recruitable NPCs
+          - Blue (\\x1b[34m): Other players
+          - Reset (\\x1b[0m): Return to default
+        """
+        width = 60
+        exit_parts = [d.upper() for d in sorted(self.exits.keys())]
+        exit_str = ", ".join(exit_parts) if exit_parts else "none"
+        name_padded = self.name.upper().ljust(40)
+
+        lines = [
+            f"\n{'═' * width}",
+            f"  {name_padded}[Exits: {exit_str}]",
+            f"{'─' * width}",
+        ]
+
+        if self.item_ids:
+            item_list = ", ".join(
+                f"\x1b[32m{item_names.get(i, i)}\x1b[0m" for i in self.item_ids
+            )
+            lines.append(f"  Items: {item_list}")
+
+        if encounter_summary:
+            hostile_text = " | ".join(encounter_summary)
+            lines.append(f"  \x1b[31mHostiles: {hostile_text}\x1b[0m")
+
+        for flavor in npcs_present:
+            lines.append(f"  \x1b[33m{flavor}\x1b[0m")
+
+        if other_players:
+            players_text = ", ".join(f"\x1b[34m{p}\x1b[0m" for p in other_players)
+            lines.append(f"  Also here: {players_text}")
+
+        if not any([self.item_ids, encounter_summary, npcs_present, other_players]):
+            lines.append("  (nothing of note)")
+
+        lines.append(f"{'═' * width}")
+        return "\n".join(lines)
+
 
 # ── World Map ─────────────────────────────────────────────────────────────────
 
