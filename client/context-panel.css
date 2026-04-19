@@ -1,0 +1,263 @@
+/* Context Panel Styles */
+
+#context-panel {
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-y: auto;
+}
+
+#context-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+#context-panel::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+#context-panel::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+
+/* Section styling */
+.context-section {
+  border-bottom: 1px solid #333;
+  padding: 12px;
+}
+
+.context-section:last-child {
+  border-bottom: none;
+}
+
+.context-section-title {
+  color: #c8a96e;
+  font-weight: bold;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #444;
+}
+
+/* Player Stats */
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.player-name {
+  color: #d4c9a8;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.player-class {
+  color: #888;
+  font-size: 10px;
+}
+
+/* HP/MP Bars */
+.resource-bar {
+  margin-bottom: 6px;
+}
+
+.resource-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+.resource-track {
+  height: 6px;
+  background: #222;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.resource-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.hp-fill { background: #c0392b; }
+.mp-fill { background: #4a6fa5; }
+.xp-fill { background: #c8a96e; }
+
+/* Survival Stats */
+.survival-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.survival-stat {
+  text-align: center;
+}
+
+.survival-label {
+  font-size: 9px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.survival-value {
+  font-size: 11px;
+  color: #888;
+}
+
+.survival-value.good { color: #4a8c5c; }
+.survival-value.warning { color: #c8a96e; }
+.survival-value.critical { color: #c0392b; }
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 4px;
+  background: #1a1a1a;
+  border-radius: 2px;
+}
+
+.stat-name {
+  color: #666;
+  font-size: 10px;
+}
+
+.stat-value {
+  color: #888;
+  font-weight: bold;
+  font-size: 10px;
+}
+
+/* Party Section */
+.party-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.party-member {
+  padding: 6px;
+  background: #1a1a1a;
+  border-radius: 3px;
+  border-left: 2px solid #444;
+}
+
+.party-member-name {
+  color: #888;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.party-member-hp {
+  font-size: 10px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.party-member-hp-bar {
+  height: 3px;
+  background: #333;
+  margin-top: 3px;
+  border-radius: 1px;
+}
+
+.party-member-hp-fill {
+  height: 100%;
+  background: #c0392b;
+  border-radius: 1px;
+}
+
+.empty-party {
+  color: #555;
+  font-style: italic;
+  font-size: 11px;
+}
+
+/* Map Section */
+.map-current {
+  padding: 8px;
+  background: #1a1a1a;
+  border-radius: 3px;
+  margin-bottom: 8px;
+}
+
+.map-current-name {
+  color: #888;
+  font-weight: bold;
+}
+
+.map-current-zone {
+  color: #666;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.map-exits {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+
+.map-exit {
+  padding: 4px 6px;
+  background: #222;
+  border-radius: 2px;
+  font-size: 10px;
+  color: #666;
+}
+
+.map-exit-direction {
+  color: #c8a96e;
+  font-weight: bold;
+}
+
+/* Inventory Section */
+.inventory-count {
+  color: #888;
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+
+.inventory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.inventory-item {
+  padding: 3px 6px;
+  background: #1a1a1a;
+  border-radius: 2px;
+  font-size: 10px;
+  color: #888;
+  display: flex;
+  justify-content: space-between;
+}
+
+.inventory-item-type {
+  color: #666;
+  font-size: 9px;
+}
+
+.inventory-more {
+  color: #555;
+  font-size: 9px;
+  font-style: italic;
+  text-align: center;
+  padding: 4px;
+}

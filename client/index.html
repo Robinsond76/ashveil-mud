@@ -5,20 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ashveil MUD</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" />
+  <link rel="stylesheet" href="/static/context-panel.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     html, body {
       height: 100%;
+      width: 100%;
       background: #0d0d0d;
-      font-family: monospace;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
       overflow: hidden;
     }
-    body {
+    
+    /* Main container - horizontal split */
+    #app {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+    
+    /* Left side: 66% - MUD terminal */
+    #terminal-area {
+      width: 66.666%;
+      height: 100%;
       display: flex;
       flex-direction: column;
+      border-right: 2px solid #333;
     }
+    
     #header {
-      width: 100%;
       padding: 8px 16px;
       color: #c8a96e;
       font-size: 13px;
@@ -27,72 +43,102 @@
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
-    }
-    #header span { color: #888; }
-    
-    /* Output area - takes 2/3 of remaining space */
-    #output-container {
-      flex: 2;
-      width: 100%;
-      padding: 8px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    #terminal-output {
-      flex: 1;
-      width: 100%;
-      background: #0d0d0d;
-    }
-    
-    /* Input area - separated below output */
-    #input-container {
-      flex: 1;
-      width: 100%;
-      padding: 8px;
-      border-top: 2px solid #333;
-      display: flex;
-      flex-direction: column;
       background: #111;
     }
+    
+    #header span { color: #888; }
+    
+    /* MUD Output - takes most of the space */
+    #output-container {
+      flex: 1;
+      min-height: 0;
+      padding: 8px;
+      overflow: hidden;
+    }
+    
+    #terminal-output {
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Input area - auto-expanding */
+    #input-container {
+      flex-shrink: 0;
+      min-height: 32px;
+      max-height: 120px;
+      padding: 4px 8px;
+      border-top: 2px solid #444;
+      background: #111;
+      display: flex;
+      align-items: center;
+    }
+    
+    #input-prompt {
+      color: #c8a96e;
+      padding-right: 8px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    
     #terminal-input {
       flex: 1;
-      width: 100%;
-      background: #0d0d0d;
+      height: 100%;
+      min-height: 24px;
     }
     
     #status-bar {
-      width: 100%;
       padding: 4px 16px;
       font-size: 11px;
       color: #555;
       border-top: 1px solid #222;
       flex-shrink: 0;
+      background: #0d0d0d;
     }
+    
     #status-bar.connected { color: #4a8; }
     #status-bar.disconnected { color: #a44; }
+    
+    /* Right side: 33% - Context Panel */
+    #context-panel {
+      width: 33.333%;
+      height: 100%;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
   </style>
 </head>
 <body>
-  <div id="header">
-    <strong>⚔ ASHVEIL MUD</strong>
-    <span id="conn-label">Connecting...</span>
+  <div id="app">
+    <!-- Left side: Terminal -->
+    <div id="terminal-area">
+      <div id="header">
+        <strong>⚔ ASHVEIL MUD</strong>
+        <span id="conn-label">Connecting...</span>
+      </div>
+      
+      <div id="output-container">
+      <div id="terminal-output"></div>
+      </div>
+      
+      <div id="input-container">
+        <span id="input-prompt">&gt;</span>
+        <div id="terminal-input"></div>
+      </div>
+      
+      <div id="status-bar" class="disconnected">Disconnected</div>
+    </div>
+    
+    <!-- Right side: Context Panel -->
+    <div id="context-panel">
+      <!-- Content rendered by JavaScript -->
+    </div>
   </div>
-  
-  <!-- Output section - takes 2/3 -->
-  <div id="output-container">
-    <div id="terminal-output"></div>
-  </div>
-  
-  <!-- Input section - separated below -->
-  <div id="input-container">
-    <div id="terminal-input"></div>
-  </div>
-  
-  <div id="status-bar" class="disconnected">Disconnected</div>
 
   <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+  <script src="/static/context-panel.js"></script>
   <script src="/static/terminal.js"></script>
 </body>
 </html>
