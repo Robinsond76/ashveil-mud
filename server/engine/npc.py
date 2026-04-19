@@ -119,6 +119,10 @@ def spawn_npc(template_id: str, class_defs: dict) -> NPC | None:
     equipment.update(equip_raw)
     data["equipment"] = equipment
 
+    # Map default_strategies → strategies (Character.from_dict reads "strategies")
+    if "strategies" not in data and "default_strategies" in data:
+        data["strategies"] = data.pop("default_strategies")
+
     # Compute HP/MP from class definition
     class_type = data.get("class_type", "warrior")
     class_def = class_defs.get(class_type, {})
