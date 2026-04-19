@@ -47,17 +47,20 @@ def init_db() -> None:
 
 
 def save_player(name: str, data: dict) -> None:
+    """Save player data with normalized lowercase name."""
+    normalized_name = name.lower()
     save_data = dict(data)
     save_data["_schema_version"] = SAVE_SCHEMA_VERSION
+    save_data["name"] = normalized_name  # Normalize stored name too
 
     last_exc: Exception | None = None
     for attempt in range(1, _MAX_SAVE_RETRIES + 1):
         try:
             with Session(_engine) as session:
-                record = session.get(PlayerSave, name)
+                record = session.get(PlayerSave, normalized_name)
                 blob = json.dumps(save_data)
                 if record is None:
-                    record = PlayerSave(name=name, save_data=blob)
+                    record = PlayerSave(name=normalized_name, save_data=blob)
                     session.add(record)
                 else:
                     record.save_data = blob
@@ -68,18 +71,20 @@ def save_player(name: str, data: dict) -> None:
             last_exc = exc
             logger.warning(
                 "save_player attempt %d/%d for '%s' failed: %s",
-                attempt, _MAX_SAVE_RETRIES, name, exc,
+                attempt, _MAX_SAVE_RETRIES, normalized_name, exc,
             )
             if attempt < _MAX_SAVE_RETRIES:
                 time.sleep(_RETRY_DELAY_SECONDS)
 
-    logger.error("All save attempts failed for '%s'", name)
+    logger.error("All save attempts failed for '%s'", normalized_name)
     raise last_exc  # type: ignore[misc]
 
 
 def load_player(name: str) -> dict | None:
+    """Load player data by name (case-insensitive)."""
+    normalized_name = name.lower()
     with Session(_engine) as session:
-        record = session.get(PlayerSave, name)
+        record = session.get(PlayerSave, normalized_name)
         if record is None:
             return None
         data = json.loads(record.save_data)
@@ -88,14 +93,16 @@ def load_player(name: str) -> dict | None:
             logger.warning(
                 "Save '%s' has schema version %d (current: %d). "
                 "Migration may be needed.",
-                name, version, SAVE_SCHEMA_VERSION,
+                normalized_name, version, SAVE_SCHEMA_VERSION,
             )
         return data
 
 
 def delete_player(name: str) -> bool:
+    """Delete player save by name (case-insensitive)."""
+    normalized_name = name.lower()
     with Session(_engine) as session:
-        record = session.get(PlayerSave, name)
+        record = session.get(PlayerSave, normalized_name)
         if record is None:
             return False
         session.delete(record)
