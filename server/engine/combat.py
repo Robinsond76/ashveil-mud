@@ -713,8 +713,12 @@ class CombatSession:
             actual = target.take_damage(raw)
             log.append(f"  {char.name} hits {target.name} with {skill.name} for {actual} {damage_type} damage!")
             if "status" in ep and hasattr(target, "status_effects"):
-                target.status_effects[ep["status"]] = ep.get("duration_ticks", 2)  # type: ignore[index]
-                log.append(f"    {target.name} is now {ep['status']}!")
+                status_name = ep["status"]
+                duration = ep.get("duration_ticks", 2)
+                # Only show "is now <status>" message if status wasn't already present
+                if status_name not in target.status_effects:
+                    log.append(f"    {target.name} is now {status_name}!")
+                target.status_effects[status_name] = duration  # type: ignore[index]
 
         # --- heal ---
         elif et == "heal":
