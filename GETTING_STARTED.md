@@ -42,6 +42,49 @@ At the welcome prompt, type your character's name and press Enter.
 > Aldric
 ```
 
+### Deleting a Character
+
+If you want to permanently delete a character, use the DELETE command at the login screen:
+
+**Step 1 — Initiate Deletion**
+
+```
+> DELETE Aldric
+```
+
+**Step 2 — Confirm Deletion**
+
+The system will warn you and ask for confirmation. You must type the character name again to confirm:
+
+```
+WARNING: CHARACTER DELETION
+You are about to PERMANENTLY delete character: Aldric
+This action cannot be undone!
+
+To confirm deletion, type the character name again: 'Aldric'
+To cancel, type: CANCEL
+
+> Aldric
+```
+
+**Step 3 — Deletion Complete**
+
+After successful deletion, you'll return to the login prompt:
+
+```
+Character 'Aldric' has been successfully deleted.
+
+Enter your character name (new or existing):
+To delete a character, type: DELETE <name>
+>
+```
+
+**Important Notes:**
+- Deletion is **permanent** and cannot be undone
+- Character names are case-insensitive for both deletion and confirmation
+- Type `CANCEL` at any time to abort the deletion process
+- You can type `HELP DELETE` at the login screen for more information
+
 ### Step 2 — Choose a Class
 
 You'll be shown the four available classes. Type the class name to select it.
@@ -193,6 +236,41 @@ PARTY         — see all members
 FORMATION     — arrange the battle grid
 MANAGE <name> — edit their combat strategies
 ```
+
+---
+
+## Look Mode Preferences
+
+You can customize how room information is displayed using two preferences:
+
+### LOOKMODE — Room Display Style
+
+Control whether you see full room descriptions or quick summaries when entering rooms:
+
+```
+> LOOKMODE FULL    (default — full descriptions with all details)
+> LOOKMODE QUICK   (compact summaries with color highlights)
+```
+
+**Quick Look** shows:
+- Room name and available exits
+- Items on floor (shown in **green**)
+- Hostile enemies (shown in **red**)
+- Recruitable NPCs (shown in **yellow**)
+- Other players (shown in **blue**)
+
+### BATTLELOOK — Post-Combat Display
+
+Control whether a room summary appears after combat ends:
+
+```
+> BATTLELOOK ON    (default — show quick look after combat)
+> BATTLELOOK OFF   (victory/defeat message only, no room summary)
+```
+
+When BATTLELOOK is ON, after defeating enemies you'll immediately see what's in the room — making it easy to spot loot or new threats without being spammed with full room descriptions.
+
+Both preferences are **saved with your character** and persist across sessions.
 
 ---
 
