@@ -94,6 +94,11 @@
   let inputBuffer = "";
   let reconnectTimer = null;
 
+  // Command history tracking
+  let commandHistory = [];        // Array of sent commands
+  let historyIndex = -1;           // Current position (-1 = not navigating)
+  const MAX_HISTORY = 50;          // Maximum commands to remember
+
   function setStatus(connected) {
     if (connected) {
       statusBar.textContent = "Connected to server";
@@ -174,6 +179,21 @@
     if (code === 13) {
       // Enter — send buffered line, clear input terminal
       inputTerm.write("\r\n");
+      
+      // Save to history if input is not empty
+      const trimmedInput = inputBuffer.trim();
+      if (trimmedInput) {
+        // Only add if different from most recent command (prevents duplicates)
+        if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== trimmedInput) {
+          commandHistory.push(trimmedInput);
+          // Remove oldest if exceeding max
+          if (commandHistory.length > MAX_HISTORY) {
+            commandHistory.shift();
+          }
+        }
+        historyIndex = -1;  // Reset navigation position
+      }
+      
       sendLine(inputBuffer);
       inputBuffer = "";
       // Clear input terminal and reset to 1 row
@@ -185,8 +205,44 @@
         inputBuffer = inputBuffer.slice(0, -1);
         inputTerm.write("\b \b");
       }
-    } else if (code === 38 || code === 40) {
-      // Up/Down arrows — ignore (no history for now)
+    } else if (code === 38) {
+      // Up arrow — navigate to previous command
+      if (historyIndex < commandHistory.length - 1) {
+        historyIndex++;
+        inputBuffer = commandHistory[commandHistory.length - 1 - historyIndex];
+        // Clear and rewrite input terminal
+        inputTerm.clear();
+        inputTerm.write(inputBuffer);
+        // Adjust rows if needed
+        const lines = Math.ceil(inputBuffer.length / inputTerm.cols);
+        if (lines > inputTerm.rows && inputTerm.rows < 5) {
+          inputTerm.resize(inputTerm.cols, Math.min(lines, 5));
+        } else if (lines < inputTerm.rows && inputTerm.rows > 1) {
+          inputTerm.resize(inputTerm.cols, Math.max(lines, 1));
+        }
+      }
+    } else if (code === 40) {
+      // Down arrow — navigate forward in history
+      if (historyIndex > 0) {
+        historyIndex--;
+        inputBuffer = commandHistory[commandHistory.length - 1 - historyIndex];
+        // Clear and rewrite input terminal
+        inputTerm.clear();
+        inputTerm.write(inputBuffer);
+        // Adjust rows if needed
+        const lines = Math.ceil(inputBuffer.length / inputTerm.cols);
+        if (lines > inputTerm.rows && inputTerm.rows < 5) {
+          inputTerm.resize(inputTerm.cols, Math.min(lines, 5));
+        } else if (lines < inputTerm.rows && inputTerm.rows > 1) {
+          inputTerm.resize(inputTerm.cols, Math.max(lines, 1));
+        }
+      } else if (historyIndex === 0) {
+        // At end of history, clear input
+        historyIndex = -1;
+        inputBuffer = "";
+        inputTerm.clear();
+        inputTerm.resize(inputTerm.cols, 1);
+      }
     } else if (domEvent.ctrlKey && code === 67) {
       // Ctrl+C — clear buffer and send empty line
       inputBuffer = "";
@@ -214,6 +270,20 @@
     for (const ch of data) {
       if (ch === "\r" || ch === "\n") {
         inputTerm.write("\r\n");
+        
+        // Save to history if input is not empty (same as regular Enter)
+        const trimmedInput = inputBuffer.trim();
+        if (trimmedInput) {
+          // Only add if different from most recent command
+          if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== trimmedInput) {
+            commandHistory.push(trimmedInput);
+            if (commandHistory.length > MAX_HISTORY) {
+              commandHistory.shift();
+            }
+          }
+          historyIndex = -1;
+        }
+        
         sendLine(inputBuffer);
         inputBuffer = "";
         inputTerm.clear();

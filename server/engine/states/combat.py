@@ -109,11 +109,6 @@ class CombatHandler:
 
         await session.transition_to(State.NAVIGATION)
 
-        # Trigger look
-        from server.engine.states.navigation import NavigationHandler
-        nav = NavigationHandler()
-        await nav._do_look(session)
-
     async def _handle_defeat(self, session: GameSession) -> None:
         """Handle defeat transition."""
         if not DEBUG_NO_DEATH_PENALTY:
@@ -136,8 +131,3 @@ class CombatHandler:
 
         await session.transition_to(State.NAVIGATION)
         await session.send("\n  You find yourself back at the Proving Grounds, wounds healed.\n")
-
-        # Trigger look
-        from server.engine.states.navigation import NavigationHandler
-        nav = NavigationHandler()
-        await nav._do_look(session)
