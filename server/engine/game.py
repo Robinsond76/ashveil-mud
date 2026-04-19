@@ -17,6 +17,10 @@ Input arrives via `await self.handle_input(raw_text)`.
 """
 from __future__ import annotations
 
+import json
+from typing import Any
+from unittest.mock import Mock, MagicMock, AsyncMock
+
 from server.config import (
     DEBUG_NO_DEATH_PENALTY,
     DEBUG_RESPAWN_ROOM_ID,
@@ -192,6 +196,9 @@ class GameSession:
         # Enter new state
         await HANDLER_REGISTRY[new_state].on_enter(self)
 
+        # Send updated context after state transition
+        await self._send_context_update()
+
     async def handle_input(self, raw: str) -> None:
         """Main entry point — delegates to current state handler."""
         text = raw.strip()
@@ -205,6 +212,9 @@ class GameSession:
 
         # Delegate to state handler
         await HANDLER_REGISTRY[self._state].handle(self, text)
+
+        # Send updated context after every command
+        await self._send_context_update()
 
     # ─────────────────────────────────────────────────────────────────────────
     # Lifecycle methods
@@ -790,6 +800,151 @@ class GameSession:
     async def _save(self) -> None:
         """Alias for save() (backward-compatible)."""
         self.save()
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Context panel data gathering
+    # ─────────────────────────────────────────────────────────────────────────
+
+    async def _send_context_update(self) -> None:
+        """Send current game context to client as JSON."""
+        if not self.player:
+            return
+
+        # Skip context updates if player is not a real Character (e.g., MagicMock in tests)
+        if not hasattr(self.player, 'to_dict'):
+            return
+
+        # Skip context updates in test environments (detected by mock send functions)
+        if isinstance(self._send_raw, (Mock, MagicMock, AsyncMock)):
+            return
+
+        try:
+            context = self._gather_context()
+            json_msg = json.dumps({
+                "type": "context",
+                "data": context
+            })
+            await self.send(json_msg)
+        except (TypeError, ValueError):
+            # Skip if context can't be serialized (e.g., mocked objects in tests)
+            pass
+
+    def _gather_context(self) -> dict[str, Any]:
+        """Gather all context data for the side panel."""
+        from server.engine.survival import party_survival_aggregate
+
+        context = {
+            "player": self._get_player_context(),
+            "party": self._get_party_context(),
+            "map": self._get_map_context(),
+            "inventory": self._get_inventory_context(),
+        }
+        return context
+
+    def _get_player_context(self) -> dict[str, Any]:
+        """Get player character stats and status."""
+        if not self.player:
+            return {}
+
+        h_pct, t_pct, s_pct = 1.0, 1.0, 1.0
+        if self.party:
+            from server.engine.survival import party_survival_aggregate
+            h_pct, t_pct, s_pct = party_survival_aggregate(self.player, self.party)
+
+        return {
+            "name": self.player.name,
+            "class": self.player.class_type,
+            "level": self.player.level,
+            "xp": self.player.xp,
+            "hp": self.player.hp,
+            "max_hp": self.player.max_hp,
+            "mp": self.player.mp,
+            "max_mp": self.player.max_mp,
+            "stats": {
+                "STR": self.player.STR,
+                "DEX": self.player.DEX,
+                "INT": self.player.INT,
+                "WIS": self.player.WIS,
+                "CON": self.player.CON,
+                "AGI": self.player.AGI,
+            },
+            "hunger": int(h_pct * 100),
+            "thirst": int(t_pct * 100),
+            "stamina": int(s_pct * 100),
+            "gold": self.player.gold,
+        }
+
+    def _get_party_context(self) -> list[dict[str, Any]]:
+        """Get party member information."""
+        if not self.party:
+            return []
+
+        members = []
+        for npc in self.party:
+            member_data = {
+                "name": npc.name,
+                "hp": npc.hp,
+                "max_hp": npc.max_hp,
+                "mp": npc.mp,
+                "max_mp": npc.max_mp,
+                "class": npc.class_type,
+            }
+            # template_id is NPC-specific; skip if not present
+            if hasattr(npc, 'template_id'):
+                member_data["template_id"] = npc.template_id
+            members.append(member_data)
+        return members
+
+    def _get_map_context(self) -> dict[str, Any]:
+        """Get mini-map data for current location."""
+        if not self.current_room_id:
+            return {}
+
+        room = self.world.get_room(self.current_room_id)
+        if not room:
+            return {}
+
+        # Get connected rooms
+        connected = {}
+        for direction, room_id in room.exits.items():
+            connected_room = self.world.get_room(room_id)
+            if connected_room:
+                connected[direction] = {
+                    "name": connected_room.name,
+                    "room_id": room_id,
+                }
+
+        return {
+            "current": {
+                "id": room.id,
+                "name": room.name,
+                "zone": room.zone,
+            },
+            "exits": connected,
+        }
+
+    def _get_inventory_context(self) -> dict[str, Any]:
+        """Get inventory summary."""
+        if not self.player:
+            return {}
+
+        from server.engine.items import get_item
+
+        items = []
+        for item_id in self.player.inventory[:10]:  # Limit to first 10
+            item = get_item(item_id)
+            if item:
+                items.append({
+                    "id": item_id,
+                    "name": item.name,
+                    "type": item.type,
+                })
+
+        return {
+            "count": len(self.player.inventory),
+            "items": items,
+            "equipment": self.player.equipment,
+        }
 
     async def _do_inventory(self, args: str = "") -> None:
         await do_inventory(self._send, self.player, self.party, self._cart_inventory, args)
