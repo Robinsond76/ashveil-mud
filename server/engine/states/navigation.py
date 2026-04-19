@@ -125,12 +125,17 @@ class NavigationHandler:
             "shout": self._do_shout,
             "ooc": self._do_shout,
             "help": self._do_help,
+            "lookmode": self._do_lookmode,
+            "battlelook": self._do_battlelook,
         }
 
     async def on_enter(self, session: GameSession) -> None:
-        """Subscribe to clock and show current room."""
+        """Subscribe to clock and show current room based on look_mode."""
         session._subscribe_clock()
-        await self._do_look(session)
+        if session.player and session.player.look_mode == "QUICK":
+            await self._do_quicklook(session)
+        else:
+            await self._do_look(session)
 
     async def on_exit(self, session: GameSession) -> None:
         """No cleanup needed."""
@@ -241,6 +246,82 @@ class NavigationHandler:
             await session.send(
                 "  !! The party is completely exhausted. Rest to recover stamina. !!\n"
             )
+
+    async def _do_quicklook(self, session: GameSession, *args) -> None:
+        from server.engine.items import get_item
+        from server.engine.npc import get_npc_template
+
+        room = session.world.get_room(session.current_room_id)
+        if room is None:
+            await session.send("  Error: current room not found.\n")
+            return
+
+        item_names = {i: get_item(i).name for i in room.item_ids if get_item(i)}
+
+        npc_flavors = []
+        if room.recruitable_npc_ids:
+            for tid in room.recruitable_npc_ids:
+                tpl = get_npc_template(tid)
+                if tpl:
+                    in_party = any(m.template_id == tid for m in session.party)
+                    if not in_party:
+                        npc_flavors.append(tpl.get("room_flavor", tpl["name"]))
+
+        encounter_lines = []
+        active_groups = session.world.active_encounter_groups(session.current_room_id)
+        for eg in active_groups:
+            label = eg.label if eg.label else eg.group
+            if room.id == "test_arena":
+                encounter_lines.append(
+                    f"[{eg.group}] {label} — {len(eg.members)} opponent(s)"
+                )
+            else:
+                encounter_lines.append(f"{', '.join(eg.members)}")
+
+        other_players = []
+        if session.player:
+            other_players = [
+                n for n in await session.world.players_in_room(session.current_room_id)
+                if n != session.player.name
+            ]
+
+        await session.send(room.render_quick(item_names, npc_flavors, encounter_lines, other_players))
+
+        if session.player and session.player.stamina <= 0.0:
+            await session.send(
+                "  !! The party is completely exhausted. Rest to recover stamina. !!\n"
+            )
+
+    async def _do_lookmode(self, session: GameSession, args: str, *_) -> None:
+        upper = args.strip().upper()
+
+        if not upper:
+            mode = session.player.look_mode
+            await session.send(f"  Current look mode: {mode}\n  Usage: LOOKMODE FULL | LOOKMODE QUICK\n")
+            return
+
+        if upper not in ("FULL", "QUICK"):
+            await session.send("  Usage: LOOKMODE FULL | LOOKMODE QUICK\n")
+            return
+
+        session.player.look_mode = upper
+        await session.send(f"  Look mode set to {upper}.\n")
+
+    async def _do_battlelook(self, session: GameSession, args: str, *_) -> None:
+        upper = args.strip().upper()
+
+        if not upper:
+            status = "ON" if session.player.battle_look else "OFF"
+            await session.send(f"  Battle look is {status}.\n  Usage: BATTLELOOK ON | BATTLELOOK OFF\n")
+            return
+
+        if upper not in ("ON", "OFF"):
+            await session.send("  Usage: BATTLELOOK ON | BATTLELOOK OFF\n")
+            return
+
+        session.player.battle_look = (upper == "ON")
+        status = "ON" if session.player.battle_look else "OFF"
+        await session.send(f"  Battle look set to {status}.\n")
 
     async def _do_move(self, session: GameSession, direction: str) -> None:
         """Move in a direction."""
