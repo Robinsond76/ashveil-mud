@@ -7,18 +7,18 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
+    html, body {
+      height: 100%;
       background: #0d0d0d;
+      font-family: monospace;
+      overflow: hidden;
+    }
+    body {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      font-family: monospace;
     }
     #header {
       width: 100%;
-      max-width: 900px;
       padding: 8px 16px;
       color: #c8a96e;
       font-size: 13px;
@@ -26,24 +26,48 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
     #header span { color: #888; }
-    #terminal-wrapper {
+    
+    /* Output area - takes 2/3 of remaining space */
+    #output-container {
+      flex: 2;
       width: 100%;
-      max-width: 900px;
       padding: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    #terminal-output {
       flex: 1;
-    }
-    #terminal {
       width: 100%;
+      background: #0d0d0d;
     }
+    
+    /* Input area - separated below output */
+    #input-container {
+      flex: 1;
+      width: 100%;
+      padding: 8px;
+      border-top: 2px solid #333;
+      display: flex;
+      flex-direction: column;
+      background: #111;
+    }
+    #terminal-input {
+      flex: 1;
+      width: 100%;
+      background: #0d0d0d;
+    }
+    
     #status-bar {
       width: 100%;
-      max-width: 900px;
       padding: 4px 16px;
       font-size: 11px;
       color: #555;
       border-top: 1px solid #222;
+      flex-shrink: 0;
     }
     #status-bar.connected { color: #4a8; }
     #status-bar.disconnected { color: #a44; }
@@ -54,9 +78,17 @@
     <strong>⚔ ASHVEIL MUD</strong>
     <span id="conn-label">Connecting...</span>
   </div>
-  <div id="terminal-wrapper">
-    <div id="terminal"></div>
+  
+  <!-- Output section - takes 2/3 -->
+  <div id="output-container">
+    <div id="terminal-output"></div>
   </div>
+  
+  <!-- Input section - separated below -->
+  <div id="input-container">
+    <div id="terminal-input"></div>
+  </div>
+  
   <div id="status-bar" class="disconnected">Disconnected</div>
 
   <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>

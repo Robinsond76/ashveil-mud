@@ -2,7 +2,42 @@
   const WS_URL = `ws://${location.host}/ws`;
   const RECONNECT_DELAY_MS = 3000;
 
-  const term = new Terminal({
+  // Output terminal (for server messages)
+  const outputTerm = new Terminal({
+    theme: {
+      background: "#0d0d0d",
+      foreground: "#d4c9a8",
+      cursor: "#c8a96e",
+      cursorAccent: "#0d0d0d",
+      black: "#1a1a1a",
+      red: "#c0392b",
+      green: "#4a8c5c",
+      yellow: "#c8a96e",
+      blue: "#4a6fa5",
+      magenta: "#8b5e83",
+      cyan: "#4a8c8c",
+      white: "#d4c9a8",
+      brightBlack: "#555555",
+      brightRed: "#e74c3c",
+      brightGreen: "#5dade2",
+      brightYellow: "#f0c040",
+      brightBlue: "#5b8dd9",
+      brightMagenta: "#b07cc6",
+      brightCyan: "#5dade2",
+      brightWhite: "#f5f0e8",
+    },
+    fontFamily: '"Cascadia Code", "Fira Code", "Consolas", monospace',
+    fontSize: 14,
+    lineHeight: 1.25,
+    cursorBlink: false,
+    cursorStyle: "block",
+    scrollback: 5000,
+    convertEol: true,
+    disableStdin: true,  // Read-only output terminal
+  });
+
+  // Input terminal (for user typing)
+  const inputTerm = new Terminal({
     theme: {
       background: "#0d0d0d",
       foreground: "#d4c9a8",
@@ -30,16 +65,27 @@
     lineHeight: 1.25,
     cursorBlink: true,
     cursorStyle: "block",
-    scrollback: 2000,
+    scrollback: 100,
     convertEol: true,
+    rows: 3,  // Small fixed height for input
   });
 
-  const fitAddon = new FitAddon.FitAddon();
-  term.loadAddon(fitAddon);
-  term.open(document.getElementById("terminal"));
-  fitAddon.fit();
+  const outputFitAddon = new FitAddon.FitAddon();
+  const inputFitAddon = new FitAddon.FitAddon();
+  
+  outputTerm.loadAddon(outputFitAddon);
+  inputTerm.loadAddon(inputFitAddon);
+  
+  outputTerm.open(document.getElementById("terminal-output"));
+  inputTerm.open(document.getElementById("terminal-input"));
+  
+  outputFitAddon.fit();
+  inputFitAddon.fit();
 
-  window.addEventListener("resize", () => fitAddon.fit());
+  window.addEventListener("resize", () => {
+    outputFitAddon.fit();
+    inputFitAddon.fit();
+  });
 
   const statusBar = document.getElementById("status-bar");
   const connLabel = document.getElementById("conn-label");
@@ -68,13 +114,13 @@
 
     ws.onopen = () => {
       setStatus(true);
-      term.focus();
+      inputTerm.focus();
     };
 
     ws.onmessage = (evt) => {
       if (typeof evt.data === "string") {
-        // Server sends plain text with \n — write directly; xterm handles convertEol
-        term.write(evt.data);
+        // Server sends plain text - write to output terminal only
+        outputTerm.write(evt.data);
       }
     };
 
@@ -102,55 +148,63 @@
     }
   }
 
-  // Handle keyboard input
-  term.onKey(({ key, domEvent }) => {
+  // Handle keyboard input on input terminal only
+  inputTerm.onKey(({ key, domEvent }) => {
     const code = domEvent.keyCode;
 
     if (code === 13) {
-      // Enter — send buffered line, echo newline
-      term.write("\r\n");
+      // Enter — send buffered line, clear input terminal
+      inputTerm.write("\r\n");
       sendLine(inputBuffer);
       inputBuffer = "";
+      // Clear input terminal
+      inputTerm.clear();
     } else if (code === 8) {
       // Backspace
       if (inputBuffer.length > 0) {
         inputBuffer = inputBuffer.slice(0, -1);
-        term.write("\b \b"); // erase last char on screen
+        inputTerm.write("\b \b");
       }
     } else if (code === 38 || code === 40) {
       // Up/Down arrows — ignore (no history for now)
     } else if (domEvent.ctrlKey && code === 67) {
       // Ctrl+C — clear buffer and send empty line
       inputBuffer = "";
-      term.write("^C\r\n");
+      inputTerm.write("^C\r\n");
+      inputTerm.clear();
     } else if (key && key.length === 1) {
       // Printable character — echo locally and buffer
       inputBuffer += key;
-      term.write(key);
+      inputTerm.write(key);
     }
   });
 
   // Paste support
-  term.onData((data) => {
+  inputTerm.onData((data) => {
     // onKey handles single chars; onData catches paste events
-    // Filter out chars already handled by onKey (single char, Enter, Backspace)
     if (data.length <= 1) return; // handled by onKey
     // Multi-char paste
     for (const ch of data) {
       if (ch === "\r" || ch === "\n") {
-        term.write("\r\n");
+        inputTerm.write("\r\n");
         sendLine(inputBuffer);
         inputBuffer = "";
+        inputTerm.clear();
       } else if (ch === "\b" || ch.charCodeAt(0) === 127) {
         if (inputBuffer.length > 0) {
           inputBuffer = inputBuffer.slice(0, -1);
-          term.write("\b \b");
+          inputTerm.write("\b \b");
         }
       } else {
         inputBuffer += ch;
-        term.write(ch);
+        inputTerm.write(ch);
       }
     }
+  });
+
+  // Focus input terminal on click anywhere
+  document.addEventListener("click", () => {
+    inputTerm.focus();
   });
 
   connect();
