@@ -82,6 +82,10 @@ class Character:
     skill_points: int = 0
     modifier_points: int = 0
 
+    # Display preferences
+    look_mode: str = "FULL"      # "FULL" or "QUICK"
+    battle_look: bool = True     # Show quick look after combat
+
     # Base stats — LOCKED at creation
     STR: int = 10
     DEX: int = 10
@@ -381,6 +385,8 @@ class Character:
             "owner": self.owner,
             "active_buffs": self.active_buffs,
             "lit_sources": dict(self.lit_sources),
+            "look_mode": self.look_mode,
+            "battle_look": self.battle_look,
         }
 
     @classmethod
@@ -417,6 +423,8 @@ class Character:
         c.owner = data.get("owner", "")
         c.active_buffs = data.get("active_buffs", {})
         c.lit_sources = data.get("lit_sources", {})
+        c.look_mode = data.get("look_mode", "FULL")
+        c.battle_look = data.get("battle_look", True)
         return c
 
     def stats_summary(self) -> str:
