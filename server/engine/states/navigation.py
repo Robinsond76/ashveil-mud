@@ -50,6 +50,7 @@ class NavigationHandler:
     def __init__(self):
         self.commands: dict[str, Callable] = {
             "look": self._do_look,
+            "l": self._do_look,
             "examine": self._do_examine,
             "inventory": self._do_inventory,
             "inv": self._do_inventory,
