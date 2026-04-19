@@ -67,7 +67,7 @@
     cursorStyle: "block",
     scrollback: 100,
     convertEol: true,
-    rows: 3,  // Small fixed height for input
+    rows: 1,  // Start with 1 row, will expand
   });
 
   const outputFitAddon = new FitAddon.FitAddon();
@@ -115,11 +115,30 @@
     ws.onopen = () => {
       setStatus(true);
       inputTerm.focus();
+      // Initialize context panel
+      if (window.ContextPanel) {
+        window.ContextPanel.init();
+      }
     };
 
     ws.onmessage = (evt) => {
       if (typeof evt.data === "string") {
-        // Server sends plain text - write to output terminal only
+        const data = evt.data.trim();
+        
+        // Check if it's a JSON message (starts with {)
+        if (data.startsWith('{')) {
+          try {
+            const msg = JSON.parse(data);
+            if (msg.type === 'context' && window.ContextPanel) {
+              window.ContextPanel.update(msg.data);
+              return;  // Don't print JSON to terminal
+            }
+          } catch (e) {
+            // Not valid JSON, treat as text
+          }
+        }
+        
+        // Regular text message - write to output terminal
         outputTerm.write(evt.data);
       }
     };
@@ -157,8 +176,9 @@
       inputTerm.write("\r\n");
       sendLine(inputBuffer);
       inputBuffer = "";
-      // Clear input terminal
+      // Clear input terminal and reset to 1 row
       inputTerm.clear();
+      inputTerm.resize(inputTerm.cols, 1);
     } else if (code === 8) {
       // Backspace
       if (inputBuffer.length > 0) {
@@ -172,10 +192,17 @@
       inputBuffer = "";
       inputTerm.write("^C\r\n");
       inputTerm.clear();
+      inputTerm.resize(inputTerm.cols, 1);
     } else if (key && key.length === 1) {
       // Printable character — echo locally and buffer
       inputBuffer += key;
       inputTerm.write(key);
+      
+      // Auto-expand terminal if text wraps (max 5 rows)
+      const lines = Math.ceil(inputBuffer.length / inputTerm.cols);
+      if (lines > inputTerm.rows && inputTerm.rows < 5) {
+        inputTerm.resize(inputTerm.cols, lines);
+      }
     }
   });
 
@@ -190,6 +217,7 @@
         sendLine(inputBuffer);
         inputBuffer = "";
         inputTerm.clear();
+        inputTerm.resize(inputTerm.cols, 1);
       } else if (ch === "\b" || ch.charCodeAt(0) === 127) {
         if (inputBuffer.length > 0) {
           inputBuffer = inputBuffer.slice(0, -1);
@@ -200,10 +228,16 @@
         inputTerm.write(ch);
       }
     }
+    
+    // Check if need to expand after paste (max 5 rows)
+    const lines = Math.ceil(inputBuffer.length / inputTerm.cols);
+    if (lines > inputTerm.rows && inputTerm.rows < 5) {
+      inputTerm.resize(inputTerm.cols, lines);
+    }
   });
 
-  // Focus input terminal on click anywhere
-  document.addEventListener("click", () => {
+  // Focus input terminal on click anywhere in terminal area
+  document.getElementById("terminal-area").addEventListener("click", () => {
     inputTerm.focus();
   });
 
