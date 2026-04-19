@@ -20,7 +20,7 @@
   {
     "id": "test_recruit_hall",
     "name": "The Wanderers' Hall",
-    "description": "A long hall where adventurers between jobs wait, trade stories, and look for work. Mismatched chairs and tables are scattered about. The guild board on the wall is covered in request notices.\n\nSeveral capable-looking individuals occupy the room:\n\n  - Gareth the Iron Guard leans on his sword in the corner, his chainmail polished to a dull gleam.\n  - Lyria the Ember Witch sits at a table, firelight dancing around her fingers as she pages through a grimoire.\n  - Sable the Shadow is barely visible in a darkened alcove — you only notice her because she wants you to.\n  - Aldric the Healer tends to a small shrine, offering a calm nod as you enter.\n  - Brom the Axeman sits on a crate, cheerfully spinning a battle axe that has no business being spun in an enclosed room.\n  - Vex the Frostweaver stands perfectly still near the window, trailing cold mist.\n  - Mira the Swift balances a dagger on her fingertip, watching you with sharp eyes.\n  - Sister Ophelia kneels before a small icon, her mace resting at her side.\n\nType TALK <name> to speak with anyone. Type LOOK to see who is available.",
+    "description": "A long hall where adventurers between jobs wait, trade stories, and look for work. Mismatched chairs and tables are scattered about. The guild board on the wall is covered in request notices.\n\nSeveral capable-looking individuals occupy the room, waiting for an opportunity to join a party.\n\nType TALK <name> to speak with anyone. Type LOOK to see who is available.",
     "exits": {
       "west": "test_entrance"
     },

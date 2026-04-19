@@ -115,11 +115,11 @@ LOOK
 ### Basic Loop
 
 ```
-LOOK           — see your surroundings
-N / S / E / W  — move between rooms
-STATUS         — check hunger, thirst, stamina
-STATS          — check HP, MP, level, equipment
-INV            — show inventory
+LOOK / L       — see your surroundings
+N / S / E / W    — move between rooms
+SS               — check hunger, thirst, stamina
+STATS            — check HP, MP, level, equipment
+INV              — show inventory
 ```
 
 ### Exploring Town
@@ -160,14 +160,19 @@ Three stats drain over time:
 
 | Stat | Restored By |
 |------|------------|
-| **Hunger** | `EAT <food>` (e.g., `EAT ration_pack`) |
-| **Thirst** | `DRINK <item>` (e.g., `DRINK water_flask`) |
-| **Stamina** | `SIT` to rest; `STAND` when full |
+| **Hunger** | `EAT <food>` or `EA <food>` (e.g., `EA ration_pack`) |
+| **Thirst** | `DRINK <item>` or `DR <item>` (e.g., `DR water_flask`) |
+| **Stamina** | `SIT` to rest; `REST` at campfire for full recovery |
 
 Check them anytime with:
 
 ```
 STATUS
+```
+or use the shorthand:
+
+```
+SS
 ```
 
 Low hunger or thirst reduces your combat damage. Low stamina blocks movement.
@@ -196,8 +201,9 @@ MANAGE <name> — edit their combat strategies
 ### Exploration
 ```
 LOOK / L                   — describe current room
-TIME                       — show game time and day
-WEATHER                    — show current weather
+X <item>                   — examine an item or NPC
+TIME / TI                  — show game time and day
+WEATHER / WEA              — show current weather
 LIGHT / LIGHTING           — show light level in room
 HELP [topic]               — in-game help system
 ```
@@ -205,25 +211,37 @@ HELP [topic]               — in-game help system
 ### Inventory & Equipment
 ```
 INV                        — list all party inventory
-EQUIP <member> <item>      — equip item on a party member
-UNEQUIP <member> <slot>    — remove equipped item
+EQUIP / EQ <member> <item> — equip item on a party member
+UNEQUIP / UNEQ <member> <slot> — remove equipped item
 DROP <item>                — drop item on the ground
 TAKE <item>                — pick up item from ground
-GIVE <item> <member>       — transfer item between members
+GIVE / GIV <item> <member> — transfer item between members
 ```
 
 ### Skills
 ```
-SKILLS                     — list unlocked skills
+SKILLS / SK                — list unlocked skills
 SKILLS UTILITY             — utility skills only
-LEARN <skill>              — unlock a skill (costs skill points)
+LEARN / LRN <skill>        — unlock a skill (costs skill points)
+UPGRADE / UPG <modifier>   — upgrade a stat modifier
 USE <skill>                — activate a utility skill
+BUFFS / B                  — show active buffs and effects
 ```
 
 ### System
 ```
-SAVE                       — save your progress
+SAVE / SV                  — save your progress
 QUIT / LOGOUT              — exit the game
+PARTY / P                  — show party status
+STATUS / SS                — show survival stats (hunger/thirst/stamina)
+```
+
+### Party & Combat
+```
+TALK / T <npc>             — speak with a recruitable NPC
+DISMISS / DIS <name>       — remove a companion from party
+ATTACK / K                 — engage in combat
+HORSES / HOR               — show horse status
 ```
 
 ---
