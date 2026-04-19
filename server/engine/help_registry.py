@@ -28,6 +28,24 @@ _HELP_TOPICS: dict[str, str] = {
         "    L",
         "  See also: NORTH, SOUTH, EAST, WEST",
     ]),
+    "LOOKMODE": _box("HELP: LOOKMODE", [
+        "  Control how room descriptions are displayed when entering rooms.",
+        "  Usage: LOOKMODE FULL | LOOKMODE QUICK",
+        "",
+        "  FULL  — Show complete room description (default)",
+        "  QUICK — Show compact summary with highlights only",
+        "",
+        "  Quick look shows:",
+        "    • Room name and available exits",
+        "    • Items on the floor (green)",
+        "    • Hostile enemies present (red)",
+        "    • Recruitable NPCs (yellow)",
+        "    • Other players in the room (blue)",
+        "",
+        "  Your preference is saved with your character.",
+        "",
+        "  See also: BATTLELOOK, LOOK",
+    ]),
     "NORTH": _box("HELP: NORTH / SOUTH / EAST / WEST", [
         "  Move your party in the given direction.",
         "  Usage: NORTH / N, SOUTH / S, EAST / E, WEST / W",
@@ -192,6 +210,20 @@ _HELP_TOPICS: dict[str, str] = {
         "  Show all active buffs and their effects on party members.",
         "  Usage: BUFFS  (or B)",
         "  See also: STATUS, SS, STATS, BUFFS",
+    ]),
+    "BATTLELOOK": _box("HELP: BATTLELOOK", [
+        "  Control whether a quick room summary is shown after combat ends.",
+        "  Usage: BATTLELOOK ON | BATTLELOOK OFF",
+        "",
+        "  ON  — Show quick look after victory/defeat (default)",
+        "  OFF — Show only the victory/defeat message",
+        "",
+        "  When ON, after combat ends you will see a compact room summary",
+        "  showing items, enemies, NPCs, and other players in the room.",
+        "",
+        "  Your preference is saved with your character.",
+        "",
+        "  See also: LOOKMODE, LOOK",
     ]),
     "TALK": _box("HELP: TALK", [
         "  Talk to an NPC to start a conversation or quest.",
@@ -795,6 +827,19 @@ _HELP_TOPICS: dict[str, str] = {
         "    Use on unknown or magical items to learn their stats.",
         "  See also: SPELLS, SKILLS, WIZARD",
     ]),
+    # ── Character Management ─────────────────────────────────────────────────
+    "DELETE": _box("HELP: DELETE", [
+        "  Permanently delete a character from the server.",
+        "  Usage: DELETE <character_name>",
+        "  Examples:",
+        "    DELETE Aldric",
+        "  Details:",
+        "    This command is only available at the login screen.",
+        "    You will be asked to confirm by typing the character name again.",
+        "    This action is PERMANENT and cannot be undone!",
+        "  To cancel: type CANCEL at the confirmation prompt.",
+        "  See also: (available at login)",
+    ]),
     # ── Multiplayer / Chat ────────────────────────────────────────────────────
     "SAY": _box("HELP: SAY", [
         "  Speak to all players in the same room.",
@@ -869,10 +914,13 @@ _HELP_TOPICS: dict[str, str] = {
 def _help_for_state(state) -> str:
     if state.value in ("connect", "creation"):
         return _box("HELP", [
-            "  You are creating a character. Available choices:",
+            "  You are at the login screen. Available commands:",
             "",
-            "    HELP RACES    — learn about available races",
-            "    HELP CLASSES  — learn about available classes",
+            "    <character_name>  — Enter name to login or create a new character",
+            "    DELETE <name>     — Permanently delete a character",
+            "    HELP RACES        — Learn about available races",
+            "    HELP CLASSES      — Learn about available classes",
+            "    HELP DELETE       — Learn about character deletion",
             "",
             "  Type your responses as prompted.",
         ])
