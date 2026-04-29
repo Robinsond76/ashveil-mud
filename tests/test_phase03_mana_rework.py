@@ -42,23 +42,26 @@ def test_rest_restores_player_mp_to_max():
     s = make_campfire_session()
     s.player.mp = 0
     s.player.max_mp = 40
-    asyncio.get_event_loop().run_until_complete(s._handle_campfire("REST"))
+    from server.engine.states.campfire import CampfireHandler
+    asyncio.get_event_loop().run_until_complete(CampfireHandler().handle(s, "REST"))
     assert s.player.mp == 40
 
 
 def test_rest_restores_npc_party_mp_to_max():
     """REST at campfire must fully restore all party NPC MP."""
+    from server.engine.states.campfire import CampfireHandler
     s = make_campfire_session()
     npc = NPC(name="Ariel", class_type="cleric")
     npc.mp = 0
     npc.max_mp = 30
     s.party = [npc]
-    asyncio.get_event_loop().run_until_complete(s._handle_campfire("REST"))
+    asyncio.get_event_loop().run_until_complete(CampfireHandler().handle(s, "REST"))
     assert npc.mp == 30
 
 
 def test_rest_restores_multiple_party_npcs_mp():
     """REST restores MP for every NPC in the party."""
+    from server.engine.states.campfire import CampfireHandler
     s = make_campfire_session()
     npcs = []
     for i in range(3):
@@ -67,7 +70,7 @@ def test_rest_restores_multiple_party_npcs_mp():
         n.max_mp = 20
         npcs.append(n)
     s.party = npcs
-    asyncio.get_event_loop().run_until_complete(s._handle_campfire("REST"))
+    asyncio.get_event_loop().run_until_complete(CampfireHandler().handle(s, "REST"))
     for n in npcs:
         assert n.mp == 20
 
@@ -92,7 +95,8 @@ def test_slow_mp_regen_during_sitting_tick():
     session.state = State.NAVIGATION
 
     # Call the tick directly
-    session._sitting_stamina_tick()
+    from server.engine.systems.survival import sitting_stamina_tick
+    sitting_stamina_tick(session.player, session.party, session.clock, session._sitting)
     assert player.mp == 5.3  # MP recovers at 0.3 per tick while sitting
 
 
@@ -112,5 +116,6 @@ def test_no_passive_mp_regen_on_drain_tick():
     session.player = player
     session.state = State.NAVIGATION
 
-    session._drain_survival_tick("Comfortable")
+    from server.engine.systems.survival import drain_survival_tick
+    drain_survival_tick(session.player, session.party, session.clock, "Comfortable")
     assert player.mp == 5  # unchanged

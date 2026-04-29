@@ -114,38 +114,42 @@ def test_thirst_drain_rate_quenched_plus_hot():
 # ── energised → _sitting_stamina_tick ────────────────────────────────────────
 
 def test_energised_increases_sit_recovery(make_nav_session):
+    from server.engine.systems.survival import sitting_stamina_tick
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.stamina = 50.0
     session.player.apply_food_buff("energised", 90, clock)
     session._sitting = True
-    session._sitting_stamina_tick()
+    sitting_stamina_tick(session.player, session.party, session.clock, session._sitting)
     assert session.player.stamina == pytest.approx(51.5)
 
 
 def test_energised_expired_gives_normal_recovery(make_nav_session):
+    from server.engine.systems.survival import sitting_stamina_tick
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.stamina = 50.0
     session.player.apply_food_buff("energised", 90, clock)
     clock.total_minutes = 200  # expired
     session._sitting = True
-    session._sitting_stamina_tick()
+    sitting_stamina_tick(session.player, session.party, session.clock, session._sitting)
     assert session.player.stamina == pytest.approx(51.0)
 
 
 def test_no_energised_normal_sit_recovery(make_nav_session):
+    from server.engine.systems.survival import sitting_stamina_tick
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.stamina = 50.0
     session._sitting = True
-    session._sitting_stamina_tick()
+    sitting_stamina_tick(session.player, session.party, session.clock, session._sitting)
     assert session.player.stamina == pytest.approx(51.0)
 
 
 # ── fortified → _do_move stamina drain ───────────────────────────────────────
 
 def test_fortified_reduces_move_stamina_drain(make_nav_session):
+    from server.engine.states.navigation import NavigationHandler
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.stamina = 100.0
@@ -159,12 +163,13 @@ def test_fortified_reduces_move_stamina_drain(make_nav_session):
     session.world.active_encounter_groups = lambda rid: []
     session.current_room_id = "r1"
 
-    asyncio.get_event_loop().run_until_complete(session._do_move("north"))
+    asyncio.get_event_loop().run_until_complete(NavigationHandler()._do_move(session, "north"))
     # Normal drain = 2.0, fortified = 2.0 * 0.7 = 1.4
     assert session.player.stamina == pytest.approx(98.6)
 
 
 def test_no_fortified_normal_move_drain(make_nav_session):
+    from server.engine.states.navigation import NavigationHandler
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.stamina = 100.0
@@ -176,28 +181,30 @@ def test_no_fortified_normal_move_drain(make_nav_session):
     session.world.active_encounter_groups = lambda rid: []
     session.current_room_id = "r1"
 
-    asyncio.get_event_loop().run_until_complete(session._do_move("north"))
+    asyncio.get_event_loop().run_until_complete(NavigationHandler()._do_move(session, "north"))
     assert session.player.stamina == pytest.approx(98.0)
 
 
 # ── _drain_survival_tick passes clock to drain rates ─────────────────────────
 
 def test_drain_survival_tick_honours_satiated_buff(make_nav_session):
+    from server.engine.systems.survival import drain_survival_tick
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.hunger = 100.0
     session.player.apply_food_buff("satiated", 180, clock)
-    session._drain_survival_tick("Comfortable")
+    drain_survival_tick(session.player, session.party, session.clock, "Comfortable")
     # satiated rate = 0.1 * 0.6 = 0.06
     assert session.player.hunger == pytest.approx(100.0 - 0.06)
 
 
 def test_drain_survival_tick_honours_quenched_buff(make_nav_session):
+    from server.engine.systems.survival import drain_survival_tick
     clock = make_clock(total_minutes=0)
     session = make_nav_session(clock=clock)
     session.player.thirst = 100.0
     session.player.apply_food_buff("quenched", 120, clock)
-    session._drain_survival_tick("Comfortable")
+    drain_survival_tick(session.player, session.party, session.clock, "Comfortable")
     # quenched rate = 0.15 * 0.6 = 0.09
     assert session.player.thirst == pytest.approx(100.0 - 0.09)
 

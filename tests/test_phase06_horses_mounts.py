@@ -13,6 +13,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 from server.engine.domain.character import Character
 from server.engine.domain.items import get_item
+from server.engine.systems.mounts import horse_count, stamina_multiplier
+from server.engine.states.navigation import NavigationHandler
+from server.engine.states.combat import CombatHandler
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -143,17 +146,17 @@ class TestPhaseB_HorseCount:
     def test_horse_count_zero_when_no_horses(self):
         gs = make_session()
         gs.player.inventory = []
-        assert gs._horse_count() == 0
+        assert horse_count(gs) == 0
 
     def test_horse_count_one_when_player_has_horse(self):
         gs = make_session()
         gs.player.inventory = ["horse"]
-        assert gs._horse_count() == 1
+        assert horse_count(gs) == 1
 
     def test_horse_count_two_when_player_has_two_horses(self):
         gs = make_session()
         gs.player.inventory = ["horse", "horse"]
-        assert gs._horse_count() == 2
+        assert horse_count(gs) == 2
 
     def test_horse_count_includes_npc_inventory(self):
         gs = make_session()
@@ -161,12 +164,12 @@ class TestPhaseB_HorseCount:
         npc = make_char("Gareth")
         npc.inventory = ["horse"]
         gs.party = [npc]
-        assert gs._horse_count() == 2
+        assert horse_count(gs) == 2
 
     def test_horse_count_ignores_non_mount_items(self):
         gs = make_session()
         gs.player.inventory = ["torch", "lockpick", "horse"]
-        assert gs._horse_count() == 1
+        assert horse_count(gs) == 1
 
 
 class TestPhaseB_StaminaMultiplier:
@@ -174,14 +177,14 @@ class TestPhaseB_StaminaMultiplier:
         gs = make_session()
         gs._mounted = False
         gs.player.inventory = ["horse"]
-        assert gs._stamina_multiplier() == 1.0
+        assert stamina_multiplier(gs) == 1.0
 
     def test_multiplier_is_full_reduction_when_one_horse_one_member(self):
         gs = make_session()
         gs._mounted = True
         gs.player.inventory = ["horse"]
         # ratio = min(1.0, 1/1) = 1.0 → multiplier = 1.0 - 0.60*1.0 = 0.40
-        assert abs(gs._stamina_multiplier() - 0.40) < 1e-9
+        assert abs(stamina_multiplier(gs) - 0.40) < 1e-9
 
     def test_multiplier_scales_by_ratio(self):
         gs = make_session()
@@ -193,21 +196,21 @@ class TestPhaseB_StaminaMultiplier:
             npc.inventory = []
             gs.party.append(npc)
         # ratio = min(1.0, 1/4) = 0.25 → multiplier = 1.0 - 0.60*0.25 = 0.85
-        assert abs(gs._stamina_multiplier() - 0.85) < 1e-9
+        assert abs(stamina_multiplier(gs) - 0.85) < 1e-9
 
     def test_multiplier_caps_at_max_reduction_when_more_horses_than_members(self):
         gs = make_session()
         gs._mounted = True
         gs.player.inventory = ["horse", "horse", "horse"]
         # 3 horses, 1 member → ratio = min(1.0, 3/1) = 1.0 → multiplier = 0.40
-        assert abs(gs._stamina_multiplier() - 0.40) < 1e-9
+        assert abs(stamina_multiplier(gs) - 0.40) < 1e-9
 
     def test_multiplier_zero_horses_gives_one(self):
         gs = make_session()
         gs._mounted = True
         gs.player.inventory = []
         # No horses, mounted (shouldn't happen logically but defensively: ratio=0 → mult=1.0)
-        assert abs(gs._stamina_multiplier() - 1.0) < 1e-9
+        assert abs(stamina_multiplier(gs) - 1.0) < 1e-9
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -222,7 +225,7 @@ class TestPhaseC_MoveHook_Detach:
         gs._mounted = True
         gs.player.inventory = ["horse"]
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert gs._mounted is False
 
@@ -233,7 +236,7 @@ class TestPhaseC_MoveHook_Detach:
         gs._mounted = True
         gs.player.inventory = ["horse"]
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert gs._horses_outside is True
 
@@ -245,7 +248,7 @@ class TestPhaseC_MoveHook_Detach:
         gs._mounted = True
         gs.player.inventory = ["horse"]
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         all_output = "".join(c.args[0] for c in send_fn.call_args_list)
         assert "horses wait outside" in all_output.lower()
@@ -257,7 +260,7 @@ class TestPhaseC_MoveHook_Detach:
         gs._mounted = True
         gs.player.inventory = ["horse"]
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert gs._mounted is False
         assert gs._horses_outside is True
@@ -269,7 +272,7 @@ class TestPhaseC_MoveHook_Detach:
         gs._mounted = False
         gs._horses_outside = False
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert gs._mounted is False
         assert gs._horses_outside is False
@@ -281,7 +284,7 @@ class TestPhaseC_MoveHook_Detach:
         gs.current_room_id = "src_room"
         gs._mounted = False
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         all_output = "".join(c.args[0] for c in send_fn.call_args_list)
         assert "horses wait outside" not in all_output.lower()
@@ -296,7 +299,7 @@ class TestPhaseC_MoveHook_Remount:
         gs._horses_outside = True
         gs.player.inventory = ["horse"]
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert gs._horses_outside is False
 
@@ -308,7 +311,7 @@ class TestPhaseC_MoveHook_Remount:
         gs._horses_outside = True
         gs.player.inventory = ["horse"]
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert gs._mounted is True
 
@@ -321,7 +324,7 @@ class TestPhaseC_MoveHook_Remount:
         gs._horses_outside = True
         gs.player.inventory = ["horse"]
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         all_output = "".join(c.args[0] for c in send_fn.call_args_list)
         assert "fall back into step" in all_output.lower()
@@ -333,7 +336,7 @@ class TestPhaseC_MoveHook_Remount:
         gs._mounted = False
         gs._horses_outside = False
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert gs._mounted is False
 
@@ -347,7 +350,7 @@ class TestPhaseC_StaminaDrain:
         gs.player.inventory = ["horse"]
         gs.player.stamina = 100.0
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         # 1 horse, 1 party member → ratio=1.0 → multiplier=0.40 → drain = 2*0.40 = 0.80
         assert abs(gs.player.stamina - 99.20) < 0.01
@@ -360,7 +363,7 @@ class TestPhaseC_StaminaDrain:
         gs.player.inventory = ["horse"]
         gs.player.stamina = 100.0
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert abs(gs.player.stamina - 98.0) < 0.01
 
@@ -388,7 +391,7 @@ class TestPhaseD_CombatDismount:
         gs.current_room_id = "outdoor_room"
 
         from unittest.mock import patch
-        with patch("server.engine.game.CombatSession") as MockCombat:
+        with patch("server.engine.states.combat.CombatSession") as MockCombat:
             mock_cs = MagicMock()
             from server.engine.combat.actions import CombatResult as _CR
             mock_cs.run_and_get_result = AsyncMock(return_value=_CR(state='defeat', summary=[]))
@@ -398,11 +401,12 @@ class TestPhaseD_CombatDismount:
             encounter_group = MagicMock()
             encounter_group.members = ["goblin"]
 
-            with patch("server.engine.domain.npc.spawn_npc") as mock_spawn:
+            with patch("server.engine.states.combat.spawn_npc") as mock_spawn:
                 mock_npc = MagicMock()
                 mock_spawn.return_value = mock_npc
 
-                run(gs._start_combat(encounter_group))
+                gs._state_data = {"encounter_group": encounter_group}
+                run(CombatHandler().on_enter(gs))
 
         assert gs._mounted is False
 
@@ -424,7 +428,7 @@ class TestPhaseD_CombatDismount:
         gs.current_room_id = "outdoor_room"
 
         from unittest.mock import patch
-        with patch("server.engine.game.CombatSession") as MockCombat:
+        with patch("server.engine.states.combat.CombatSession") as MockCombat:
             mock_cs = MagicMock()
             from server.engine.combat.actions import CombatResult as _CR
             mock_cs.run_and_get_result = AsyncMock(return_value=_CR(state='defeat', summary=[]))
@@ -434,11 +438,12 @@ class TestPhaseD_CombatDismount:
             encounter_group = MagicMock()
             encounter_group.members = ["goblin"]
 
-            with patch("server.engine.domain.npc.spawn_npc") as mock_spawn:
+            with patch("server.engine.states.combat.spawn_npc") as mock_spawn:
                 mock_npc = MagicMock()
                 mock_spawn.return_value = mock_npc
 
-                run(gs._start_combat(encounter_group))
+                gs._state_data = {"encounter_group": encounter_group}
+                run(CombatHandler().on_enter(gs))
 
         assert gs._was_mounted is True
 
@@ -460,7 +465,7 @@ class TestPhaseD_CombatDismount:
         gs.current_room_id = "outdoor_room"
 
         from unittest.mock import patch
-        with patch("server.engine.game.CombatSession") as MockCombat:
+        with patch("server.engine.states.combat.CombatSession") as MockCombat:
             mock_cs = MagicMock()
             from server.engine.combat.actions import CombatResult as _CR
             mock_cs.run_and_get_result = AsyncMock(return_value=_CR(state='defeat', summary=[]))
@@ -470,11 +475,12 @@ class TestPhaseD_CombatDismount:
             encounter_group = MagicMock()
             encounter_group.members = ["goblin"]
 
-            with patch("server.engine.domain.npc.spawn_npc") as mock_spawn:
+            with patch("server.engine.states.combat.spawn_npc") as mock_spawn:
                 mock_npc = MagicMock()
                 mock_spawn.return_value = mock_npc
 
-                run(gs._start_combat(encounter_group))
+                gs._state_data = {"encounter_group": encounter_group}
+                run(CombatHandler().on_enter(gs))
 
         all_output = "".join(str(c.args[0]) for c in send_fn.call_args_list)
         assert "dismounts" in all_output.lower()
@@ -495,7 +501,7 @@ class TestPhaseD_CombatDismount:
         gs._was_mounted = False
 
         from unittest.mock import patch
-        with patch("server.engine.game.CombatSession") as MockCombat:
+        with patch("server.engine.states.combat.CombatSession") as MockCombat:
             mock_cs = MagicMock()
             from server.engine.combat.actions import CombatResult as _CR
             mock_cs.run_and_get_result = AsyncMock(return_value=_CR(state='defeat', summary=[]))
@@ -505,11 +511,12 @@ class TestPhaseD_CombatDismount:
             encounter_group = MagicMock()
             encounter_group.members = ["goblin"]
 
-            with patch("server.engine.domain.npc.spawn_npc") as mock_spawn:
+            with patch("server.engine.states.combat.spawn_npc") as mock_spawn:
                 mock_npc = MagicMock()
                 mock_spawn.return_value = mock_npc
 
-                run(gs._start_combat(encounter_group))
+                gs._state_data = {"encounter_group": encounter_group}
+                run(CombatHandler().on_enter(gs))
 
         assert gs._was_mounted is False
 
@@ -531,7 +538,7 @@ class TestPhaseD_CombatRemount:
         gs._mounted = False
         gs.current_room_id = "outdoor_room"
 
-        run(gs._end_combat_victory())
+        run(CombatHandler()._handle_victory(gs))
 
         assert gs._mounted is True
         assert gs._was_mounted is False
@@ -554,7 +561,7 @@ class TestPhaseD_CombatRemount:
         gs._mounted = False
         gs.current_room_id = "outdoor_room"
 
-        run(gs._end_combat_victory())
+        run(CombatHandler()._handle_victory(gs))
 
         all_output = "".join(str(c.args[0]) for c in send_fn.call_args_list)
         assert "remounts" in all_output.lower()
@@ -575,7 +582,7 @@ class TestPhaseD_CombatRemount:
         gs._mounted = False
         gs.current_room_id = "indoor_room"
 
-        run(gs._end_combat_victory())
+        run(CombatHandler()._handle_victory(gs))
 
         assert gs._mounted is False
         assert gs._was_mounted is False
@@ -596,7 +603,7 @@ class TestPhaseD_CombatRemount:
         gs._mounted = False
         gs.current_room_id = "dungeon_room"
 
-        run(gs._end_combat_victory())
+        run(CombatHandler()._handle_victory(gs))
 
         assert gs._mounted is False
         assert gs._was_mounted is False
@@ -616,7 +623,7 @@ class TestPhaseD_CombatRemount:
         gs._was_mounted = True
         gs._mounted = False
 
-        run(gs._end_combat_victory())
+        run(CombatHandler()._handle_victory(gs))
 
         assert gs._was_mounted is False
 

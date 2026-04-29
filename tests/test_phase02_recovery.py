@@ -38,31 +38,34 @@ def make_campfire_session():
 # ── Phase E: REST restores stamina ───────────────────────────────────────────
 
 def test_rest_restores_player_stamina_to_max():
+    from server.engine.states.campfire import CampfireHandler
     sent_messages.clear()
     s = make_campfire_session()
     s.player.stamina = 30.0
-    asyncio.get_event_loop().run_until_complete(s._handle_campfire("REST"))
+    asyncio.get_event_loop().run_until_complete(CampfireHandler().handle(s, "REST"))
     assert s.player.stamina == s.player.max_stamina
 
 
 def test_rest_restores_npc_stamina_to_max():
     from server.engine.domain.npc import NPC
+    from server.engine.states.campfire import CampfireHandler
     sent_messages.clear()
     s = make_campfire_session()
     npc = NPC(name="Ally", class_type="warrior")
     npc.hp = 1
     npc.stamina = 10.0
     s.party = [npc]
-    asyncio.get_event_loop().run_until_complete(s._handle_campfire("REST"))
+    asyncio.get_event_loop().run_until_complete(CampfireHandler().handle(s, "REST"))
     assert npc.stamina == npc.max_stamina
 
 
 def test_rest_also_restores_hp_mp():
+    from server.engine.states.campfire import CampfireHandler
     sent_messages.clear()
     s = make_campfire_session()
     s.player.hp = 1
     s.player.mp = 1
-    asyncio.get_event_loop().run_until_complete(s._handle_campfire("REST"))
+    asyncio.get_event_loop().run_until_complete(CampfireHandler().handle(s, "REST"))
     assert s.player.hp == s.player.max_hp
     assert s.player.mp == s.player.max_mp
 
@@ -88,25 +91,28 @@ def test_stand_command_clears_sitting_flag():
 
 def test_sitting_tick_recovers_stamina():
     """_sitting_stamina_tick() should add +1 stamina to each party member."""
+    from server.engine.systems.survival import sitting_stamina_tick
     s = make_campfire_session()
     s.state = State.NAVIGATION
     s._sitting = True
     s.player.stamina = 50.0
-    s._sitting_stamina_tick()
+    sitting_stamina_tick(s.player, s.party, s.clock, s._sitting)
     assert s.player.stamina == 51.0
 
 
 def test_sitting_tick_caps_at_max_stamina():
+    from server.engine.systems.survival import sitting_stamina_tick
     s = make_campfire_session()
     s.state = State.NAVIGATION
     s._sitting = True
     s.player.stamina = 100.0
-    s._sitting_stamina_tick()
+    sitting_stamina_tick(s.player, s.party, s.clock, s._sitting)
     assert s.player.stamina == 100.0
 
 
 def test_sitting_tick_affects_npc_too():
     from server.engine.domain.npc import NPC
+    from server.engine.systems.survival import sitting_stamina_tick
     s = make_campfire_session()
     s.state = State.NAVIGATION
     s._sitting = True
@@ -115,14 +121,15 @@ def test_sitting_tick_affects_npc_too():
     npc.stamina = 80.0; npc.max_stamina = 100.0
     npc.hp = 30; npc.max_hp = 30
     s.party = [npc]
-    s._sitting_stamina_tick()
+    sitting_stamina_tick(s.player, s.party, s.clock, s._sitting)
     assert npc.stamina == 81.0
 
 
 def test_sitting_tick_does_not_run_when_not_sitting():
+    from server.engine.systems.survival import sitting_stamina_tick
     s = make_campfire_session()
     s.state = State.NAVIGATION
     s._sitting = False
     s.player.stamina = 50.0
-    s._sitting_stamina_tick()
+    sitting_stamina_tick(s.player, s.party, s.clock, s._sitting)
     assert s.player.stamina == 50.0

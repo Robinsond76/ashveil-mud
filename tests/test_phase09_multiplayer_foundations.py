@@ -15,6 +15,7 @@ import pytest
 from server.engine.game import GameSession, State
 from server.engine.domain.character import Character
 from server.engine.world.map import WorldMap, Room
+from server.engine.states.navigation import NavigationHandler
 
 
 # ── Test helpers ──────────────────────────────────────────────────────────────
@@ -181,7 +182,7 @@ class TestPhaseC_BroadcastHelper:
         sessions["Mira"] = s2
 
         received = collect_output(s2)
-        run(s1._broadcast_to_room("Hello room!"))
+        run(s1.broadcast_to_room("Hello room!"))
         assert any("Hello room!" in m for m in received)
 
     def test_broadcast_exclude_self_true_skips_sender(self):
@@ -190,7 +191,7 @@ class TestPhaseC_BroadcastHelper:
         sessions["Aldric"] = s1
 
         received = collect_output(s1)
-        run(s1._broadcast_to_room("Test", exclude_self=True))
+        run(s1.broadcast_to_room("Test", exclude_self=True))
         assert not any("Test" in m for m in received)
 
     def test_broadcast_exclude_self_false_includes_sender(self):
@@ -199,7 +200,7 @@ class TestPhaseC_BroadcastHelper:
         sessions["Aldric"] = s1
 
         received = collect_output(s1)
-        run(s1._broadcast_to_room("Echo!", exclude_self=False))
+        run(s1.broadcast_to_room("Echo!", exclude_self=False))
         assert any("Echo!" in m for m in received)
 
     def test_broadcast_does_not_reach_different_room(self):
@@ -211,7 +212,7 @@ class TestPhaseC_BroadcastHelper:
         sessions["Mira"] = s2
 
         received = collect_output(s2)
-        run(s1._broadcast_to_room("Only for room_a"))
+        run(s1.broadcast_to_room("Only for room_a"))
         assert not any("Only for room_a" in m for m in received)
 
 
@@ -234,13 +235,13 @@ class TestPhaseD_MovementBroadcasts:
     def test_move_updates_room_occupancy_leave(self):
         s1, s2, sessions = self._setup_two_players()
         s1.player.stamina = 100.0
-        run(s1._do_move("north"))
+        run(NavigationHandler()._do_move(s1, "north"))
         assert "Aldric" not in run(s1.world.players_in_room("room_a"))
 
     def test_move_updates_room_occupancy_enter(self):
         s1, s2, sessions = self._setup_two_players()
         s1.player.stamina = 100.0
-        run(s1._do_move("north"))
+        run(NavigationHandler()._do_move(s1, "north"))
         assert "Aldric" in run(s1.world.players_in_room("room_b"))
 
     def test_move_broadcasts_leaves_to_old_room(self):
@@ -248,7 +249,7 @@ class TestPhaseD_MovementBroadcasts:
         s1.player.stamina = 100.0
 
         received_s2 = collect_output(s2)
-        run(s1._do_move("north"))
+        run(NavigationHandler()._do_move(s1, "north"))
         output = " ".join(received_s2)
         assert "Aldric" in output
         assert "north" in output.lower() or "heads" in output.lower()
@@ -265,7 +266,7 @@ class TestPhaseD_MovementBroadcasts:
         s1.player.stamina = 100.0
 
         received_s2 = collect_output(s2)
-        run(s1._do_move("north"))
+        run(NavigationHandler()._do_move(s1, "north"))
         output = " ".join(received_s2)
         assert "Aldric" in output
         assert "arrives" in output.lower() or "south" in output.lower()
@@ -287,7 +288,7 @@ class TestPhaseE_LookAlsoHere:
         sessions["Mira"] = s2
 
         received = collect_output(s1)
-        run(s1._do_look())
+        run(NavigationHandler()._do_look(s1))
         output = " ".join(received)
         assert "Mira" in output
         assert "Also here" in output
@@ -299,7 +300,7 @@ class TestPhaseE_LookAlsoHere:
         run(s1.world.enter_room("Aldric", "room_a"))
 
         received = collect_output(s1)
-        run(s1._do_look())
+        run(NavigationHandler()._do_look(s1))
         # Should not show "Also here: Aldric"
         output = " ".join(received)
         if "Also here" in output:
@@ -309,7 +310,7 @@ class TestPhaseE_LookAlsoHere:
         s1 = make_session(name="Aldric", room_id="room_a")
 
         received = collect_output(s1)
-        run(s1._do_look())
+        run(NavigationHandler()._do_look(s1))
         output = " ".join(received)
         assert "Also here" not in output
 

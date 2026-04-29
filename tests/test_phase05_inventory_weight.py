@@ -14,6 +14,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 from server.engine.domain.character import Character
 from server.engine.domain.items import EQUIPMENT_SLOTS, get_item
+from server.engine.systems.mounts import party_has_cart
+from server.engine.systems.inventory import (
+    auto_assign_item, auto_assign_item_with_message, party_inventory_view,
+)
+from server.engine.states.navigation import NavigationHandler
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -214,12 +219,12 @@ class TestPhaseC_CartState:
     def test_party_has_cart_false_when_no_cart(self):
         gs = make_session()
         gs.player.inventory = []
-        assert gs._party_has_cart() is False
+        assert party_has_cart(gs) is False
 
     def test_party_has_cart_true_when_player_has_cart_in_inventory(self):
         gs = make_session()
         gs.player.inventory = ["travellers_cart"]
-        assert gs._party_has_cart() is True
+        assert party_has_cart(gs) is True
 
     def test_party_has_cart_true_when_npc_has_cart_in_inventory(self):
         gs = make_session()
@@ -227,7 +232,7 @@ class TestPhaseC_CartState:
         npc = make_npc_char("Gareth")
         npc.inventory = ["travellers_cart"]
         gs.party = [npc]
-        assert gs._party_has_cart() is True
+        assert party_has_cart(gs) is True
 
 
 class TestPhaseC_CartMoveLogic:
@@ -271,7 +276,7 @@ class TestPhaseC_CartMoveLogic:
         gs._cart_present = True
         gs._cart_room_id = None
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert gs._cart_present is False
         assert gs._cart_room_id == "src_room"
@@ -284,7 +289,7 @@ class TestPhaseC_CartMoveLogic:
         gs.player.inventory = ["travellers_cart"]
         gs._cart_present = True
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         all_output = "".join(call.args[0] for call in send_fn.call_args_list)
         assert "cart remains outside" in all_output.lower()
@@ -298,7 +303,7 @@ class TestPhaseC_CartMoveLogic:
         gs._cart_present = True
         gs._cart_room_id = None
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert gs._cart_present is True
         assert gs._cart_room_id is None
@@ -311,7 +316,7 @@ class TestPhaseC_CartMoveLogic:
         gs._cart_present = False
         gs._cart_room_id = "some_outdoor_room"
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         assert gs._cart_present is True
         assert gs._cart_room_id is None
@@ -324,7 +329,7 @@ class TestPhaseC_CartMoveLogic:
         gs._cart_present = False
         gs._cart_room_id = "some_outdoor_room"
 
-        run(gs._do_move("north"))
+        run(NavigationHandler()._do_move(gs, "north"))
 
         all_output = "".join(call.args[0] for call in send_fn.call_args_list)
         assert "cart catches up" in all_output.lower()
@@ -338,7 +343,7 @@ class TestPhaseD_AutoAssign:
     def test_item_assigned_to_player_when_has_space(self):
         gs = make_session()
         gs.player.inventory = []
-        result = gs._auto_assign_item("torch")
+        result = auto_assign_item(gs.player, gs.party, "torch", gs._cart_inventory, gs._cart_present)
         assert result is True
         assert "torch" in gs.player.inventory
 
@@ -349,7 +354,7 @@ class TestPhaseD_AutoAssign:
         npc = make_npc_char("Gareth")
         npc.inventory = []
         gs.party = [npc]
-        result = gs._auto_assign_item("torch")
+        result = auto_assign_item(gs.player, gs.party, "torch", gs._cart_inventory, gs._cart_present)
         assert result is True
         assert "torch" in npc.inventory
 
@@ -359,7 +364,7 @@ class TestPhaseD_AutoAssign:
         gs._cart_present = False
         # No party members
         gs.party = []
-        result = gs._auto_assign_item("torch")
+        result = auto_assign_item(gs.player, gs.party, "torch", gs._cart_inventory, gs._cart_present)
         assert result is False
 
     def test_over_encumbered_message_sent_when_no_space(self):
@@ -368,7 +373,7 @@ class TestPhaseD_AutoAssign:
         gs.player.inventory = ["torch"] * gs.player.carry_slots
         gs.party = []
         gs._cart_present = False
-        run(gs._auto_assign_item_with_message("torch"))
+        run(auto_assign_item_with_message(gs._send_raw, gs.player, gs.party, "torch", gs._cart_inventory, gs._cart_present))
         all_output = "".join(call.args[0] for call in send_fn.call_args_list)
         assert "over-encumbered" in all_output.lower()
 
@@ -377,7 +382,7 @@ class TestPhaseD_AutoAssign:
         gs.player.inventory = ["torch"] * gs.player.carry_slots
         gs.party = []
         gs._cart_present = True
-        result = gs._auto_assign_item("torch")
+        result = auto_assign_item(gs.player, gs.party, "torch", gs._cart_inventory, gs._cart_present)
         assert result is True
         assert "torch" in gs._cart_inventory
 
@@ -391,7 +396,7 @@ class TestPhaseD_AutoAssign:
         send_fn = AsyncMock()
         gs = make_session(world=world, send_fn=send_fn)
         gs.player.inventory = []
-        run(gs._do_pick_up("torch"))
+        run(NavigationHandler()._do_pick_up(gs, "torch"))
         assert "torch" in gs.player.inventory
 
 
@@ -403,7 +408,7 @@ class TestPhaseE_PartyInventoryView:
     def test_returns_player_items_with_holder_name(self):
         gs = make_session()
         gs.player.inventory = ["torch"]
-        result = gs._party_inventory_view()
+        result = party_inventory_view(gs.player, gs.party)
         holders = [r[0] for r in result]
         assert gs.player.name in holders
 
@@ -413,14 +418,14 @@ class TestPhaseE_PartyInventoryView:
         npc = make_npc_char("Gareth")
         npc.inventory = ["torch"]
         gs.party = [npc]
-        result = gs._party_inventory_view()
+        result = party_inventory_view(gs.player, gs.party)
         holders = [r[0] for r in result]
         assert "Gareth" in holders
 
     def test_returns_tuple_of_three_fields(self):
         gs = make_session()
         gs.player.inventory = ["torch"]
-        result = gs._party_inventory_view()
+        result = party_inventory_view(gs.player, gs.party)
         assert len(result[0]) == 3  # (holder_name, item_id, item_name)
 
     def test_inv_command_shows_party_items(self):

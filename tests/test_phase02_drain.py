@@ -27,48 +27,54 @@ def make_session_with_player():
 # ── Phase C: _drain_survival_tick ─────────────────────────────────────────────
 
 def test_drain_tick_reduces_hunger():
+    from server.engine.systems.survival import drain_survival_tick
     s = make_session_with_player()
     initial = s.player.hunger
-    s._drain_survival_tick("Comfortable")
+    drain_survival_tick(s.player, s.party, s.clock, "Comfortable")
     assert s.player.hunger < initial
 
 
 def test_drain_tick_reduces_thirst_comfortable():
+    from server.engine.systems.survival import drain_survival_tick
     s = make_session_with_player()
     initial = s.player.thirst
-    s._drain_survival_tick("Comfortable")
+    drain_survival_tick(s.player, s.party, s.clock, "Comfortable")
     assert s.player.thirst < initial
 
 
 def test_drain_tick_hot_drains_thirst_faster_than_comfortable():
+    from server.engine.systems.survival import drain_survival_tick
     s = make_session_with_player()
     s2 = make_session_with_player()
-    s._drain_survival_tick("Hot")
-    s2._drain_survival_tick("Comfortable")
+    drain_survival_tick(s.player, s.party, s.clock, "Hot")
+    drain_survival_tick(s2.player, s2.party, s2.clock, "Comfortable")
     # Hot should drain more thirst
     assert s.player.thirst < s2.player.thirst
 
 
 def test_drain_tick_scorching_drains_thirst_2x():
+    from server.engine.systems.survival import drain_survival_tick
     s = make_session_with_player()
     s_base = make_session_with_player()
-    s._drain_survival_tick("Scorching")
-    s_base._drain_survival_tick("Comfortable")
+    drain_survival_tick(s.player, s.party, s.clock, "Scorching")
+    drain_survival_tick(s_base.player, s_base.party, s_base.clock, "Comfortable")
     base_drain = 100.0 - s_base.player.thirst
     scorch_drain = 100.0 - s.player.thirst
     assert abs(scorch_drain - base_drain * 2.0) < 1e-6
 
 
 def test_drain_tick_does_not_drain_below_zero():
+    from server.engine.systems.survival import drain_survival_tick
     s = make_session_with_player()
     s.player.hunger = 0.0
     s.player.thirst = 0.0
-    s._drain_survival_tick("Scorching")
+    drain_survival_tick(s.player, s.party, s.clock, "Scorching")
     assert s.player.hunger >= 0.0
     assert s.player.thirst >= 0.0
 
 
 def test_drain_tick_affects_all_party_members():
+    from server.engine.systems.survival import drain_survival_tick
     s = make_session_with_player()
     npc = NPC.__new__(NPC)
     npc.name = "Ally"
@@ -78,7 +84,7 @@ def test_drain_tick_affects_all_party_members():
     npc.class_type = "warrior"
     npc.hp = 30; npc.max_hp = 30
     s.party = [npc]
-    s._drain_survival_tick("Comfortable")
+    drain_survival_tick(s.player, s.party, s.clock, "Comfortable")
     assert npc.hunger < 100.0
     assert npc.thirst < 100.0
 
@@ -88,6 +94,7 @@ def test_drain_tick_affects_all_party_members():
 def test_move_drains_party_stamina():
     """After a successful move, all party members lose 2 stamina."""
     import asyncio
+    from server.engine.states.navigation import NavigationHandler
     from unittest.mock import MagicMock, AsyncMock
 
     # Build a minimal world with one room that has an exit
@@ -131,13 +138,14 @@ def test_move_drains_party_stamina():
     session.current_room_id = "start"
 
     initial_stamina = session.player.stamina
-    asyncio.get_event_loop().run_until_complete(session._do_move("north"))
+    asyncio.get_event_loop().run_until_complete(NavigationHandler()._do_move(session, "north"))
     assert session.player.stamina == initial_stamina - 2.0
 
 
 def test_move_blocked_when_stamina_zero():
     """At stamina=0, movement should be refused."""
     import asyncio
+    from server.engine.states.navigation import NavigationHandler
     from server.engine.world.map import Room
 
     room = Room.__new__(Room)
@@ -167,7 +175,7 @@ def test_move_blocked_when_stamina_zero():
     session.state = State.NAVIGATION
     session.current_room_id = "start"
 
-    asyncio.get_event_loop().run_until_complete(session._do_move("north"))
+    asyncio.get_event_loop().run_until_complete(NavigationHandler()._do_move(session, "north"))
     # Player should still be in start room
     assert session.current_room_id == "start"
     # Should have gotten a warning

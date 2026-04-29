@@ -112,7 +112,8 @@ def test_look_zero_stamina_shows_exhaustion_warning():
     s.state = State.NAVIGATION
     s.current_room_id = "here"
 
-    asyncio.get_event_loop().run_until_complete(s._do_look())
+    from server.engine.states.navigation import NavigationHandler
+    asyncio.get_event_loop().run_until_complete(NavigationHandler()._do_look(s))
     output = "".join(collected).lower()
     assert "exhaust" in output or "stamina" in output or "rest" in output
 
