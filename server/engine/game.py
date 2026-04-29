@@ -46,22 +46,23 @@ from server.engine.strategy import (
     add_strategy, clear_strategies, list_strategies, remove_strategy,
 )
 from server.engine.display.help_data import send_help
-from server.engine.inventory_ops import (
+from server.engine.systems.inventory import (
     party_inventory_view, do_inventory, do_equip, do_unequip, do_drop,
     do_pick_up, do_give, do_load_cart, do_unload_cart,
     auto_assign_item, auto_assign_item_with_message,
 )
-from server.engine.campfire import do_formation, do_manage
-from server.engine.chat import do_say, do_emote, do_shout
+from server.engine.systems.campfire import do_formation, do_manage
+from server.engine.systems.chat import do_say, do_emote, do_shout
 from server.engine.world.environment import (
     carried_light as _carried_light_fn,
     effective_light as _effective_light_fn,
     do_time, do_weather, do_light, do_envdetails, do_light_source,
 )
-from server.engine.survival import (
+from server.engine.systems.survival import (
     party_survival_aggregate, apply_survival_penalties,
     drain_survival_tick, sitting_stamina_tick,
     do_survival_status, do_eat, do_drink, do_buffs,
+    survival_tick_handler,
 )
 from server.engine.world.map import WorldMap
 from server.engine.world.clock import WorldClock
@@ -255,9 +256,7 @@ class GameSession:
                     temp_label = "Comfortable"
                     if room:
                         temp_label = self.clock.temperature_label(room.room_type, room.base_temp_f)
-                    drain_survival_tick(self.player, self.party, self.clock, temp_label)
-                    if self._state != State.COMBAT:
-                        sitting_stamina_tick(self.player, self.party, self.clock, self._sitting)
+                    await survival_tick_handler(self, temp_label, self._sitting)
             self._tick_cb = _on_tick
             self.clock.subscribe_tick(self._tick_cb)
 

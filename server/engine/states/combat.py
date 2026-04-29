@@ -43,7 +43,7 @@ class CombatHandler:
         player_party = [session.player] + session.party
 
         from server.engine.world.environment import effective_light
-        from server.engine.survival import apply_survival_penalties
+        from server.engine.systems.survival import apply_survival_penalties
 
         room = session.world.get_room(session.current_room_id)
         lighting = effective_light(

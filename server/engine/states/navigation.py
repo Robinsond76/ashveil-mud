@@ -5,16 +5,16 @@ from typing import TYPE_CHECKING, Callable
 
 from server.config import STAMINA_DRAIN_PER_MOVE, MOUNT_STAMINA_REDUCTION
 from server.engine.states import State
-from server.engine.inventory_ops import (
+from server.engine.systems.inventory import (
     do_inventory, do_equip, do_unequip, do_drop, do_pick_up,
     do_give, do_load_cart, do_unload_cart
 )
-from server.engine.chat import do_say, do_emote, do_shout
+from server.engine.systems.chat import do_say, do_emote, do_shout
 from server.engine.world.environment import (
     do_time, do_weather, do_light, do_envdetails, do_light_source,
     carried_light, effective_light
 )
-from server.engine.survival import (
+from server.engine.systems.survival import (
     do_survival_status, do_eat, do_drink, do_buffs
 )
 
@@ -578,7 +578,7 @@ class NavigationHandler:
 
     async def _do_party(self, session: GameSession, *args) -> None:
         """Show party status."""
-        from server.engine.survival import party_survival_aggregate
+        from server.engine.systems.survival import party_survival_aggregate
 
         lines = []
         lines.append(session.player.stats_summary())
