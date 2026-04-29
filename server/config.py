@@ -71,7 +71,7 @@ XP_TABLE: list[int] = [
 ]
 
 # ── Save versioning ───────────────────────────────────────────────────────────
-SAVE_SCHEMA_VERSION: int = 1
+SAVE_SCHEMA_VERSION: int = 2
 
 # ── Grid limits ───────────────────────────────────────────────────────────────
 MAX_PARTY_SIZE: int = 5     # 1 player + 4 companions

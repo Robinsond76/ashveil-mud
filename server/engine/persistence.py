@@ -90,12 +90,20 @@ def load_player(name: str) -> dict | None:
         data = json.loads(record.save_data)
         version = data.get("_schema_version", 0)
         if version < SAVE_SCHEMA_VERSION:
-            logger.warning(
-                "Save '%s' has schema version %d (current: %d). "
-                "Migration may be needed.",
-                normalized_name, version, SAVE_SCHEMA_VERSION,
-            )
+            _migrate(data, version)
         return data
+
+
+def _migrate(data: dict, from_version: int) -> None:
+    """Migrate save data from an older schema version to current."""
+    if from_version < 2:
+        char = data.setdefault("character", {})
+        char.setdefault("lit_sources", {})
+    data["_schema_version"] = SAVE_SCHEMA_VERSION
+    logger.info(
+        "Migrated save '%s' from schema v%d to v%d",
+        data.get("name", "unknown"), from_version, SAVE_SCHEMA_VERSION,
+    )
 
 
 def delete_player(name: str) -> bool:
