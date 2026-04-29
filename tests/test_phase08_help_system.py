@@ -9,7 +9,8 @@ Phase D: Unknown topic returns graceful fallback
 import asyncio
 import pytest
 
-from server.engine.game import GameSession, State, _HELP_TOPICS
+from server.engine.game import GameSession, State
+from server.engine.display.help_data import _HELP_TOPICS
 from server.engine.character import Character
 from server.engine.world import WorldMap
 

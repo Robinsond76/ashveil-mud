@@ -475,29 +475,29 @@ class TestPhaseG_ChatCommands:
 
 class TestPhaseH_HelpEntries:
     def test_help_has_say_topic(self):
-        from server.engine.game import _HELP_TOPICS
+        from server.engine.display.help_data import _HELP_TOPICS
         assert "SAY" in _HELP_TOPICS
 
     def test_help_has_emote_topic(self):
-        from server.engine.game import _HELP_TOPICS
+        from server.engine.display.help_data import _HELP_TOPICS
         assert "EMOTE" in _HELP_TOPICS
 
     def test_help_has_shout_topic(self):
-        from server.engine.game import _HELP_TOPICS
+        from server.engine.display.help_data import _HELP_TOPICS
         assert "SHOUT" in _HELP_TOPICS
 
     def test_help_has_me_topic(self):
-        from server.engine.game import _HELP_TOPICS
+        from server.engine.display.help_data import _HELP_TOPICS
         assert "ME" in _HELP_TOPICS
 
     def test_help_has_players_topic(self):
-        from server.engine.game import _HELP_TOPICS
+        from server.engine.display.help_data import _HELP_TOPICS
         assert "PLAYERS" in _HELP_TOPICS
 
     def test_help_say_returns_text(self):
-        from server.engine.game import _HELP_TOPICS
+        from server.engine.display.help_data import _HELP_TOPICS
         assert _HELP_TOPICS["SAY"]
 
     def test_help_emote_returns_text(self):
-        from server.engine.game import _HELP_TOPICS
+        from server.engine.display.help_data import _HELP_TOPICS
         assert _HELP_TOPICS["EMOTE"]

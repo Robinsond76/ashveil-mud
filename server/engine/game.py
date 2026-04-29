@@ -45,7 +45,7 @@ from server.engine.skills import (
 from server.engine.strategy import (
     add_strategy, clear_strategies, list_strategies, remove_strategy,
 )
-from server.engine.display.help_data import send_help, _HELP_TOPICS
+from server.engine.display.help_data import send_help
 from server.engine.inventory_ops import (
     party_inventory_view, do_inventory, do_equip, do_unequip, do_drop,
     do_pick_up, do_give, do_load_cart, do_unload_cart,
