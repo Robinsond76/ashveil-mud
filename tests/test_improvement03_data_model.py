@@ -107,7 +107,7 @@ def test_buff_effect_has_fields():
 
 def test_parse_item_effect_heal(load_game_data):
     from server.engine.item_effects import parse_item_effect, HealEffect
-    from server.engine.items import get_item
+    from server.engine.domain.items import get_item
     # health_potion should parse to HealEffect
     item = get_item("health_potion")
     assert item is not None
@@ -118,7 +118,7 @@ def test_parse_item_effect_heal(load_game_data):
 
 def test_parse_item_effect_restore_mp(load_game_data):
     from server.engine.item_effects import parse_item_effect, RestoreMPEffect
-    from server.engine.items import get_item
+    from server.engine.domain.items import get_item
     item = get_item("mana_potion")
     if item is None:
         pytest.skip("mana_potion not in data")

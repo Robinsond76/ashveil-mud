@@ -5,7 +5,7 @@ import json
 import logging
 from typing import Any, TYPE_CHECKING
 
-from server.engine.items import get_item
+from server.engine.domain.items import get_item
 from server.engine.survival import party_survival_aggregate
 from server.engine.environment import effective_light as _effective_light_fn
 

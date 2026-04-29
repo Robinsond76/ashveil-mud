@@ -13,7 +13,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from server.engine.character import Character
-from server.engine.items import EQUIPMENT_SLOTS, get_item
+from server.engine.domain.items import EQUIPMENT_SLOTS, get_item
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ def run(coro):
 def make_session(world=None, send_fn=None, player=None, party=None):
     """Build a minimal GameSession for testing without a real WebSocket."""
     from server.engine.game import GameSession
-    from server.engine.items import load_items
+    from server.engine.domain.items import load_items
     import os
 
     if send_fn is None:

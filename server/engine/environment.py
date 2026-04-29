@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 
-from server.engine.items import get_item
+from server.engine.domain.items import get_item
 from server.engine.world_clock import light_label
 
 

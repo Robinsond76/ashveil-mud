@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from server.engine.states import State
-from server.engine.skills import render_skill_tree
+from server.engine.domain.skills import render_skill_tree
 
 if TYPE_CHECKING:
     from server.engine.game import GameSession

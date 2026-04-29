@@ -13,9 +13,9 @@ DATA_DIR = __import__("os").path.join(
 
 
 def _load_skills():
-    from server.engine.skills import _SKILL_REGISTRY
+    from server.engine.domain.skills import _SKILL_REGISTRY
     if not _SKILL_REGISTRY:
-        from server.engine.skills import load_skills
+        from server.engine.domain.skills import load_skills
         load_skills(DATA_DIR)
 
 

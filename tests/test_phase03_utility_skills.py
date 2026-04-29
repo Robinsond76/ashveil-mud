@@ -21,9 +21,9 @@ DATA_DIR = __import__("os").path.join(
 
 
 def _load_skills_once():
-    from server.engine.skills import _SKILL_REGISTRY
+    from server.engine.domain.skills import _SKILL_REGISTRY
     if not _SKILL_REGISTRY:
-        from server.engine.skills import load_skills
+        from server.engine.domain.skills import load_skills
         load_skills(DATA_DIR)
 
 
@@ -42,7 +42,7 @@ def run(session, cmd):
 
 def test_skill_dataclass_has_use_context_field():
     """Skill dataclass must have use_context field defaulting to 'combat'."""
-    from server.engine.skills import Skill
+    from server.engine.domain.skills import Skill
     s = Skill(
         id="test", name="Test", description="", class_type="warrior",
         mp_cost=0, cooldown_ticks=3, effect_type="damage"
@@ -52,7 +52,7 @@ def test_skill_dataclass_has_use_context_field():
 
 def test_skill_dataclass_has_stamina_cost_field():
     """Skill dataclass must have stamina_cost field defaulting to 0."""
-    from server.engine.skills import Skill
+    from server.engine.domain.skills import Skill
     s = Skill(
         id="test", name="Test", description="", class_type="warrior",
         mp_cost=0, cooldown_ticks=3, effect_type="damage"
@@ -62,7 +62,7 @@ def test_skill_dataclass_has_stamina_cost_field():
 
 def test_skill_dataclass_has_required_items_field():
     """Skill dataclass must have required_items field defaulting to []."""
-    from server.engine.skills import Skill
+    from server.engine.domain.skills import Skill
     s = Skill(
         id="test", name="Test", description="", class_type="warrior",
         mp_cost=0, cooldown_ticks=3, effect_type="damage"
@@ -72,7 +72,7 @@ def test_skill_dataclass_has_required_items_field():
 
 def test_skill_dataclass_has_consumes_item_field():
     """Skill dataclass must have consumes_item field defaulting to False."""
-    from server.engine.skills import Skill
+    from server.engine.domain.skills import Skill
     s = Skill(
         id="test", name="Test", description="", class_type="warrior",
         mp_cost=0, cooldown_ticks=3, effect_type="damage"
@@ -83,7 +83,7 @@ def test_skill_dataclass_has_consumes_item_field():
 def test_get_utility_skills_returns_only_utility_skills():
     """get_utility_skills() returns only skills with use_context == 'utility'."""
     _load_skills_once()
-    from server.engine.skills import get_utility_skills
+    from server.engine.domain.skills import get_utility_skills
     utility = get_utility_skills("thief")
     assert all(s.use_context == "utility" for s in utility)
     assert len(utility) > 0
@@ -92,7 +92,7 @@ def test_get_utility_skills_returns_only_utility_skills():
 def test_get_combat_skills_returns_only_combat_skills():
     """get_combat_skills() returns only skills with use_context == 'combat'."""
     _load_skills_once()
-    from server.engine.skills import get_combat_skills
+    from server.engine.domain.skills import get_combat_skills
     combat = get_combat_skills("thief")
     assert all(s.use_context == "combat" for s in combat)
     assert len(combat) > 0
@@ -101,7 +101,7 @@ def test_get_combat_skills_returns_only_combat_skills():
 def test_lockpick_skill_is_utility():
     """The lockpick skill must have use_context == 'utility'."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     skill = get_skill("lockpick")
     assert skill is not None
     assert skill.use_context == "utility"
@@ -110,7 +110,7 @@ def test_lockpick_skill_is_utility():
 def test_detect_traps_skill_is_utility():
     """The detect_traps skill must have use_context == 'utility'."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     skill = get_skill("detect_traps")
     assert skill is not None
     assert skill.use_context == "utility"
@@ -119,7 +119,7 @@ def test_detect_traps_skill_is_utility():
 def test_arcane_light_skill_is_utility():
     """The arcane_light skill must have use_context == 'utility'."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     skill = get_skill("arcane_light")
     assert skill is not None
     assert skill.use_context == "utility"
@@ -128,7 +128,7 @@ def test_arcane_light_skill_is_utility():
 def test_identify_skill_is_utility():
     """The identify skill must have use_context == 'utility'."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     skill = get_skill("identify")
     assert skill is not None
     assert skill.use_context == "utility"
@@ -137,7 +137,7 @@ def test_identify_skill_is_utility():
 def test_bless_camp_skill_is_utility():
     """The bless_camp skill must have use_context == 'utility'."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     skill = get_skill("bless_camp")
     assert skill is not None
     assert skill.use_context == "utility"
@@ -146,7 +146,7 @@ def test_bless_camp_skill_is_utility():
 def test_purify_food_skill_is_utility():
     """The purify_food skill must have use_context == 'utility'."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     skill = get_skill("purify_food")
     assert skill is not None
     assert skill.use_context == "utility"
@@ -155,7 +155,7 @@ def test_purify_food_skill_is_utility():
 def test_fortify_skill_is_utility():
     """The fortify skill must have use_context == 'utility'."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     skill = get_skill("fortify")
     assert skill is not None
     assert skill.use_context == "utility"
@@ -164,7 +164,7 @@ def test_fortify_skill_is_utility():
 def test_existing_combat_skills_default_to_combat_context():
     """combat skills like backstab must default to use_context == 'combat'."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     skill = get_skill("backstab")
     assert skill is not None
     assert skill.use_context == "combat"
@@ -227,7 +227,7 @@ def test_use_combat_skill_with_use_command_shows_error(make_nav_session):
 def test_use_detect_traps_deducts_mp(make_nav_session):
     """USE detect_traps must deduct the skill's MP cost from the player."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     skill = get_skill("detect_traps")
     assert skill is not None
 
@@ -249,7 +249,7 @@ def test_use_detect_traps_blocked_without_enough_mp(make_nav_session):
 def test_use_lockpick_deducts_stamina(make_nav_session):
     """USE lockpick must deduct the skill's stamina_cost from the player."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     skill = get_skill("lockpick")
     assert skill is not None
 

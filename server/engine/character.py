@@ -23,7 +23,7 @@ from server.config import (
     MAX_ATTACK_INTERVAL,
     XP_TABLE,
 )
-from server.engine.items import (
+from server.engine.domain.items import (
     EQUIPMENT_SLOTS,
     total_equipped_weight,
     total_equipped_defense,

@@ -7,7 +7,7 @@ from server.engine.states import State
 from server.engine.strategy import (
     add_strategy, clear_strategies, list_strategies, remove_strategy
 )
-from server.engine.skills import get_skill
+from server.engine.domain.skills import get_skill
 
 if TYPE_CHECKING:
     from server.engine.game import GameSession

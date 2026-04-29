@@ -85,7 +85,7 @@ async def do_survival_status(send_fn, player, party) -> None:
 
 
 async def do_eat(send_fn, player, party, clock, args: str) -> None:
-    from server.engine.items import get_item
+    from server.engine.domain.items import get_item
     item_name = args.lower().strip()
     if not item_name:
         await send_fn("  Eat what? Usage: EAT <item>\n")
@@ -123,7 +123,7 @@ async def do_eat(send_fn, player, party, clock, args: str) -> None:
 
 
 async def do_drink(send_fn, player, party, clock, args: str) -> None:
-    from server.engine.items import get_item
+    from server.engine.domain.items import get_item
     item_name = args.lower().strip()
     if not item_name:
         await send_fn("  Drink what? Usage: DRINK <item>\n")

@@ -15,7 +15,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from server.engine.character import Character
-from server.engine.items import get_item
+from server.engine.domain.items import get_item
 
 DATA_DIR = __import__("os").path.join(
     __import__("os").path.dirname(__file__), "..", "server", "data"
@@ -23,9 +23,9 @@ DATA_DIR = __import__("os").path.join(
 
 
 def _load_skills_once():
-    from server.engine.skills import _SKILL_REGISTRY
+    from server.engine.domain.skills import _SKILL_REGISTRY
     if not _SKILL_REGISTRY:
-        from server.engine.skills import load_skills
+        from server.engine.domain.skills import load_skills
         load_skills(DATA_DIR)
 
 
@@ -134,74 +134,74 @@ class TestPhaseC_SpellData:
         _load_skills_once()
 
     def test_arcane_bolt_exists(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("arcane_bolt")
         assert s is not None
 
     def test_arcane_bolt_is_instant(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("arcane_bolt")
         assert s.cast_time_seconds == 0
 
     def test_magic_missile_exists(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("magic_missile")
         assert s is not None
 
     def test_magic_missile_cast_time(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("magic_missile")
         assert s.cast_time_seconds == 3
 
     def test_fireball_exists(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("fireball")
         assert s is not None
 
     def test_fireball_cast_time_is_9(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("fireball")
         assert s.cast_time_seconds == 9
 
     def test_fireball_target_type_is_grid_2x2(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("fireball")
         assert s.target_type == "grid_2x2"
 
     def test_fireball_damage_type_is_fire(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("fireball")
         assert s.damage_type == "fire"
 
     def test_fireball_has_4_cast_messages(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("fireball")
         assert len(s.cast_messages) == 4
 
     def test_chain_lightning_target_type_is_all_enemies(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("chain_lightning")
         assert s.target_type == "all_enemies"
 
     def test_frost_bolt_target_type_is_single(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("frost_bolt")
         assert s.target_type == "single"
 
     def test_arcane_shield_target_type_is_self(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("arcane_shield")
         assert s.target_type == "self"
 
     def test_blink_is_instant_and_self(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         s = get_skill("blink")
         assert s is not None
         assert s.cast_time_seconds == 0
         assert s.target_type == "self"
 
     def test_all_mage_spells_have_cast_time_seconds(self):
-        from server.engine.skills import get_skill
+        from server.engine.domain.skills import get_skill
         for spell_id in ["arcane_bolt", "magic_missile", "frost_bolt",
                          "fireball", "chain_lightning", "arcane_shield", "blink"]:
             s = get_skill(spell_id)
@@ -214,37 +214,37 @@ class TestPhaseC_SpellData:
 
 class TestPhaseD_SkillDataclass:
     def test_skill_has_cast_time_seconds_field(self):
-        from server.engine.skills import Skill
+        from server.engine.domain.skills import Skill
         s = Skill(id="t", name="T", description="", class_type="mage",
                   mp_cost=5, cooldown_ticks=3, effect_type="damage")
         assert s.cast_time_seconds == 0
 
     def test_skill_has_target_type_field(self):
-        from server.engine.skills import Skill
+        from server.engine.domain.skills import Skill
         s = Skill(id="t", name="T", description="", class_type="mage",
                   mp_cost=5, cooldown_ticks=3, effect_type="damage")
         assert s.target_type == "single"
 
     def test_skill_has_damage_type_field(self):
-        from server.engine.skills import Skill
+        from server.engine.domain.skills import Skill
         s = Skill(id="t", name="T", description="", class_type="mage",
                   mp_cost=5, cooldown_ticks=3, effect_type="damage")
         assert s.damage_type == "physical"
 
     def test_skill_has_spell_power_scale_field(self):
-        from server.engine.skills import Skill
+        from server.engine.domain.skills import Skill
         s = Skill(id="t", name="T", description="", class_type="mage",
                   mp_cost=5, cooldown_ticks=3, effect_type="damage")
         assert s.spell_power_scale == pytest.approx(1.0)
 
     def test_skill_has_cast_messages_field(self):
-        from server.engine.skills import Skill
+        from server.engine.domain.skills import Skill
         s = Skill(id="t", name="T", description="", class_type="mage",
                   mp_cost=5, cooldown_ticks=3, effect_type="damage")
         assert s.cast_messages == []
 
     def test_skill_accepts_cast_messages_list(self):
-        from server.engine.skills import Skill
+        from server.engine.domain.skills import Skill
         msgs = ["start", "mid", "end", "fire"]
         s = Skill(id="t", name="T", description="", class_type="mage",
                   mp_cost=5, cooldown_ticks=3, effect_type="damage",

@@ -12,7 +12,7 @@ _skill_loaded = False
 def _load_skills_once():
     global _skill_loaded
     if not _skill_loaded:
-        from server.engine.skills import load_skills
+        from server.engine.domain.skills import load_skills
         load_skills(DATA_DIR)
         _skill_loaded = True
 
@@ -52,7 +52,7 @@ class MockChar:
 def test_slow_status_only_shown_on_first_apply():
     """Test that 'is now slow' message only appears when status is first applied."""
     _load_skills_once()
-    from server.engine.skills import get_skill
+    from server.engine.domain.skills import get_skill
     
     # Create mock combatants
     attacker = Combatant(MockChar("Mage", "mage"), is_player_side=True)

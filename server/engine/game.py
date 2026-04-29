@@ -33,13 +33,13 @@ from server.config import (
 )
 from server.engine.character import Character, MODIFIER_CATALOGUE, XP_TABLE
 from server.engine.combat import CombatSession
-from server.engine.items import (
+from server.engine.domain.items import (
     get_item,
     equipped_weapon, total_equipped_weight,
 )
 from server.engine.npc import NPC, spawn_npc
 from server.engine.persistence import init_db, load_player, save_player
-from server.engine.skills import (
+from server.engine.domain.skills import (
     can_learn, get_skill, render_skill_tree, render_skills_section,
 )
 from server.engine.strategy import (

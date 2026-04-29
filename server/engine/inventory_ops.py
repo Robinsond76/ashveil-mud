@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import random
 
-from server.engine.items import EQUIPMENT_SLOTS, get_item, total_equipped_weight
+from server.engine.domain.items import EQUIPMENT_SLOTS, get_item, total_equipped_weight
 
 
 def _box(title: str, lines: list[str]) -> str:

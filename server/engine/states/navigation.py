@@ -195,7 +195,7 @@ class NavigationHandler:
 
     async def _do_look(self, session: GameSession, *args) -> None:
         """Look at current room."""
-        from server.engine.items import get_item
+        from server.engine.domain.items import get_item
         from server.engine.npc import get_npc_template
 
         room = session.world.get_room(session.current_room_id)
@@ -255,7 +255,7 @@ class NavigationHandler:
             )
 
     async def _do_quicklook(self, session: GameSession, *args) -> None:
-        from server.engine.items import get_item
+        from server.engine.domain.items import get_item
         from server.engine.npc import get_npc_template
 
         room = session.world.get_room(session.current_room_id)
@@ -352,7 +352,7 @@ class NavigationHandler:
             members = [session.player] + list(session.party)
             mount_mult = 1.0
             if session._mounted:
-                from server.engine.items import get_item
+                from server.engine.domain.items import get_item
                 horse_count = sum(
                     1 for m in members for item_id in m.inventory
                     if (item := get_item(item_id))
@@ -416,7 +416,7 @@ class NavigationHandler:
 
     async def _do_examine(self, session: GameSession, args: str, *_) -> None:
         """Examine an item or NPC."""
-        from server.engine.items import get_item
+        from server.engine.domain.items import get_item
         from server.engine.npc import get_npc_template
 
         target = args.lower().strip()
@@ -501,7 +501,7 @@ class NavigationHandler:
 
     async def _do_skills(self, session: GameSession, args: str, *_) -> None:
         """Show skill tree."""
-        from server.engine.skills import render_skills_section
+        from server.engine.domain.skills import render_skills_section
         await session.send(
             render_skills_section(
                 session.player.class_type,
@@ -513,7 +513,7 @@ class NavigationHandler:
 
     async def _do_learn(self, session: GameSession, args: str, *_) -> None:
         """Learn a skill."""
-        from server.engine.skills import can_learn, get_skill_tree, get_skill
+        from server.engine.domain.skills import can_learn, get_skill_tree, get_skill
 
         skill_id = args.strip()
         if not skill_id:
@@ -791,7 +791,7 @@ class NavigationHandler:
 
     async def _do_ride(self, session: GameSession, *args) -> None:
         """Mount horses."""
-        from server.engine.items import get_item
+        from server.engine.domain.items import get_item
 
         horse_count = sum(
             1 for m in ([session.player] + list(session.party))
@@ -818,7 +818,7 @@ class NavigationHandler:
 
     async def _do_horses(self, session: GameSession, *args) -> None:
         """Show horse status."""
-        from server.engine.items import get_item
+        from server.engine.domain.items import get_item
 
         horse_count = sum(
             1 for m in ([session.player] + list(session.party))

@@ -36,9 +36,9 @@ from server.config import (
     STAMINA_DRAIN_FLEE,
 )
 from server.engine.character import Character
-from server.engine.items import equipped_weapon
+from server.engine.domain.items import equipped_weapon
 from server.engine.npc import NPC
-from server.engine.skills import get_skill
+from server.engine.domain.skills import get_skill
 from server.engine.strategy import evaluate_strategy
 from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem, CombatResult
 from server.engine.world_clock import lighting_combat_penalties
@@ -794,7 +794,7 @@ class CombatSession:
         target: Character | NPC | None,
         log: list[str],
     ) -> None:
-        from server.engine.items import get_item
+        from server.engine.domain.items import get_item
         from server.engine.item_effects import parse_item_effect, HealEffect, RestoreMPEffect, StatusRemoveEffect
         char = actor.character
         if item_id not in char.inventory:

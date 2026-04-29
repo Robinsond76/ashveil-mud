@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from server.engine.character import Character
-from server.engine.items import EQUIPMENT_SLOTS
+from server.engine.domain.items import EQUIPMENT_SLOTS
 
 
 @dataclass

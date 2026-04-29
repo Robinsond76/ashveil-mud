@@ -23,7 +23,7 @@ from unittest.mock import MagicMock
 
 from server.engine.character import Character
 from server.engine.game import GameSession, State
-from server.engine.items import get_item
+from server.engine.domain.items import get_item
 from server.engine.npc import NPC
 from server.engine.world import WorldMap
 

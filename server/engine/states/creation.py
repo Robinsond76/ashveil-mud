@@ -8,7 +8,7 @@ from server.engine.character import Character
 from server.engine.npc import NPC, spawn_npc
 from server.engine.states import State
 from server.engine.strategy import list_strategies
-from server.engine.skills import get_skill
+from server.engine.domain.skills import get_skill
 
 if TYPE_CHECKING:
     from server.engine.game import GameSession
