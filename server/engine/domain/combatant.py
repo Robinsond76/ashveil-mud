@@ -2,7 +2,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from server.engine.domain.character import Character
+    from server.engine.domain.npc import NPC
 
 
 @runtime_checkable
@@ -27,7 +31,7 @@ class CombatantState:
     Keeps combat fields separate from the base Character/NPC model
     so they never leak into persistence or non-combat contexts.
     """
-    combatant: object         # Character | NPC
+    combatant: Character | NPC
     speed: int = 0            # effective_speed during combat
     grid_row: int = 0         # 0=FRONT, 1=BACK
     grid_col: int = 0         # 0, 1, or 2
