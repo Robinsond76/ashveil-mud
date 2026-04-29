@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from server.config import DEBUG_NO_DEATH_PENALTY, DEATH_XP_LOSS_PCT, DEATH_GOLD_LOSS_PCT, DEBUG_RESPAWN_ROOM_ID
 from server.engine.combat import CombatSession
-from server.engine.npc import spawn_npc
+from server.engine.domain.npc import spawn_npc
 from server.engine.states import State
 
 if TYPE_CHECKING:

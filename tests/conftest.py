@@ -11,7 +11,7 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "server", "data")
 def load_game_data():
     """Load items and NPC templates into their registries once per test session."""
     from server.engine.domain.items import load_items
-    from server.engine.npc import load_npcs
+    from server.engine.domain.npc import load_npcs
     from server.engine.persistence import init_db
 
     load_items(DATA_DIR)
@@ -40,7 +40,7 @@ def make_nav_session():
     ):
         from server.engine.game import GameSession, State
         from server.engine.world import WorldMap
-        from server.engine.character import Character
+        from server.engine.domain.character import Character
 
         world = WorldMap.__new__(WorldMap)
         world._rooms = {}

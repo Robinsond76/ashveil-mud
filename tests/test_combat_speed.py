@@ -2,7 +2,7 @@
 Tests for real-time per-character attack speed intervals.
 """
 import pytest
-from server.engine.character import Character
+from server.engine.domain.character import Character
 
 
 def _bare(class_type, AGI):

@@ -5,7 +5,7 @@ actually called in tests; to_dict/from_dict tested trivially.
 """
 import pytest
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.persistence import save_player, load_player
 
 

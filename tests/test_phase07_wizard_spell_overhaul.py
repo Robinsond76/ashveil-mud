@@ -14,7 +14,7 @@ import random
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.domain.items import get_item
 
 DATA_DIR = __import__("os").path.join(
@@ -337,7 +337,7 @@ class TestPhaseF_Interruption:
         from server.engine.combat import CombatSession, Combatant
         mage = make_mage(INT=14)
         mage.mp = 50
-        from server.engine.npc import NPC
+        from server.engine.domain.npc import NPC
         npc = NPC(
             name="Goblin", class_type="warrior", level=1,
             hp=30, max_hp=30, mp=0, max_mp=0,
@@ -433,7 +433,7 @@ class TestPhaseG_AoEExtended:
 class TestPhaseH_ZeroMana:
     def _make_session_with_mage_strategy(self):
         from server.engine.combat import CombatSession, Combatant
-        from server.engine.npc import NPC
+        from server.engine.domain.npc import NPC
         _load_skills_once()
 
         mage = make_mage(INT=10)

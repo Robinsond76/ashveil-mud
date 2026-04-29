@@ -9,7 +9,7 @@ import pytest
 def test_character_satisfies_combatant_protocol(load_game_data):
     """Character should satisfy the Combatant protocol."""
     from server.engine.protocols import Combatant
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     c = Character(name="test", class_type="warrior")
     assert isinstance(c, Combatant)
     assert hasattr(c, "name")
@@ -24,7 +24,7 @@ def test_character_satisfies_combatant_protocol(load_game_data):
 def test_npc_satisfies_combatant_protocol(load_game_data):
     """NPC should satisfy the Combatant protocol."""
     from server.engine.protocols import Combatant
-    from server.engine.npc import NPC
+    from server.engine.domain.npc import NPC
     npc = NPC(name="Goblin", class_type="warrior")
     assert isinstance(npc, Combatant)
 
@@ -33,7 +33,7 @@ def test_npc_satisfies_combatant_protocol(load_game_data):
 
 def test_character_grid_defaults_to_minus_one(load_game_data):
     """grid_row and grid_col should default to -1 (auto-assign)."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     c = Character(name="test", class_type="warrior")
     assert c.grid_row == -1
     assert c.grid_col == -1
@@ -43,7 +43,7 @@ def test_character_grid_defaults_to_minus_one(load_game_data):
 
 def test_character_has_owner_field(load_game_data):
     """Character should have an owner field defaulting to empty string."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     c = Character(name="Hero", class_type="warrior")
     assert hasattr(c, "owner")
     assert c.owner == ""
@@ -51,7 +51,7 @@ def test_character_has_owner_field(load_game_data):
 
 def test_owner_persists_in_to_dict(load_game_data):
     """Owner field should appear in Character.to_dict() output."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     c = Character(name="Hero", class_type="warrior")
     c.owner = "player1"
     d = c.to_dict()
@@ -60,7 +60,7 @@ def test_owner_persists_in_to_dict(load_game_data):
 
 def test_owner_restored_from_dict(load_game_data):
     """Owner field should be restored by Character.from_dict()."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     c = Character(name="Hero", class_type="warrior")
     c.owner = "player1"
     d = c.to_dict()
@@ -70,7 +70,7 @@ def test_owner_restored_from_dict(load_game_data):
 
 def test_owner_defaults_empty_string_when_missing_from_save(load_game_data):
     """Old saves without 'owner' key should default to empty string."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     c = Character(name="Hero", class_type="warrior")
     d = c.to_dict()
     del d["owner"]

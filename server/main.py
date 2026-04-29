@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from server.engine.game import GameSession
 from server.engine.domain.items import load_items
-from server.engine.npc import load_npcs
+from server.engine.domain.npc import load_npcs
 from server.engine.domain.skills import load_skills
 from server.engine.world import WorldMap
 from server.engine.world_clock import WorldClock

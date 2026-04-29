@@ -5,7 +5,7 @@ Phase A: Glass cannon constraints (spell_power_modifier, mage melee guard, weigh
 """
 import pytest
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 
 
 def make_mage(name="Mage", INT=12):

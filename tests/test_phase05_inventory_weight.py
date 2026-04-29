@@ -12,7 +12,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.domain.items import EQUIPMENT_SLOTS, get_item
 
 

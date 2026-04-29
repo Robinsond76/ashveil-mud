@@ -2,7 +2,7 @@
 
 import pytest
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.world import Room, EncounterGroup
 
 

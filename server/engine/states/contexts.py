@@ -8,8 +8,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 if TYPE_CHECKING:
-    from server.engine.character import Character
-    from server.engine.npc import NPC
+    from server.engine.domain.character import Character
+    from server.engine.domain.npc import NPC
 
 
 class ConnectContext(TypedDict):

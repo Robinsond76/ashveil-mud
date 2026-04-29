@@ -21,10 +21,10 @@ import asyncio
 import pytest
 from unittest.mock import MagicMock
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.game import GameSession, State
 from server.engine.domain.items import get_item
-from server.engine.npc import NPC
+from server.engine.domain.npc import NPC
 from server.engine.world import WorldMap
 
 

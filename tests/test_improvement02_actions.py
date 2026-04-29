@@ -57,7 +57,7 @@ def test_combat_result_defeat():
 
 def test_evaluate_strategy_returns_attack_action(load_game_data):
     """Default strategy with no rules returns Attack action."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     from server.engine.strategy import evaluate_strategy
 
     c = Character(name="test", class_type="warrior")
@@ -68,7 +68,7 @@ def test_evaluate_strategy_returns_attack_action(load_game_data):
 
 def test_evaluate_strategy_returns_defend_action(load_game_data):
     """Strategy rule with DEFEND returns Defend action."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     from server.engine.strategy import evaluate_strategy
 
     c = Character(name="test", class_type="warrior")
@@ -81,7 +81,7 @@ def test_evaluate_strategy_returns_defend_action(load_game_data):
 
 def test_evaluate_strategy_returns_flee_action(load_game_data):
     """Strategy rule with FLEE returns Flee action."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     from server.engine.strategy import evaluate_strategy
 
     c = Character(name="test", class_type="warrior")
@@ -94,7 +94,7 @@ def test_evaluate_strategy_returns_flee_action(load_game_data):
 
 def test_evaluate_strategy_returns_use_skill_action(load_game_data):
     """Strategy rule with USE_SKILL returns UseSkill action."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     from server.engine.strategy import evaluate_strategy
 
     c = Character(name="test", class_type="mage")
@@ -112,7 +112,7 @@ def test_evaluate_strategy_returns_use_skill_action(load_game_data):
 
 def test_evaluate_strategy_returns_use_item_action(load_game_data):
     """Strategy rule with USE_ITEM returns UseItem action."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     from server.engine.strategy import evaluate_strategy
 
     c = Character(name="test", class_type="warrior")
@@ -128,7 +128,7 @@ def test_evaluate_strategy_returns_use_item_action(load_game_data):
 
 def test_assign_positions_rejects_party_over_six(load_game_data):
     """Parties larger than 6 should raise ValueError, not silently drop members."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     from server.engine.combat import CombatSession, Combatant
 
     oversized = [

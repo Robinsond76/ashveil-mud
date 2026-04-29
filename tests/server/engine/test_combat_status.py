@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from server.engine.combat import CombatSession, Combatant
-from server.engine.character import Character
-from server.engine.npc import NPC
+from server.engine.domain.character import Character
+from server.engine.domain.npc import NPC
 
 import os
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "server", "data")

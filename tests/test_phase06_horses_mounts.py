@@ -11,7 +11,7 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.domain.items import get_item
 
 
@@ -398,7 +398,7 @@ class TestPhaseD_CombatDismount:
             encounter_group = MagicMock()
             encounter_group.members = ["goblin"]
 
-            with patch("server.engine.npc.spawn_npc") as mock_spawn:
+            with patch("server.engine.domain.npc.spawn_npc") as mock_spawn:
                 mock_npc = MagicMock()
                 mock_spawn.return_value = mock_npc
 
@@ -434,7 +434,7 @@ class TestPhaseD_CombatDismount:
             encounter_group = MagicMock()
             encounter_group.members = ["goblin"]
 
-            with patch("server.engine.npc.spawn_npc") as mock_spawn:
+            with patch("server.engine.domain.npc.spawn_npc") as mock_spawn:
                 mock_npc = MagicMock()
                 mock_spawn.return_value = mock_npc
 
@@ -470,7 +470,7 @@ class TestPhaseD_CombatDismount:
             encounter_group = MagicMock()
             encounter_group.members = ["goblin"]
 
-            with patch("server.engine.npc.spawn_npc") as mock_spawn:
+            with patch("server.engine.domain.npc.spawn_npc") as mock_spawn:
                 mock_npc = MagicMock()
                 mock_spawn.return_value = mock_npc
 

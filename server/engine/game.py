@@ -31,13 +31,13 @@ from server.config import (
     STAMINA_DRAIN_PER_MOVE,
     STAT_POINT_BUY_BUDGET,
 )
-from server.engine.character import Character, MODIFIER_CATALOGUE, XP_TABLE
+from server.engine.domain.character import Character, MODIFIER_CATALOGUE, XP_TABLE
 from server.engine.combat import CombatSession
 from server.engine.domain.items import (
     get_item,
     equipped_weapon, total_equipped_weight,
 )
-from server.engine.npc import NPC, spawn_npc
+from server.engine.domain.npc import NPC, spawn_npc
 from server.engine.persistence import init_db, load_player, save_player
 from server.engine.domain.skills import (
     can_learn, get_skill, render_skill_tree, render_skills_section,
@@ -514,7 +514,7 @@ class GameSession:
 
     async def _start_combat(self, encounter_group) -> None:
         """Backward-compatible wrapper — runs combat inline (old behavior)."""
-        from server.engine.npc import spawn_npc
+        from server.engine.domain.npc import spawn_npc
         enemy_npcs = []
         for tid in encounter_group.members:
             npc = spawn_npc(tid, self.class_defs)
@@ -726,7 +726,7 @@ class GameSession:
 
     async def _do_attack(self, args: str) -> None:
         """Initiate combat (backward-compatible)."""
-        from server.engine.npc import get_npc_template
+        from server.engine.domain.npc import get_npc_template
         room = self.world.get_room(self.current_room_id)
         if not room:
             return
@@ -772,7 +772,7 @@ class GameSession:
 
     async def _do_talk(self, args: str) -> None:
         """Talk to a recruitable NPC (backward-compatible)."""
-        from server.engine.npc import get_npc_template
+        from server.engine.domain.npc import get_npc_template
         name = args.lower().strip()
         if not name:
             await self.send("  Talk to who?\n")

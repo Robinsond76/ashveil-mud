@@ -2,7 +2,7 @@
 Phase 2 — Survival Stats: Character-level tests (Phase A).
 """
 import pytest
-from server.engine.character import Character
+from server.engine.domain.character import Character
 
 
 def make_char(name="Tester", class_type="warrior"):

@@ -4,8 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from server.config import MIN_STAT, MAX_STAT, STAT_POINT_BUY_BUDGET
-from server.engine.character import Character
-from server.engine.npc import NPC, spawn_npc
+from server.engine.domain.character import Character
+from server.engine.domain.npc import NPC, spawn_npc
 from server.engine.states import State
 from server.engine.strategy import list_strategies
 from server.engine.domain.skills import get_skill

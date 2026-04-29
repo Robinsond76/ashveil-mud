@@ -4,8 +4,8 @@ Tests for caster spell preference: starter skills, basic-spell cascade, cleric s
 import pytest
 from unittest.mock import AsyncMock
 
-from server.engine.character import Character
-from server.engine.npc import NPC
+from server.engine.domain.character import Character
+from server.engine.domain.npc import NPC
 
 DATA_DIR = __import__("os").path.join(
     __import__("os").path.dirname(__file__), "..", "server", "data"

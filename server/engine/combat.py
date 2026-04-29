@@ -35,9 +35,9 @@ from server.config import (
     FLEE_SUCCESS_RATE,
     STAMINA_DRAIN_FLEE,
 )
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.domain.items import equipped_weapon
-from server.engine.npc import NPC
+from server.engine.domain.npc import NPC
 from server.engine.domain.skills import get_skill
 from server.engine.strategy import evaluate_strategy
 from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem, CombatResult

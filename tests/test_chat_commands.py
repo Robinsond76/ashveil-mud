@@ -5,7 +5,7 @@ Covers T10 (untested commands): SAY, EMOTE, SHOUT have zero test coverage.
 import asyncio
 import pytest
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.game import GameSession, State
 from server.engine.world import WorldMap
 

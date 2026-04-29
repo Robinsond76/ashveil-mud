@@ -196,7 +196,7 @@ class NavigationHandler:
     async def _do_look(self, session: GameSession, *args) -> None:
         """Look at current room."""
         from server.engine.domain.items import get_item
-        from server.engine.npc import get_npc_template
+        from server.engine.domain.npc import get_npc_template
 
         room = session.world.get_room(session.current_room_id)
         if room is None:
@@ -256,7 +256,7 @@ class NavigationHandler:
 
     async def _do_quicklook(self, session: GameSession, *args) -> None:
         from server.engine.domain.items import get_item
-        from server.engine.npc import get_npc_template
+        from server.engine.domain.npc import get_npc_template
 
         room = session.world.get_room(session.current_room_id)
         if room is None:
@@ -417,7 +417,7 @@ class NavigationHandler:
     async def _do_examine(self, session: GameSession, args: str, *_) -> None:
         """Examine an item or NPC."""
         from server.engine.domain.items import get_item
-        from server.engine.npc import get_npc_template
+        from server.engine.domain.npc import get_npc_template
 
         target = args.lower().strip()
         if not target:
@@ -537,7 +537,7 @@ class NavigationHandler:
 
     async def _do_modifiers(self, session: GameSession, *args) -> None:
         """Show character modifiers."""
-        from server.engine.character import MODIFIER_CATALOGUE
+        from server.engine.domain.character import MODIFIER_CATALOGUE
         from server.config import MODIFIER_BONUS_PER_LEVEL
 
         lines = [f"  Modifier Points available: {session.player.modifier_points}", ""]
@@ -549,7 +549,7 @@ class NavigationHandler:
 
     async def _do_upgrade(self, session: GameSession, args: str, *_) -> None:
         """Upgrade a modifier."""
-        from server.engine.character import MODIFIER_CATALOGUE
+        from server.engine.domain.character import MODIFIER_CATALOGUE
         from server.config import MODIFIER_BONUS_PER_LEVEL
 
         mod_id = args.strip().lower()
@@ -599,7 +599,7 @@ class NavigationHandler:
 
     async def _do_talk(self, session: GameSession, args: str, *_) -> None:
         """Talk to a recruitable NPC."""
-        from server.engine.npc import get_npc_template, spawn_npc
+        from server.engine.domain.npc import get_npc_template, spawn_npc
 
         name = args.lower().strip()
         if not name:
@@ -691,7 +691,7 @@ class NavigationHandler:
 
     async def _do_attack(self, session: GameSession, args: str, *_) -> None:
         """Initiate combat."""
-        from server.engine.npc import get_npc_template
+        from server.engine.domain.npc import get_npc_template
 
         room = session.world.get_room(session.current_room_id)
         if not room:
@@ -854,7 +854,7 @@ class NavigationHandler:
 
     async def _try_recruit_response(self, session: GameSession, text: str) -> bool:
         """Handle YES/NO response after TALK command."""
-        from server.engine.npc import spawn_npc
+        from server.engine.domain.npc import spawn_npc
 
         if not hasattr(session, "_pending_recruit") or session._pending_recruit is None:
             return False

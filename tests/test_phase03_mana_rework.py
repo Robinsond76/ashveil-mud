@@ -7,9 +7,9 @@ Tests:
 import asyncio
 import pytest
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.game import GameSession, State
-from server.engine.npc import NPC
+from server.engine.domain.npc import NPC
 from server.engine.world import WorldMap
 
 

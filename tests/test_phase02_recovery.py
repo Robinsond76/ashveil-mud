@@ -5,7 +5,7 @@ Tests for REST restoring stamina, SIT passive recovery, STAND stopping it.
 import pytest
 import asyncio
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.game import GameSession, State
 from server.engine.world import WorldMap
 
@@ -46,7 +46,7 @@ def test_rest_restores_player_stamina_to_max():
 
 
 def test_rest_restores_npc_stamina_to_max():
-    from server.engine.npc import NPC
+    from server.engine.domain.npc import NPC
     sent_messages.clear()
     s = make_campfire_session()
     npc = NPC(name="Ally", class_type="warrior")
@@ -106,7 +106,7 @@ def test_sitting_tick_caps_at_max_stamina():
 
 
 def test_sitting_tick_affects_npc_too():
-    from server.engine.npc import NPC
+    from server.engine.domain.npc import NPC
     s = make_campfire_session()
     s.state = State.NAVIGATION
     s._sitting = True

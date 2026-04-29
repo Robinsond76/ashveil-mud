@@ -10,7 +10,7 @@ Tests:
 import pytest
 from unittest.mock import MagicMock
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 
 
 def make_char():

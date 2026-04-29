@@ -3,10 +3,10 @@ Phase 2 — Survival Stats: drain tick + movement stamina drain tests (Phase C).
 """
 import pytest
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.game import GameSession, State
 from server.engine.world import WorldMap
-from server.engine.npc import NPC
+from server.engine.domain.npc import NPC
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

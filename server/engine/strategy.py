@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING, Any
 from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem
 
 if TYPE_CHECKING:
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
 
 
 @dataclass

@@ -8,7 +8,7 @@ Tests (in order of plan phases):
 import asyncio
 import pytest
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.game import GameSession, State
 from server.engine.world import WorldMap
 
@@ -285,7 +285,7 @@ def test_use_lockpick_blocked_without_lockpick_item(make_nav_session):
 def test_use_lockpick_succeeds_when_npc_party_member_has_lockpick(make_nav_session):
     """USE lockpick succeeds if a party NPC has a lockpick item."""
     _load_skills_once()
-    from server.engine.npc import NPC
+    from server.engine.domain.npc import NPC
     s = make_nav_session(class_type="thief", stamina=100.0)
     s.player.unlocked_skills = {"lockpick": 1}
     s.player.inventory = []

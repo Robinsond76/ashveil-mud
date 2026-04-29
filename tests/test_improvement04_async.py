@@ -97,14 +97,14 @@ def test_world_clock_without_world_still_works(load_game_data):
 
 def test_lit_sources_defaults_empty(load_game_data):
     """lit_sources should default to empty dict on a new Character."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     c = Character(name="test", class_type="warrior")
     assert c.lit_sources == {}
 
 
 def test_lit_sources_persist_in_to_dict(load_game_data):
     """lit_sources should be included in Character.to_dict()."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     c = Character(name="test", class_type="warrior")
     c.lit_sources = {"torch_1": 500}
     d = c.to_dict()
@@ -113,7 +113,7 @@ def test_lit_sources_persist_in_to_dict(load_game_data):
 
 def test_lit_sources_restored_from_dict(load_game_data):
     """lit_sources should be restored from Character.from_dict()."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     c = Character(name="test", class_type="warrior")
     c.lit_sources = {"torch_1": 500}
     d = c.to_dict()
@@ -123,7 +123,7 @@ def test_lit_sources_restored_from_dict(load_game_data):
 
 def test_lit_sources_defaults_empty_in_from_dict(load_game_data):
     """from_dict without lit_sources key should default to empty dict."""
-    from server.engine.character import Character
+    from server.engine.domain.character import Character
     c = Character(name="test", class_type="warrior")
     d = c.to_dict()
     del d["lit_sources"]

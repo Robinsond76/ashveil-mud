@@ -6,9 +6,9 @@ and that stamina drains on combat actions.
 import pytest
 from unittest.mock import AsyncMock
 
-from server.engine.character import Character
+from server.engine.domain.character import Character
 from server.engine.combat import CombatSession, CombatState
-from server.engine.npc import NPC
+from server.engine.domain.npc import NPC
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
