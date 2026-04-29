@@ -1,34 +1,28 @@
-"""Navigation state handler — exploration and main gameplay."""
+"""NavigationHandler — main exploration gameplay coordinator."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
 
 from server.config import STAMINA_DRAIN_PER_MOVE, MOUNT_STAMINA_REDUCTION
+from server.engine.display.formatting import box as _box
 from server.engine.states import State
-from server.engine.systems.inventory import (
-    do_inventory, do_equip, do_unequip, do_drop, do_pick_up,
-    do_give, do_load_cart, do_unload_cart
-)
-from server.engine.systems.chat import do_say, do_emote, do_shout
 from server.engine.world.environment import (
     do_time, do_weather, do_light, do_envdetails, do_light_source,
-    carried_light, effective_light
+    carried_light,
 )
 from server.engine.systems.survival import (
     do_survival_status, do_eat, do_drink, do_buffs
 )
 
+from . import inventory as _inventory
+from . import party as _party
+from . import social as _social
+from . import interaction as _interaction
+from . import mounts as _mounts
+from . import quick_look as _quick_look
+
 if TYPE_CHECKING:
     from server.engine.game import GameSession
-
-
-def _box(title: str, lines: list[str]) -> str:
-    """Format a boxed display."""
-    width = 60
-    out = [f"\n{'═' * width}", f"  {title}", f"{'─' * width}"]
-    out += [f"  {l}" for l in lines]
-    out.append("═" * width)
-    return "\n".join(out)
 
 
 class NavigationHandler:
@@ -190,7 +184,7 @@ class NavigationHandler:
             await session.send(f"  Unknown command '{cmd}'. Type HELP for a list.\n")
 
     # ────────────────────────────────────────────────────────────────────────
-    # Command implementations
+    # Core navigation (kept in NavigationHandler)
     # ────────────────────────────────────────────────────────────────────────
 
     async def _do_look(self, session: GameSession, *args) -> None:
@@ -299,37 +293,6 @@ class NavigationHandler:
                 "  !! The party is completely exhausted. Rest to recover stamina. !!\n"
             )
 
-    async def _do_lookmode(self, session: GameSession, args: str, *_) -> None:
-        upper = args.strip().upper()
-
-        if not upper:
-            mode = session.player.look_mode
-            await session.send(f"  Current look mode: {mode}\n  Usage: LOOKMODE FULL | LOOKMODE QUICK\n")
-            return
-
-        if upper not in ("FULL", "QUICK"):
-            await session.send("  Usage: LOOKMODE FULL | LOOKMODE QUICK\n")
-            return
-
-        session.player.look_mode = upper
-        await session.send(f"  Look mode set to {upper}.\n")
-
-    async def _do_battlelook(self, session: GameSession, args: str, *_) -> None:
-        upper = args.strip().upper()
-
-        if not upper:
-            status = "ON" if session.player.battle_look else "OFF"
-            await session.send(f"  Battle look is {status}.\n  Usage: BATTLELOOK ON | BATTLELOOK OFF\n")
-            return
-
-        if upper not in ("ON", "OFF"):
-            await session.send("  Usage: BATTLELOOK ON | BATTLELOOK OFF\n")
-            return
-
-        session.player.battle_look = (upper == "ON")
-        status = "ON" if session.player.battle_look else "OFF"
-        await session.send(f"  Battle look set to {status}.\n")
-
     async def _do_move(self, session: GameSession, direction: str) -> None:
         """Move in a direction."""
         room = session.world.get_room(session.current_room_id)
@@ -414,167 +377,94 @@ class NavigationHandler:
         else:
             await self._do_look(session)
 
-    async def _do_examine(self, session: GameSession, args: str, *_) -> None:
-        """Examine an item or NPC."""
-        from server.engine.domain.items import get_item
-        from server.engine.domain.npc import get_npc_template
+    # ────────────────────────────────────────────────────────────────────────
+    # Thin wrappers delegating to command submodules
+    # ────────────────────────────────────────────────────────────────────────
 
-        target = args.lower().strip()
-        if not target:
-            await session.send("  Examine what?\n")
-            return
+    # -- inventory --
+    async def _do_inventory(self, session: GameSession, args: str = "", *_) -> None:
+        await _inventory._do_inventory(session, args, "")
 
-        room = session.world.get_room(session.current_room_id)
+    async def _do_equip(self, session: GameSession, args: str = "", *_) -> None:
+        await _inventory._do_equip(session, args, "")
 
-        # Check room items
-        for item_id in room.item_ids:
-            item = get_item(item_id)
-            if item and target in item.name.lower():
-                await session.send(_box(item.name, [item.description, item.short_desc()]))
-                return
+    async def _do_unequip(self, session: GameSession, args: str = "", *_) -> None:
+        await _inventory._do_unequip(session, args, "")
 
-        # Check inventory
-        for item_id in session.player.inventory:
-            item = get_item(item_id)
-            if item and target in item.name.lower():
-                await session.send(_box(item.name, [item.description, item.short_desc()]))
-                return
+    async def _do_drop(self, session: GameSession, args: str = "", *_) -> None:
+        await _inventory._do_drop(session, args, "")
 
-        # Check recruitable NPCs
-        for tid in room.recruitable_npc_ids:
-            tpl = get_npc_template(tid)
-            if tpl and target in tpl["name"].lower():
-                await session.send(_box(
-                    tpl["name"],
-                    [tpl.get("room_flavor", ""), f"Class: {tpl['class_type'].capitalize()}, Level {tpl['level']}"]
-                ))
-                return
-
-        await session.send(f"  You don't see '{args}' here.\n")
-
-    async def _do_inventory(self, session: GameSession, args: str, *_) -> None:
-        """Show inventory."""
-        await do_inventory(session.send, session.player, session.party, session._cart_inventory, args)
-
-    async def _do_equip(self, session: GameSession, args: str, *_) -> None:
-        """Equip an item."""
-        await do_equip(session.send, session.player, args)
-
-    async def _do_unequip(self, session: GameSession, args: str, *_) -> None:
-        """Unequip an item."""
-        await do_unequip(session.send, session.player, args)
-
-    async def _do_drop(self, session: GameSession, args: str, *_) -> None:
-        """Drop an item."""
-        room = session.world.get_room(session.current_room_id)
-        await do_drop(session.send, session.player, room, session.broadcast_to_room, args)
-
-    async def _do_pick_up(self, session: GameSession, args: str, *_) -> None:
-        """Pick up an item."""
-        room = session.world.get_room(session.current_room_id)
-        item_arg = args.lstrip("UP").strip() if args.upper().startswith("UP") else args
-        await do_pick_up(
-            session.send, session.player, session.party, room,
-            session._cart_inventory, session._cart_present,
-            session.broadcast_to_room, item_arg.strip()
-        )
-
-    async def _do_load_cart(self, session: GameSession, args: str, *_) -> None:
-        """Load item into cart."""
-        await do_load_cart(session.send, session.player, session.party, session._cart_inventory, session._cart_present, args)
-
-    async def _do_unload_cart(self, session: GameSession, args: str, *_) -> None:
-        """Unload item from cart."""
-        await do_unload_cart(session.send, session.player, session.party, session._cart_inventory, session._cart_present, args)
-
-    async def _do_give(self, session: GameSession, args: str, *_) -> None:
-        """Give item to party member."""
-        await do_give(session.send, session.player, session.party, args)
-
+    # -- party --
     async def _do_stats(self, session: GameSession, *args) -> None:
-        """Show character stats."""
-        await session.send(session.player.stats_summary() + "\n")
+        await _party._do_stats(session, "", "")
 
     async def _do_gold(self, session: GameSession, *args) -> None:
-        """Show gold amount."""
-        await session.send(f"  You have {session.player.gold} gold.\n")
+        await _party._do_gold(session, "", "")
 
-    async def _do_skills(self, session: GameSession, args: str, *_) -> None:
-        """Show skill tree."""
-        from server.engine.domain.skills import render_skills_section
-        await session.send(
-            render_skills_section(
-                session.player.class_type,
-                session.player.unlocked_skills,
-                session.player.skill_points,
-                args.lower().strip()
-            ) + "\n"
-        )
+    async def _do_skills(self, session: GameSession, args: str = "", *_) -> None:
+        await _party._do_skills(session, args, "")
 
-    async def _do_learn(self, session: GameSession, args: str, *_) -> None:
-        """Learn a skill."""
-        from server.engine.domain.skills import can_learn, get_skill_tree, get_skill
-
-        skill_id = args.strip()
-        if not skill_id:
-            await session.send("  Learn what? Usage: LEARN <skill_id>\n")
-            return
-
-        ok, reason = can_learn(
-            session.player.class_type, skill_id,
-            session.player.unlocked_skills, session.player.skill_points
-        )
-        if not ok:
-            await session.send(f"  Cannot learn: {reason}\n")
-            return
-
-        tree = get_skill_tree(session.player.class_type)
-        node = next(n for n in tree if n.skill_id == skill_id)
-        session.player.skill_points -= node.unlock_cost
-        session.player.unlocked_skills[skill_id] = 1
-        skill = get_skill(skill_id)
-        await session.send(f"  You learned {skill.name}!\n")
+    async def _do_learn(self, session: GameSession, args: str = "", *_) -> None:
+        await _party._do_learn(session, args, "")
 
     async def _do_modifiers(self, session: GameSession, *args) -> None:
-        """Show character modifiers."""
-        from server.engine.domain.character import MODIFIER_CATALOGUE
-        from server.config import MODIFIER_BONUS_PER_LEVEL
+        await _party._do_modifiers(session, "", "")
 
-        lines = [f"  Modifier Points available: {session.player.modifier_points}", ""]
-        for mod_id, meta in MODIFIER_CATALOGUE.items():
-            level = session.player.modifiers.get(mod_id, 0)
-            bonus_pct = round(level * MODIFIER_BONUS_PER_LEVEL * 100)
-            lines.append(f"  {meta['label']:<25} Lv.{level} (+{bonus_pct}%)")
-        await session.send(_box("MODIFIERS", lines))
+    async def _do_upgrade(self, session: GameSession, args: str = "", *_) -> None:
+        await _party._do_upgrade(session, args, "")
 
-    async def _do_upgrade(self, session: GameSession, args: str, *_) -> None:
-        """Upgrade a modifier."""
-        from server.engine.domain.character import MODIFIER_CATALOGUE
-        from server.config import MODIFIER_BONUS_PER_LEVEL
+    # -- social --
+    async def _do_examine(self, session: GameSession, args: str = "", *_) -> None:
+        await _social._do_examine(session, args, "")
 
-        mod_id = args.strip().lower()
-        if not mod_id:
-            await session.send("  Upgrade what? Usage: UPGRADE <modifier_id>\n")
-            return
+    async def _do_say(self, session: GameSession, args: str = "", raw_args: str = "") -> None:
+        await _social._do_say(session, args, raw_args)
 
-        if mod_id not in MODIFIER_CATALOGUE:
-            await session.send(f"  Unknown modifier. Valid: {', '.join(MODIFIER_CATALOGUE.keys())}\n")
-            return
+    async def _do_emote(self, session: GameSession, args: str = "", raw_args: str = "") -> None:
+        await _social._do_emote(session, args, raw_args)
 
-        if session.player.modifier_points < 1:
-            await session.send("  You have no modifier points.\n")
-            return
+    async def _do_shout(self, session: GameSession, args: str = "", raw_args: str = "") -> None:
+        await _social._do_shout(session, args, raw_args)
 
-        session.player.modifier_points -= 1
-        session.player.modifiers[mod_id] = session.player.modifiers.get(mod_id, 0) + 1
+    # -- interaction --
+    async def _do_attack(self, session: GameSession, args: str = "", *_) -> None:
+        await _interaction._do_attack(session, args, "")
 
-        meta = MODIFIER_CATALOGUE[mod_id]
-        new_level = session.player.modifiers[mod_id]
-        new_pct = round(new_level * MODIFIER_BONUS_PER_LEVEL * 100)
-        await session.send(
-            f"  {meta['label']} improved to Lv.{new_level} (+{new_pct}%).\n"
-            f"  Modifier points remaining: {session.player.modifier_points}\n"
-        )
+    async def _do_talk(self, session: GameSession, args: str = "", *_) -> None:
+        await _interaction._do_talk(session, args, "")
+
+    async def _do_pick_up(self, session: GameSession, args: str = "", *_) -> None:
+        await _interaction._do_pick_up(session, args, "")
+
+    async def _do_give(self, session: GameSession, args: str = "", *_) -> None:
+        await _interaction._do_give(session, args, "")
+
+    # -- mounts --
+    async def _do_ride(self, session: GameSession, *args) -> None:
+        await _mounts._do_ride(session, "", "")
+
+    async def _do_dismount(self, session: GameSession, *args) -> None:
+        await _mounts._do_dismount(session, "", "")
+
+    async def _do_horses(self, session: GameSession, *args) -> None:
+        await _mounts._do_horses(session, "", "")
+
+    async def _do_load_cart(self, session: GameSession, args: str = "", *_) -> None:
+        await _mounts._do_load_cart(session, args, "")
+
+    async def _do_unload_cart(self, session: GameSession, args: str = "", *_) -> None:
+        await _mounts._do_unload_cart(session, args, "")
+
+    # -- quick look --
+    async def _do_lookmode(self, session: GameSession, args: str = "", *_) -> None:
+        await _quick_look._do_lookmode(session, args, "")
+
+    async def _do_battlelook(self, session: GameSession, args: str = "", *_) -> None:
+        await _quick_look._do_battlelook(session, args, "")
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Commands that remain fully in NavigationHandler
+    # ────────────────────────────────────────────────────────────────────────
 
     async def _do_party(self, session: GameSession, *args) -> None:
         """Show party status."""
@@ -597,39 +487,7 @@ class NavigationHandler:
         )
         await session.send(_box("PARTY", lines))
 
-    async def _do_talk(self, session: GameSession, args: str, *_) -> None:
-        """Talk to a recruitable NPC."""
-        from server.engine.domain.npc import get_npc_template, spawn_npc
-
-        name = args.lower().strip()
-        if not name:
-            await session.send("  Talk to who?\n")
-            return
-
-        room = session.world.get_room(session.current_room_id)
-        if not room:
-            return
-
-        for tid in room.recruitable_npc_ids:
-            tpl = get_npc_template(tid)
-            if tpl and name in tpl["name"].lower():
-                already_in_party = any(m.template_id == tid for m in session.party)
-                if already_in_party:
-                    await session.send(f"  {tpl['name']} is already in your party.\n")
-                    return
-                if len(session.party) >= 4:
-                    await session.send("  Your party is full. Dismiss someone first.\n")
-                    return
-
-                await session.send(tpl.get("recruit_dialogue", f"{tpl['name']} nods at you.\n"))
-
-                # Store pending recruit in session state
-                session._pending_recruit = tid
-                return
-
-        await session.send(f"  There's no one named '{args}' here to talk to.\n")
-
-    async def _do_dismiss(self, session: GameSession, args: str, *_) -> None:
+    async def _do_dismiss(self, session: GameSession, args: str = "", *_) -> None:
         """Dismiss a companion."""
         name = args.lower().strip()
         if not name:
@@ -677,11 +535,11 @@ class NavigationHandler:
         session._sitting = False
         await session.send("  You stand up.\n")
 
-    async def _do_eat(self, session: GameSession, args: str, *_) -> None:
+    async def _do_eat(self, session: GameSession, args: str = "", *_) -> None:
         """Eat food."""
         await do_eat(session.send, session.player, session.party, session.clock, args)
 
-    async def _do_drink(self, session: GameSession, args: str, *_) -> None:
+    async def _do_drink(self, session: GameSession, args: str = "", *_) -> None:
         """Drink."""
         await do_drink(session.send, session.player, session.party, session.clock, args)
 
@@ -689,67 +547,7 @@ class NavigationHandler:
         """Show active buffs."""
         await do_buffs(session.send, session.player, session.party, session.clock)
 
-    async def _do_attack(self, session: GameSession, args: str, *_) -> None:
-        """Initiate combat."""
-        from server.engine.domain.npc import get_npc_template
-
-        room = session.world.get_room(session.current_room_id)
-        if not room:
-            return
-
-        group_id = args.strip().upper() if args else None
-        active = session.world.active_encounter_groups(session.current_room_id)
-
-        if not active:
-            await session.send("  There's no one left to fight here.\n")
-            return
-
-        # Lighting check
-        if session.clock:
-            eff_light = effective_light(
-                session.player, session.party,
-                session.player.lit_sources, session.clock, room
-            )
-            if eff_light < 0.05:
-                target_group = (
-                    next((g for g in active if g.group == group_id), None)
-                    if group_id else active[0]
-                )
-                enemy_has_darkvision = False
-                if target_group:
-                    for tid in target_group.members:
-                        tpl = get_npc_template(tid)
-                        if tpl and tpl.get("darkvision", False):
-                            enemy_has_darkvision = True
-                            break
-                if not enemy_has_darkvision:
-                    await session.send(
-                        "  It is pitch black — you cannot fight what you cannot see.\n"
-                        "  Light a torch or find another source of light.\n"
-                    )
-                    return
-
-        # Arena: pick group by letter
-        if room.id == "test_arena":
-            if not group_id:
-                await session.send("  Specify a group: ATTACK A, ATTACK B, ATTACK C, or ATTACK D\n")
-                return
-            target_group = next((g for g in active if g.group == group_id), None)
-            if not target_group:
-                await session.send(f"  Group '{group_id}' is defeated or doesn't exist.\n")
-                return
-            arena_group = group_id
-        else:
-            target_group = active[0]
-            arena_group = None
-
-        await session.transition_to(
-            State.COMBAT,
-            encounter_group=target_group,
-            arena_group=arena_group
-        )
-
-    async def _do_use(self, session: GameSession, args: str, *_) -> None:
+    async def _do_use(self, session: GameSession, args: str = "", *_) -> None:
         """Use a utility skill."""
         await session._handle_use_skill(args.lower().strip())
 
@@ -781,74 +579,15 @@ class NavigationHandler:
             session.player, session.party, session.player.lit_sources, session.clock, session.send
         ))
 
-    async def _do_lit(self, session: GameSession, args: str, *_) -> None:
+    async def _do_lit(self, session: GameSession, args: str = "", *_) -> None:
         """Light a light source."""
         await do_light_source(session.send, session.player, session.party, session.player.lit_sources, session.clock, args, extinguish=False)
 
-    async def _do_extinguish(self, session: GameSession, args: str, *_) -> None:
+    async def _do_extinguish(self, session: GameSession, args: str = "", *_) -> None:
         """Extinguish a light source."""
         await do_light_source(session.send, session.player, session.party, session.player.lit_sources, session.clock, args, extinguish=True)
 
-    async def _do_ride(self, session: GameSession, *args) -> None:
-        """Mount horses."""
-        from server.engine.domain.items import get_item
-
-        horse_count = sum(
-            1 for m in ([session.player] + list(session.party))
-            for item_id in m.inventory
-            if (item := get_item(item_id)) and item.type == "mount"
-        )
-
-        if horse_count == 0:
-            await session.send("  You don't have any horses.\n")
-            return
-
-        room = session.world.get_room(session.current_room_id)
-        if room and room.room_type != "outdoor":
-            await session.send("  You can only mount up outdoors.\n")
-            return
-
-        session._mounted = True
-        await session.send("  The party mounts up and prepares to ride.\n")
-
-    async def _do_dismount(self, session: GameSession, *args) -> None:
-        """Dismount horses."""
-        session._mounted = False
-        await session.send("  The party dismounts.\n")
-
-    async def _do_horses(self, session: GameSession, *args) -> None:
-        """Show horse status."""
-        from server.engine.domain.items import get_item
-
-        horse_count = sum(
-            1 for m in ([session.player] + list(session.party))
-            for item_id in m.inventory
-            if (item := get_item(item_id)) and item.type == "mount"
-        )
-        party_size = 1 + len(session.party)
-        ratio = min(1.0, horse_count / max(1, party_size)) if session._mounted else 0.0
-        reduction_pct = round(MOUNT_STAMINA_REDUCTION * ratio * 100)
-
-        await session.send(
-            f"  Horses: {horse_count} | Party: {party_size} | Stamina drain: -{reduction_pct}%\n"
-        )
-
-    async def _do_say(self, session: GameSession, args: str, raw_args: str) -> None:
-        """Say something to the room."""
-        player_name = session.player.name if session.player else "Someone"
-        await do_say(session.send, session.broadcast_to_room, player_name, raw_args)
-
-    async def _do_emote(self, session: GameSession, args: str, raw_args: str) -> None:
-        """Perform an emote."""
-        player_name = session.player.name if session.player else "Someone"
-        await do_emote(session.send, session.broadcast_to_room, player_name, raw_args)
-
-    async def _do_shout(self, session: GameSession, args: str, raw_args: str) -> None:
-        """Shout to all players."""
-        player_name = session.player.name if session.player else "Someone"
-        await do_shout(session.send, session._sessions, player_name, raw_args)
-
-    async def _do_help(self, session: GameSession, args: str, *_) -> None:
+    async def _do_help(self, session: GameSession, args: str = "", *_) -> None:
         """Show help."""
         await session._send_help(args)
 
