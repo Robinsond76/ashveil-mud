@@ -3,6 +3,6 @@ Shared protocols — re-exports from domain.combatant.
 """
 from __future__ import annotations
 
-from server.engine.domain.combatant import Combatant, CombatantState
+from server.engine.domain.combatant import CombatParticipant
 
-__all__ = ["Combatant", "CombatantState"]
+__all__ = ["CombatParticipant"]

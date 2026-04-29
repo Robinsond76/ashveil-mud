@@ -8,10 +8,10 @@ import pytest
 
 def test_character_satisfies_combatant_protocol(load_game_data):
     """Character should satisfy the Combatant protocol."""
-    from server.engine.protocols import Combatant
+    from server.engine.protocols import CombatParticipant
     from server.engine.domain.character import Character
     c = Character(name="test", class_type="warrior")
-    assert isinstance(c, Combatant)
+    assert isinstance(c, CombatParticipant)
     assert hasattr(c, "name")
     assert hasattr(c, "hp")
     assert hasattr(c, "max_hp")
@@ -23,10 +23,10 @@ def test_character_satisfies_combatant_protocol(load_game_data):
 
 def test_npc_satisfies_combatant_protocol(load_game_data):
     """NPC should satisfy the Combatant protocol."""
-    from server.engine.protocols import Combatant
+    from server.engine.protocols import CombatParticipant
     from server.engine.domain.npc import NPC
     npc = NPC(name="Goblin", class_type="warrior")
-    assert isinstance(npc, Combatant)
+    assert isinstance(npc, CombatParticipant)
 
 
 # ── Task 2: Grid row/col defaults ─────────────────────────────────────────────
