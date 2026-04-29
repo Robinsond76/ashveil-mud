@@ -57,6 +57,7 @@ MOUNT_STAMINA_REDUCTION: float = 0.60    # fraction of stamina saving granted by
 
 # ── XP progression (extracted from character.py) ─────────────────────────────
 # XP_TABLE[level] = total XP needed to reach that level (level 1 = 0)
+MAX_LEVEL: int = 10
 XP_TABLE: list[int] = [
     0,      # level 1
     300,    # level 2

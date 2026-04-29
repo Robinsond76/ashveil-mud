@@ -13,9 +13,11 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any
 
 from server.config import (
+    MAX_LEVEL as _MAX_LEVEL,
     MODIFIER_BONUS_PER_LEVEL,
     WEIGHT_DIVISOR,
     BASE_ATTACK_SPEED,
@@ -38,25 +40,40 @@ from server.engine.domain.items import (
 
 
 # ── Modifier catalogue ───────────────────────────────────────────────────────
-# Maps modifier_id → human label and what it affects
-MODIFIER_CATALOGUE: dict[str, dict[str, str]] = {
-    # Weapon proficiencies
-    "sword_prof":    {"label": "Sword Proficiency",    "type": "weapon_hit", "weapon_type": "sword"},
-    "axe_prof":      {"label": "Axe Proficiency",      "type": "weapon_hit", "weapon_type": "axe"},
-    "mace_prof":     {"label": "Mace Proficiency",     "type": "weapon_hit", "weapon_type": "mace"},
-    "dagger_prof":   {"label": "Dagger Proficiency",   "type": "weapon_hit", "weapon_type": "dagger"},
-    "bow_prof":      {"label": "Bow Proficiency",      "type": "weapon_hit", "weapon_type": "bow"},
-    "staff_prof":    {"label": "Staff Proficiency",    "type": "weapon_hit", "weapon_type": "staff"},
-    "shield_prof":   {"label": "Shield Proficiency",   "type": "block_bonus", "weapon_type": None},
-    "dodge_mastery": {"label": "Dodge Mastery",        "type": "dodge_bonus", "weapon_type": None},
-    # Spell intensifiers
-    "fire_intensity":      {"label": "Fire Intensity",      "type": "spell_intensity", "school": "fire"},
-    "frost_intensity":     {"label": "Frost Intensity",     "type": "spell_intensity", "school": "frost"},
-    "lightning_intensity": {"label": "Lightning Intensity", "type": "spell_intensity", "school": "lightning"},
-    "heal_power":          {"label": "Heal Power",          "type": "spell_intensity", "school": "heal"},
-    "curse_intensity":     {"label": "Curse Intensity",     "type": "spell_intensity", "school": "curse"},
-    "holy_power":          {"label": "Holy Power",          "type": "spell_intensity", "school": "holy"},
+class ModifierType(Enum):
+    WEAPON_HIT = "weapon_hit"
+    BLOCK_BONUS = "block_bonus"
+    DODGE_BONUS = "dodge_bonus"
+    SPELL_INTENSITY = "spell_intensity"
+
+WEAPON_PROFS: dict[str, dict[str, str]] = {
+    "sword_prof": {"label": "Sword Proficiency", "weapon_type": "sword"},
+    "axe_prof":   {"label": "Axe Proficiency", "weapon_type": "axe"},
+    "mace_prof":  {"label": "Mace Proficiency", "weapon_type": "mace"},
+    "dagger_prof":{"label": "Dagger Proficiency", "weapon_type": "dagger"},
+    "bow_prof":   {"label": "Bow Proficiency", "weapon_type": "bow"},
+    "staff_prof": {"label": "Staff Proficiency", "weapon_type": "staff"},
 }
+
+DEFENSIVE_PROFS: dict[str, dict[str, str]] = {
+    "shield_prof":   {"label": "Shield Proficiency", "type": "block_bonus"},
+    "dodge_mastery": {"label": "Dodge Mastery", "type": "dodge_bonus"},
+}
+
+SPELL_INTENSIFIERS: dict[str, dict[str, str]] = {
+    "fire_intensity":      {"label": "Fire Intensity", "school": "fire"},
+    "frost_intensity":     {"label": "Frost Intensity", "school": "frost"},
+    "lightning_intensity": {"label": "Lightning Intensity", "school": "lightning"},
+    "heal_power":          {"label": "Heal Power", "school": "heal"},
+    "curse_intensity":     {"label": "Curse Intensity", "school": "curse"},
+    "holy_power":          {"label": "Holy Power", "school": "holy"},
+}
+
+# Backward-compatible flat dict for callers that iterate all
+MODIFIER_CATALOGUE: dict[str, dict[str, str]] = {}
+MODIFIER_CATALOGUE.update({k: {**v, "type": "weapon_hit", "category": "weapon_prof"} for k, v in WEAPON_PROFS.items()})
+MODIFIER_CATALOGUE.update({k: {**v, "category": "defensive_prof"} for k, v in DEFENSIVE_PROFS.items()})
+MODIFIER_CATALOGUE.update({k: {**v, "type": "spell_intensity", "category": "spell_intensifier"} for k, v in SPELL_INTENSIFIERS.items()})
 
 # Thirst drain multipliers keyed by temperature label from WorldClock
 _THIRST_MULTIPLIERS: dict[str, float] = {
@@ -340,7 +357,7 @@ class Character:
         self.xp += amount
         messages: list[str] = []
         while (
-            self.level < len(XP_TABLE)
+            self.level < min(len(XP_TABLE), _MAX_LEVEL)
             and self.xp >= XP_TABLE[self.level]
         ):
             self.level += 1

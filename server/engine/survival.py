@@ -2,13 +2,7 @@
 from __future__ import annotations
 
 from server.config import SIT_STAMINA_RECOVERY_RATE
-
-def _box(title: str, lines: list[str]) -> str:
-    width = 60
-    out = [f"\n{'═' * width}", f"  {title}", f"{'─' * width}"]
-    out += [f"  {l}" for l in lines]
-    out.append("═" * width)
-    return "\n".join(out)
+from server.engine.display.formatting import box as _box
 
 
 def party_survival_aggregate(player, party) -> tuple[float, float, float]:

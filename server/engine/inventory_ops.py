@@ -4,14 +4,7 @@ from __future__ import annotations
 import random
 
 from server.engine.domain.items import EQUIPMENT_SLOTS, get_item, total_equipped_weight
-
-
-def _box(title: str, lines: list[str]) -> str:
-    width = 60
-    out = [f"\n{'═' * width}", f"  {title}", f"{'─' * width}"]
-    out += [f"  {l}" for l in lines]
-    out.append("═" * width)
-    return "\n".join(out)
+from server.engine.display.formatting import box as _box
 
 
 def party_inventory_view(player, party) -> list[tuple[str, str, str]]:

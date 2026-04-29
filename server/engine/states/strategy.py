@@ -8,18 +8,10 @@ from server.engine.strategy import (
     add_strategy, clear_strategies, list_strategies, remove_strategy
 )
 from server.engine.domain.skills import get_skill
+from server.engine.display.formatting import box as _box
 
 if TYPE_CHECKING:
     from server.engine.game import GameSession
-
-
-def _box(title: str, lines: list[str]) -> str:
-    """Format a boxed display."""
-    width = 60
-    out = [f"\n{'═' * width}", f"  {title}", f"{'─' * width}"]
-    out += [f"  {l}" for l in lines]
-    out.append("═" * width)
-    return "\n".join(out)
 
 
 class StrategyHandler:

@@ -5,14 +5,7 @@ import asyncio
 
 from server.engine.domain.items import get_item
 from server.engine.world.clock import light_label
-
-
-def _box(title: str, lines: list[str]) -> str:
-    width = 60
-    out = [f"\n{'═' * width}", f"  {title}", f"{'─' * width}"]
-    out += [f"  {l}" for l in lines]
-    out.append("═" * width)
-    return "\n".join(out)
+from server.engine.display.formatting import box as _box
 
 
 def carried_light(player, party, lit_sources: dict, clock, send_fn) -> float:
