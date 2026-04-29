@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 
 from server.engine.domain.items import get_item
-from server.engine.world_clock import light_label
+from server.engine.world.clock import light_label
 
 
 def _box(title: str, lines: list[str]) -> str:

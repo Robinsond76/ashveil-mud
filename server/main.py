@@ -17,7 +17,7 @@ from server.engine.domain.items import load_items
 from server.engine.domain.npc import load_npcs
 from server.engine.domain.skills import load_skills
 from server.engine.world.map import WorldMap
-from server.engine.world_clock import WorldClock
+from server.engine.world.clock import WorldClock
 
 # ── Resolve data directory ────────────────────────────────────────────────────
 _HERE = os.path.dirname(os.path.abspath(__file__))

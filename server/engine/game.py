@@ -64,7 +64,7 @@ from server.engine.survival import (
     do_survival_status, do_eat, do_drink, do_buffs,
 )
 from server.engine.world.map import WorldMap
-from server.engine.world_clock import WorldClock
+from server.engine.world.clock import WorldClock
 from server.engine.states import State, HANDLER_REGISTRY
 
 

@@ -50,7 +50,7 @@ async def test_concurrent_leave_does_not_corrupt(load_game_data):
 def test_world_clock_ticks_respawns(load_game_data):
     """WorldClock should call world.tick_respawns() on each game-minute tick."""
     from server.engine.world.map import WorldMap, Room, EncounterGroup
-    from server.engine.world_clock import WorldClock
+    from server.engine.world.clock import WorldClock
 
     world = WorldMap()
     # Add a room with a defeated encounter group
@@ -87,7 +87,7 @@ def test_world_clock_ticks_respawns(load_game_data):
 
 def test_world_clock_without_world_still_works(load_game_data):
     """WorldClock without a world parameter should not error."""
-    from server.engine.world_clock import WorldClock
+    from server.engine.world.clock import WorldClock
     clock = WorldClock()
     # Should not raise even though no world is attached
     clock._advance_one_minute()

@@ -41,7 +41,7 @@ from server.engine.domain.npc import NPC
 from server.engine.domain.skills import get_skill
 from server.engine.strategy import evaluate_strategy
 from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem, CombatResult
-from server.engine.world_clock import lighting_combat_penalties
+from server.engine.world.clock import lighting_combat_penalties
 
 
 # ── Position grid ─────────────────────────────────────────────────────────────
