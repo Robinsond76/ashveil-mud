@@ -139,9 +139,10 @@
           </div>
         `;
       }
-      
+
       const members = party.map(member => {
         const hpPct = Math.round((member.hp / member.max_hp) * 100);
+        const mpPct = Math.round((member.mp / member.max_mp) * 100);
         return `
           <div class="party-member">
             <div class="party-member-name">${member.name}</div>
@@ -149,10 +150,14 @@
             <div class="party-member-hp-bar">
               <div class="party-member-hp-fill" style="width: ${hpPct}%"></div>
             </div>
+            <div class="party-member-mp">MP: ${member.mp}/${member.max_mp}</div>
+            <div class="party-member-mp-bar">
+              <div class="party-member-mp-fill" style="width: ${mpPct}%"></div>
+            </div>
           </div>
         `;
       }).join('');
-      
+
       return `
         <div class="context-section">
           <div class="context-section-title">Party (${party.length})</div>

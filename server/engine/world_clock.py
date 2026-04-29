@@ -160,6 +160,9 @@ class WorldClock:
         # Subscriber callbacks: async (message: str) → None
         self._subscribers: list[Callable[[str], Awaitable[None]]] = []
 
+        # Tick callbacks: async () → None — fired every game-minute tick
+        self._tick_subscribers: list[Callable[[], Awaitable[None]]] = []
+
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
     def start(self) -> None:
@@ -187,6 +190,7 @@ class WorldClock:
         self._tick_weather()
         if self._world is not None:
             self._world.tick_respawns()
+        asyncio.get_event_loop().create_task(self._notify_ticks())
 
     # ── Weather state machine ─────────────────────────────────────────────────
 
@@ -221,6 +225,14 @@ class WorldClock:
             except Exception:
                 pass
 
+    async def _notify_ticks(self) -> None:
+        """Notify all tick subscribers that a game-minute has passed."""
+        for cb in list(self._tick_subscribers):
+            try:
+                await cb()
+            except Exception:
+                pass
+
     # ── Subscription ──────────────────────────────────────────────────────────
 
     def subscribe(self, callback: Callable[[str], Awaitable[None]]) -> None:
@@ -230,6 +242,16 @@ class WorldClock:
     def unsubscribe(self, callback: Callable[[str], Awaitable[None]]) -> None:
         if callback in self._subscribers:
             self._subscribers.remove(callback)
+
+    def subscribe_tick(self, callback: Callable[[], Awaitable[None]]) -> None:
+        """Subscribe to every game-minute tick (not just weather changes)."""
+        if callback not in self._tick_subscribers:
+            self._tick_subscribers.append(callback)
+
+    def unsubscribe_tick(self, callback: Callable[[], Awaitable[None]]) -> None:
+        """Unsubscribe from game-minute ticks."""
+        if callback in self._tick_subscribers:
+            self._tick_subscribers.remove(callback)
 
     # ── Time properties ───────────────────────────────────────────────────────
 

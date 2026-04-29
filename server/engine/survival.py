@@ -58,13 +58,20 @@ def drain_survival_tick(player, party, clock, temp_label: str) -> None:
 
 
 def sitting_stamina_tick(player, party, clock, is_sitting: bool) -> None:
-    """Restore stamina per game-minute while sitting (out of combat)."""
+    """Restore stamina, HP, and MP per game-minute while sitting (out of combat)."""
     if not is_sitting:
         return
     members = [player] + list(party)
     for m in members:
+        # Stamina recovery
         recovery = 1.5 if (clock and "energised" in m.get_active_buffs(clock)) else SIT_STAMINA_RECOVERY_RATE
         m.stamina = min(m.max_stamina, m.stamina + recovery)
+
+        # HP and MP recovery (slower than campfire)
+        hp_recovery = 0.5  # 50% of max per minute (slower than campfire's instant full heal)
+        mp_recovery = 0.3  # 30% of max per minute
+        m.hp = min(m.max_hp, m.hp + hp_recovery)
+        m.mp = min(m.max_mp, m.mp + mp_recovery)
 
 
 async def do_survival_status(send_fn, player, party) -> None:

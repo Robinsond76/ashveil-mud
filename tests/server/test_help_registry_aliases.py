@@ -7,7 +7,7 @@ def test_aliases_in_help_text():
     # Import after ensuring we're in the right path
     import sys
     sys.path.insert(0, '/Users/robinsondesouza/Documents/vibing/openCode/projects/ashveil-mud/.worktrees/command-aliases')
-    from server.engine.help_registry import _HELP_TOPICS
+    from server.engine.display.help_data import _HELP_TOPICS
     
     # Map of primary command to expected shorthand notation in help
     expected_aliases_in_help = {

@@ -107,12 +107,10 @@ class CombatHandler:
                 await session.send("  The party remounts and continues on.\n")
             session._was_mounted = False
 
-        await session.transition_to(State.NAVIGATION)
-
-        if session.player and session.player.battle_look:
-            from server.engine.states.navigation import NavigationHandler
-            nav = NavigationHandler()
-            await nav._do_quicklook(session)
+        # Set battle_look flag in state_data so navigation.on_enter can handle it
+        # This avoids duplicate quick look when look_mode is QUICK
+        do_quick_look = session.player and session.player.battle_look and session.player.look_mode == "FULL"
+        await session.transition_to(State.NAVIGATION, force_quick_look=do_quick_look)
 
     async def _handle_defeat(self, session: GameSession) -> None:
         """Handle defeat transition."""
@@ -134,10 +132,8 @@ class CombatHandler:
         respawn = DEBUG_RESPAWN_ROOM_ID if DEBUG_NO_DEATH_PENALTY else session.last_campfire_room_id
         session.current_room_id = respawn
 
-        await session.transition_to(State.NAVIGATION)
+        # Set battle_look flag in state_data so navigation.on_enter can handle it
+        # This avoids duplicate quick look when look_mode is QUICK
+        do_quick_look = session.player and session.player.battle_look and session.player.look_mode == "FULL"
+        await session.transition_to(State.NAVIGATION, force_quick_look=do_quick_look)
         await session.send("\n  You find yourself back at the Proving Grounds, wounds healed.\n")
-
-        if session.player and session.player.battle_look:
-            from server.engine.states.navigation import NavigationHandler
-            nav = NavigationHandler()
-            await nav._do_quicklook(session)

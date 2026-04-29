@@ -1,13 +1,8 @@
 """Help topic registry — all HELP content extracted from GameSession."""
 from __future__ import annotations
 
-
-def _box(title: str, lines: list[str]) -> str:
-    width = 60
-    out = [f"\n{'═' * width}", f"  {title}", f"{'─' * width}"]
-    out += [f"  {l}" for l in lines]
-    out.append("═" * width)
-    return "\n".join(out)
+from server.engine.display.formatting import box as _box
+from server.engine.states import State
 
 
 _HELP_TOPICS: dict[str, str] = {

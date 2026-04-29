@@ -4,26 +4,28 @@
 
 ### First-time Setup
 
-```powershell
-pip install -r requirements.txt
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -e .
 ```
+
+> On macOS the system Python blocks `--user` installs; always use the venv.
 
 ### Run the Server
 
-```powershell
-python3 -m uvicorn server.main:app --reload --port 8081
+```bash
+. .venv/bin/activate
+uvicorn server.main:app --reload --port 8081
 ```
 
 Server runs at http://localhost:8081
 
 ### Run Tests
 
-```powershell
-# If pytest is not in your PATH, use the full path:
-/Users/robinsondesouza/Library/Python/3.9/bin/pytest tests/
-
-# Or run via Python module:
-python3 -m pytest tests/
+```bash
+. .venv/bin/activate
+pytest tests/
 ```
 
 ## Architecture
@@ -47,7 +49,7 @@ python3 -m pytest tests/
 
 ## Testing
 
-- `/Users/robinsondesouza/Library/Python/3.9/bin/pytest tests/` — all tests use `asyncio_mode = auto`
+- `pytest tests/` — all tests use `asyncio_mode = auto`
 - Many test files are phase-named (test_phase02_*, test_phase03_*, etc.)
 - Known issues (see IMPROVEMENTS.md):
   - T1: Trivial pass tests that only check field initialization
@@ -64,6 +66,6 @@ python3 -m pytest tests/
 
 ## Working on This Repo
 
-- Run `/Users/robinsondesouza/Library/Python/3.9/bin/pytest tests/` after every change
+- Run `pytest tests/` after every change (activate venv first)
 - Check IMPROVEMENTS.md before major refactors — execution order: 03 → 01 → 02 → 04 → 05 → 06 → 07
 - game.py is the main bottleneck; expect decomposition work to be complex

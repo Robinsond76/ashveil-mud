@@ -132,7 +132,14 @@ class NavigationHandler:
     async def on_enter(self, session: GameSession) -> None:
         """Subscribe to clock and show current room based on look_mode."""
         session._subscribe_clock()
-        if session.player and session.player.look_mode == "QUICK":
+
+        # Check if battle_look is forcing a quick look after combat
+        force_quick = session._state_data.get("force_quick_look", False)
+
+        if force_quick:
+            # Battle look after combat - always show quick look
+            await self._do_quicklook(session)
+        elif session.player and session.player.look_mode == "QUICK":
             await self._do_quicklook(session)
         else:
             await self._do_look(session)
@@ -401,7 +408,11 @@ class NavigationHandler:
         opposite = self._OPPOSITE_DIR.get(direction, direction)
         await session.broadcast_to_room(f"  {player_name} arrives from the {opposite}.\n", exclude_self=True)
 
-        await self._do_look(session)
+        # Show room based on look_mode preference
+        if session.player and session.player.look_mode == "QUICK":
+            await self._do_quicklook(session)
+        else:
+            await self._do_look(session)
 
     async def _do_examine(self, session: GameSession, args: str, *_) -> None:
         """Examine an item or NPC."""

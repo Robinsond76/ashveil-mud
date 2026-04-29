@@ -74,8 +74,8 @@ def test_rest_restores_multiple_party_npcs_mp():
 
 # ── Phase A: No passive MP regen out of combat ────────────────────────────────
 
-def test_no_passive_mp_regen_during_sitting_tick():
-    """MP must NOT increase during the passive sitting stamina tick."""
+def test_slow_mp_regen_during_sitting_tick():
+    """MP increases slowly during the passive sitting stamina tick."""
     world = WorldMap.__new__(WorldMap)
     world._rooms = {}
     world.get_room = lambda rid: None
@@ -93,7 +93,7 @@ def test_no_passive_mp_regen_during_sitting_tick():
 
     # Call the tick directly
     session._sitting_stamina_tick()
-    assert player.mp == 5  # unchanged
+    assert player.mp == 5.3  # MP recovers at 0.3 per tick while sitting
 
 
 def test_no_passive_mp_regen_on_drain_tick():
