@@ -10,7 +10,7 @@ from server.engine.inventory_ops import (
     do_give, do_load_cart, do_unload_cart
 )
 from server.engine.chat import do_say, do_emote, do_shout
-from server.engine.environment import (
+from server.engine.world.environment import (
     do_time, do_weather, do_light, do_envdetails, do_light_source,
     carried_light, effective_light
 )

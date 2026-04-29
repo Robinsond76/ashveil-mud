@@ -53,7 +53,7 @@ from server.engine.inventory_ops import (
 )
 from server.engine.campfire import do_formation, do_manage
 from server.engine.chat import do_say, do_emote, do_shout
-from server.engine.environment import (
+from server.engine.world.environment import (
     carried_light as _carried_light_fn,
     effective_light as _effective_light_fn,
     do_time, do_weather, do_light, do_envdetails, do_light_source,
