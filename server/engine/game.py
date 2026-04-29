@@ -67,6 +67,11 @@ from server.engine.systems.survival import (
 from server.engine.world.map import WorldMap
 from server.engine.world.clock import WorldClock
 from server.engine.states import State, HANDLER_REGISTRY
+from server.engine.systems.mounts import (
+    horse_count, stamina_multiplier, party_has_cart,
+    do_ride, do_dismount, do_horses,
+)
+from server.engine.systems.utility_skills import handle_use_skill, execute_utility_effect
 
 
 from server.engine.display.formatting import box as _box
@@ -294,111 +299,11 @@ class GameSession:
         await send_help(self.send, topic, self._state)
 
     # ─────────────────────────────────────────────────────────────────────────
-    # Utility skill handler (delegates to existing complex logic)
+    # Utility skill handler (delegates to systems/utility_skills)
     # ─────────────────────────────────────────────────────────────────────────
 
-    async def _handle_use_skill(self, skill_id: str) -> None:
-        """Handle utility skill usage."""
-        skill = get_skill(skill_id)
-        if skill is None:
-            await self.send(f"  Unknown skill '{skill_id}'. Type SKILLS UTILITY for a list.\n")
-            return
-
-        if skill_id not in self.player.unlocked_skills:
-            await self.send(
-                f"  You haven't unlocked '{skill.name}'. Use SKILLS to see your skill tree.\n"
-            )
-            return
-
-        if skill.use_context != "utility":
-            await self.send(
-                f"  '{skill.name}' is a combat skill — use it via your strategy in battle.\n"
-            )
-            return
-
-        if skill.mp_cost > 0 and self.player.mp < skill.mp_cost:
-            await self.send(
-                f"  Not enough mana. '{skill.name}' costs {skill.mp_cost} MP "
-                f"(you have {self.player.mp}).\n"
-            )
-            return
-
-        if skill.stamina_cost > 0 and self.player.stamina < skill.stamina_cost:
-            await self.send(
-                f"  Not enough stamina. '{skill.name}' costs {skill.stamina_cost} "
-                f"(you have {int(self.player.stamina)}).\n"
-            )
-            return
-
-        if skill.required_items:
-            party_inv: list[str] = list(self.player.inventory)
-            for npc in self.party:
-                party_inv.extend(npc.inventory)
-            for item_id in skill.required_items:
-                if item_id not in party_inv:
-                    await self.send(
-                        f"  You need a {item_id} to use '{skill.name}'.\n"
-                    )
-                    return
-
-        # Deduct costs
-        self.player.mp -= skill.mp_cost
-        self.player.stamina -= skill.stamina_cost
-
-        # Consume items
-        if skill.consumes_item and skill.required_items:
-            for item_id in skill.required_items:
-                if item_id in self.player.inventory:
-                    self.player.inventory.remove(item_id)
-                    break
-                else:
-                    for npc in self.party:
-                        if item_id in npc.inventory:
-                            npc.inventory.remove(item_id)
-                            break
-
-        # Execute effect
-        await self._execute_utility_effect(skill)
-
-    async def _execute_utility_effect(self, skill) -> None:
-        """Execute utility skill effect."""
-        effect = skill.effect_type
-
-        if effect == "unlock_door":
-            await self.send(
-                "  You probe the lock carefully... but there are no locked exits here.\n"
-            )
-
-        elif effect == "reveal_traps":
-            await self.send("  You scan the room carefully. You detect no hidden traps.\n")
-
-        elif effect == "provide_light":
-            base = self.clock.game_minutes_elapsed if self.clock else 0
-            self._arcane_light_until = base + 120
-            await self.send(
-                "  Arcane light fills the room, illuminating everything clearly for 120 game-minutes.\n"
-            )
-
-        elif effect == "identify_item":
-            await self.send("  You sense the arcane properties of the items around you.\n")
-
-        elif effect == "bless_camp":
-            self._bless_camp_active = True
-            await self.send(
-                "  You bless the camp. Your next rest will reduce hunger drain by 50%.\n"
-            )
-
-        elif effect == "purify_food":
-            await self.send("  You purify the food in your pack.\n")
-
-        elif effect == "fortify_party":
-            self._fortify_active = True
-            await self.send(
-                "  You bolster the party's defenses. Incoming damage will be reduced until your next battle.\n"
-            )
-
-        else:
-            await self.send(f"  You use {skill.name}.\n")
+    _handle_use_skill = handle_use_skill
+    _execute_utility_effect = execute_utility_effect
 
     # ─────────────────────────────────────────────────────────────────────────
     # Campfire handlers (delegated to by CampfireHandler)
@@ -570,13 +475,7 @@ class GameSession:
         """Backward-compatible wrapper for survival.drain_survival_tick."""
         drain_survival_tick(self.player, self.party, self.clock, temp_label)
 
-    def _party_has_cart(self) -> bool:
-        """Return True if any party member has travellers_cart."""
-        members = ([self.player] if self.player else []) + list(self.party)
-        for m in members:
-            if "travellers_cart" in m.inventory:
-                return True
-        return False
+    _party_has_cart = party_has_cart
 
     def _auto_assign_item(self, item_id: str) -> bool:
         """Backward-compatible wrapper for inventory_ops.auto_assign_item."""
@@ -595,25 +494,9 @@ class GameSession:
         """Backward-compatible wrapper for inventory_ops.party_inventory_view."""
         return party_inventory_view(self.player, self.party)
 
-    def _horse_count(self) -> int:
-        """Count items with type == 'mount' across all party member inventories."""
-        members = ([self.player] if self.player else []) + list(self.party)
-        count = 0
-        for m in members:
-            for item_id in m.inventory:
-                item = get_item(item_id)
-                if item and item.type == "mount":
-                    count += 1
-        return count
+    _horse_count = horse_count
 
-    def _stamina_multiplier(self) -> float:
-        """Return stamina drain multiplier based on horse-to-party ratio."""
-        if not self._mounted:
-            return 1.0
-        horse_count = self._horse_count()
-        party_size = max(1, 1 + len(self.party))
-        ratio = min(1.0, horse_count / party_size)
-        return 1.0 - (MOUNT_STAMINA_REDUCTION * ratio)
+    _stamina_multiplier = stamina_multiplier
 
     async def _broadcast_to_room(self, message: str, exclude_self: bool = True) -> None:
         """Backward-compatible alias for broadcast_to_room."""
@@ -696,32 +579,11 @@ class GameSession:
         handler = CampfireHandler()
         await handler.handle(self, text)
 
-    async def _do_ride(self) -> None:
-        """RIDE — mount up if horses are available (backward-compatible)."""
-        if self._horse_count() == 0:
-            await self.send("  You don't have any horses.\n")
-            return
-        room = self.world.get_room(self.current_room_id)
-        if room and room.room_type != "outdoor":
-            await self.send("  You can only mount up outdoors.\n")
-            return
-        self._mounted = True
-        await self.send("  The party mounts up and prepares to ride.\n")
+    _do_ride = do_ride
 
-    async def _do_dismount(self) -> None:
-        """DISMOUNT — dismount the party (backward-compatible)."""
-        self._mounted = False
-        await self.send("  The party dismounts.\n")
+    _do_dismount = do_dismount
 
-    async def _do_horses(self) -> None:
-        """HORSES — show horse count (backward-compatible)."""
-        horse_count = self._horse_count()
-        party_size = 1 + len(self.party)
-        ratio = min(1.0, horse_count / max(1, party_size)) if self._mounted else 0.0
-        reduction_pct = round(MOUNT_STAMINA_REDUCTION * ratio * 100)
-        await self.send(
-            f"  Horses: {horse_count} | Party: {party_size} | Stamina drain: -{reduction_pct}%\n"
-        )
+    _do_horses = do_horses
 
     async def _do_attack(self, args: str) -> None:
         """Initiate combat (backward-compatible)."""
