@@ -3,7 +3,7 @@
 import pytest
 
 from server.engine.domain.character import Character
-from server.engine.world import Room, EncounterGroup
+from server.engine.world.map import Room, EncounterGroup
 
 
 class TestCharacterPreferences:

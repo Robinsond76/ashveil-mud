@@ -10,7 +10,7 @@ import pytest
 from server.engine.domain.character import Character
 from server.engine.game import GameSession, State
 from server.engine.domain.npc import NPC
-from server.engine.world import WorldMap
+from server.engine.world.map import WorldMap
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

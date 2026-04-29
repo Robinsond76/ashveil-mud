@@ -7,7 +7,7 @@ import pytest
 
 from server.engine.domain.character import Character
 from server.engine.game import GameSession, State
-from server.engine.world import WorldMap
+from server.engine.world.map import WorldMap
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -88,7 +88,7 @@ def test_look_zero_stamina_shows_exhaustion_warning():
     collected: list[str] = []
     async def _send(text: str): collected.append(text)
 
-    from server.engine.world import Room
+    from server.engine.world.map import Room
     room = Room.__new__(Room)
     room.id = "here"
     room.name = "Test Room"

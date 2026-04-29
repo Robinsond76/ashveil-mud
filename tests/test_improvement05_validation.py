@@ -14,7 +14,7 @@ import pytest
 
 def test_validate_rooms_catches_bad_exit():
     """Room with an exit pointing to a non-existent room should surface an error."""
-    from server.engine.world import validate_room_data
+    from server.engine.world.map import validate_room_data
 
     bad_rooms = {
         "room_a": {
@@ -30,7 +30,7 @@ def test_validate_rooms_catches_bad_exit():
 
 def test_validate_rooms_accepts_valid_data():
     """Fully valid room data should return no errors."""
-    from server.engine.world import validate_room_data
+    from server.engine.world.map import validate_room_data
 
     good_rooms = {
         "room_a": {
@@ -49,7 +49,7 @@ def test_validate_rooms_accepts_valid_data():
 
 def test_validate_rooms_empty_dict():
     """Empty room dict should return no errors."""
-    from server.engine.world import validate_room_data
+    from server.engine.world.map import validate_room_data
 
     errors = validate_room_data({})
     assert errors == []
@@ -57,7 +57,7 @@ def test_validate_rooms_empty_dict():
 
 def test_validate_rooms_no_exits():
     """Room with no exits field should not raise and return no errors."""
-    from server.engine.world import validate_room_data
+    from server.engine.world.map import validate_room_data
 
     rooms = {
         "room_a": {"id": "room_a"},
@@ -68,7 +68,7 @@ def test_validate_rooms_no_exits():
 
 def test_validate_rooms_multiple_bad_exits():
     """Each invalid exit should produce a separate error entry."""
-    from server.engine.world import validate_room_data
+    from server.engine.world.map import validate_room_data
 
     rooms = {
         "room_a": {

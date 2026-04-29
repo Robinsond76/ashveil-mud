@@ -5,7 +5,7 @@ import pytest
 
 from server.engine.domain.character import Character
 from server.engine.game import GameSession, State
-from server.engine.world import WorldMap
+from server.engine.world.map import WorldMap
 from server.engine.domain.npc import NPC
 
 
@@ -91,7 +91,7 @@ def test_move_drains_party_stamina():
     from unittest.mock import MagicMock, AsyncMock
 
     # Build a minimal world with one room that has an exit
-    from server.engine.world import Room
+    from server.engine.world.map import Room
     room = Room.__new__(Room)
     room.id = "start"
     room.name = "Start Room"
@@ -138,7 +138,7 @@ def test_move_drains_party_stamina():
 def test_move_blocked_when_stamina_zero():
     """At stamina=0, movement should be refused."""
     import asyncio
-    from server.engine.world import Room
+    from server.engine.world.map import Room
 
     room = Room.__new__(Room)
     room.id = "start"

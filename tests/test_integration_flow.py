@@ -8,7 +8,7 @@ import os
 import pytest
 
 from server.engine.game import GameSession, State
-from server.engine.world import WorldMap
+from server.engine.world.map import WorldMap
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "server", "data")
 

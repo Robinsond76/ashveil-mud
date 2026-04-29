@@ -39,7 +39,7 @@ def make_nav_session():
         player_kwargs=None,
     ):
         from server.engine.game import GameSession, State
-        from server.engine.world import WorldMap
+        from server.engine.world.map import WorldMap
         from server.engine.domain.character import Character
 
         world = WorldMap.__new__(WorldMap)

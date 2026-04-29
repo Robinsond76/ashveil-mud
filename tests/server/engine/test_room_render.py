@@ -1,6 +1,6 @@
 import json
 import pytest
-from server.engine.world import Room, EncounterGroup
+from server.engine.world.map import Room, EncounterGroup
 
 
 def test_recruit_hall_no_hardcoded_npc_descriptions():

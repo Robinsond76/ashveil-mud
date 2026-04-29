@@ -14,7 +14,7 @@ import pytest
 
 from server.engine.game import GameSession, State
 from server.engine.domain.character import Character
-from server.engine.world import WorldMap, Room
+from server.engine.world.map import WorldMap, Room
 
 
 # ── Test helpers ──────────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ import pytest_asyncio
 @pytest.mark.asyncio
 async def test_concurrent_room_enter_does_not_corrupt(load_game_data):
     """Two players entering the same room concurrently should both appear."""
-    from server.engine.world import WorldMap
+    from server.engine.world.map import WorldMap
     world = WorldMap()
     world.room_occupants["town_square"] = []
 
@@ -33,7 +33,7 @@ async def test_concurrent_room_enter_does_not_corrupt(load_game_data):
 @pytest.mark.asyncio
 async def test_concurrent_leave_does_not_corrupt(load_game_data):
     """Two players leaving the same room concurrently should both be removed."""
-    from server.engine.world import WorldMap
+    from server.engine.world.map import WorldMap
     world = WorldMap()
     world.room_occupants["town_square"] = ["Alice", "Bob"]
 
@@ -49,7 +49,7 @@ async def test_concurrent_leave_does_not_corrupt(load_game_data):
 
 def test_world_clock_ticks_respawns(load_game_data):
     """WorldClock should call world.tick_respawns() on each game-minute tick."""
-    from server.engine.world import WorldMap, Room, EncounterGroup
+    from server.engine.world.map import WorldMap, Room, EncounterGroup
     from server.engine.world_clock import WorldClock
 
     world = WorldMap()

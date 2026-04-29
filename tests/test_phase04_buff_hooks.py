@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 
 from server.engine.domain.character import Character
 from server.engine.game import GameSession, State
-from server.engine.world import WorldMap
+from server.engine.world.map import WorldMap
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -152,7 +152,7 @@ def test_fortified_reduces_move_stamina_drain(make_nav_session):
     session.player.apply_food_buff("fortified", 120, clock)
 
     # Mock a navigable room to move into
-    from server.engine.world import Room
+    from server.engine.world.map import Room
     dest_room = Room(id="r2", name="Dest", description="", exits={}, item_ids=[], encounter_groups=[], recruitable_npc_ids=[])
     source_room = Room(id="r1", name="Src", description="", exits={"north": "r2"}, item_ids=[], encounter_groups=[], recruitable_npc_ids=[])
     session.world.get_room = lambda rid: dest_room if rid == "r2" else source_room
@@ -169,7 +169,7 @@ def test_no_fortified_normal_move_drain(make_nav_session):
     session = make_nav_session(clock=clock)
     session.player.stamina = 100.0
 
-    from server.engine.world import Room
+    from server.engine.world.map import Room
     dest_room = Room(id="r2", name="Dest", description="", exits={}, item_ids=[], encounter_groups=[], recruitable_npc_ids=[])
     source_room = Room(id="r1", name="Src", description="", exits={"north": "r2"}, item_ids=[], encounter_groups=[], recruitable_npc_ids=[])
     session.world.get_room = lambda rid: dest_room if rid == "r2" else source_room
