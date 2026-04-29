@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from server.engine.combat import CombatSession, Combatant
+from server.engine.combat.session import CombatSession, Combatant
 from server.engine.domain.character import Character
 from server.engine.domain.npc import NPC
 

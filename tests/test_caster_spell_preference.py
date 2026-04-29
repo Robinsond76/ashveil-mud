@@ -31,7 +31,7 @@ def _make_enemy(name="Goblin"):
 
 
 def _make_session(caster, enemy):
-    from server.engine.combat import CombatSession
+    from server.engine.combat.session import CombatSession
     return CombatSession(
         player_party=[caster],
         enemy_party=[enemy],

@@ -258,7 +258,7 @@ class TestPhaseD_SkillDataclass:
 
 class TestPhaseE_AoEGridTargeting:
     def _make_combatant(self, row, col, alive=True, name="Target"):
-        from server.engine.combat import Combatant
+        from server.engine.combat.session import Combatant
         char = make_mage(name=name)
         if not alive:
             char.hp = 0
@@ -266,7 +266,7 @@ class TestPhaseE_AoEGridTargeting:
         return c
 
     def test_single_target_by_name(self):
-        from server.engine.combat import CombatSession
+        from server.engine.combat.session import CombatSession
         c0 = self._make_combatant(0, 0, name="A")
         c1 = self._make_combatant(0, 1, name="B")
         result = CombatSession._resolve_aoe_targets("single", 0, 0, [c0, c1], name="A")
@@ -274,7 +274,7 @@ class TestPhaseE_AoEGridTargeting:
         assert c1 not in result
 
     def test_grid_1x1_returns_exact_cell(self):
-        from server.engine.combat import CombatSession
+        from server.engine.combat.session import CombatSession
         c00 = self._make_combatant(0, 0)
         c01 = self._make_combatant(0, 1)
         c10 = self._make_combatant(1, 0)
@@ -284,7 +284,7 @@ class TestPhaseE_AoEGridTargeting:
         assert c10 not in result
 
     def test_grid_1x2_returns_row_and_two_cols(self):
-        from server.engine.combat import CombatSession
+        from server.engine.combat.session import CombatSession
         c00 = self._make_combatant(0, 0)
         c01 = self._make_combatant(0, 1)
         c02 = self._make_combatant(0, 2)
@@ -296,7 +296,7 @@ class TestPhaseE_AoEGridTargeting:
         assert c10 not in result
 
     def test_grid_2x2_returns_four_cells(self):
-        from server.engine.combat import CombatSession
+        from server.engine.combat.session import CombatSession
         c00 = self._make_combatant(0, 0)
         c01 = self._make_combatant(0, 1)
         c10 = self._make_combatant(1, 0)
@@ -310,7 +310,7 @@ class TestPhaseE_AoEGridTargeting:
         assert c02 not in result
 
     def test_all_enemies_returns_all_alive(self):
-        from server.engine.combat import CombatSession
+        from server.engine.combat.session import CombatSession
         c0 = self._make_combatant(0, 0, alive=True)
         c1 = self._make_combatant(0, 1, alive=True)
         c2 = self._make_combatant(1, 0, alive=False)
@@ -320,7 +320,7 @@ class TestPhaseE_AoEGridTargeting:
         assert c2 not in result
 
     def test_grid_excludes_dead_combatants(self):
-        from server.engine.combat import CombatSession
+        from server.engine.combat.session import CombatSession
         alive = self._make_combatant(0, 0, alive=True)
         dead = self._make_combatant(0, 0, alive=False, name="Dead")
         result = CombatSession._resolve_aoe_targets("grid_1x1", 0, 0, [alive, dead])
@@ -334,7 +334,7 @@ class TestPhaseE_AoEGridTargeting:
 
 class TestPhaseF_Interruption:
     def _make_combat_session(self):
-        from server.engine.combat import CombatSession, Combatant
+        from server.engine.combat.session import CombatSession, Combatant
         mage = make_mage(INT=14)
         mage.mp = 50
         from server.engine.domain.npc import NPC
@@ -404,13 +404,13 @@ class TestPhaseF_Interruption:
 
 class TestPhaseG_AoEExtended:
     def _combatant(self, row, col, name="T"):
-        from server.engine.combat import Combatant
+        from server.engine.combat.session import Combatant
         c = Character(name=name, class_type="warrior")
         c.hp = 30
         return Combatant(character=c, is_player_side=False, row=row, col=col)
 
     def test_grid_2x2_at_edge_clips_to_grid(self):
-        from server.engine.combat import CombatSession
+        from server.engine.combat.session import CombatSession
         # Row 1, col 2 → grid_2x2 would want rows [1,2] cols [2,3]
         # Only row 1 exists (BACK_ROW=1), col 3 doesn't exist
         c12 = self._combatant(1, 2, "C12")
@@ -419,7 +419,7 @@ class TestPhaseG_AoEExtended:
         assert c12 in result
 
     def test_all_enemies_returns_empty_if_all_dead(self):
-        from server.engine.combat import CombatSession
+        from server.engine.combat.session import CombatSession
         dead = self._combatant(0, 0)
         dead.character.hp = 0
         result = CombatSession._resolve_aoe_targets("all_enemies", 0, 0, [dead])
@@ -432,7 +432,7 @@ class TestPhaseG_AoEExtended:
 
 class TestPhaseH_ZeroMana:
     def _make_session_with_mage_strategy(self):
-        from server.engine.combat import CombatSession, Combatant
+        from server.engine.combat.session import CombatSession, Combatant
         from server.engine.domain.npc import NPC
         _load_skills_once()
 

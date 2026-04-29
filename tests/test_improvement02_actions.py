@@ -3,7 +3,7 @@ Tests for the typed Action dataclass hierarchy (improvement-02).
 """
 import pytest
 
-from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem, CombatResult
+from server.engine.combat.actions import Attack, Defend, Flee, UseSkill, UseItem, CombatResult
 
 
 # ── Action type tests ─────────────────────────────────────────────────────────
@@ -129,7 +129,7 @@ def test_evaluate_strategy_returns_use_item_action(load_game_data):
 def test_assign_positions_rejects_party_over_six(load_game_data):
     """Parties larger than 6 should raise ValueError, not silently drop members."""
     from server.engine.domain.character import Character
-    from server.engine.combat import CombatSession, Combatant
+    from server.engine.combat.session import CombatSession, Combatant
 
     oversized = [
         Combatant(character=Character(name=f"c{i}", class_type="warrior"), is_player_side=True)

@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import AsyncMock
 
 from server.engine.domain.character import Character
-from server.engine.combat import CombatSession, CombatState
+from server.engine.combat.session import CombatSession, CombatState
 from server.engine.domain.npc import NPC
 
 
@@ -94,7 +94,7 @@ def test_player_damage_is_scaled_by_survival_multiplier():
     )
     log: list[str] = []
     # Directly call the resolve path
-    from server.engine.combat import Combatant
+    from server.engine.combat.session import Combatant
     actor_c = next(c for c in session.player_combatants if c.name == "Hero")
     session._resolve_attack(attacker, target, log, is_player_side=True)
     # Either capped at 1 (min damage) or 0 — the multiplier was applied
@@ -145,7 +145,7 @@ def test_flee_action_drains_5_stamina_from_player_characters():
         survival_multiplier=1.0,
     )
     log: list[str] = []
-    from server.engine.combat import Combatant
+    from server.engine.combat.session import Combatant
     actor_c = next(c for c in session.player_combatants if c.name == "Hero")
     session._do_action(actor_c, log)
     # After flee attempt, stamina should be reduced by 5

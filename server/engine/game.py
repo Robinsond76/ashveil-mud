@@ -32,7 +32,7 @@ from server.config import (
     STAT_POINT_BUY_BUDGET,
 )
 from server.engine.domain.character import Character, MODIFIER_CATALOGUE, XP_TABLE
-from server.engine.combat import CombatSession
+from server.engine.combat.session import CombatSession
 from server.engine.domain.items import (
     get_item,
     equipped_weapon, total_equipped_weight,

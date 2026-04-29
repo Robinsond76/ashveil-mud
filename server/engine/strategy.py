@@ -37,7 +37,7 @@ import random
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-from server.engine.actions import Attack, Defend, Flee, UseSkill, UseItem
+from server.engine.combat.actions import Attack, Defend, Flee, UseSkill, UseItem
 
 if TYPE_CHECKING:
     from server.engine.domain.character import Character

@@ -1,7 +1,7 @@
 """Campfire commands — extracted from GameSession."""
 from __future__ import annotations
 
-from server.engine.combat import FRONT_ROW, BACK_ROW
+from server.engine.combat.grid import FRONT_ROW, BACK_ROW
 
 
 def _box(title: str, lines: list[str]) -> str:
