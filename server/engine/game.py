@@ -75,12 +75,7 @@ from server.engine.world_clock import WorldClock
 from server.engine.states import State, HANDLER_REGISTRY
 
 
-def _box(title: str, lines: list[str]) -> str:
-    width = 60
-    out = [f"\n{'═' * width}", f"  {title}", f"{'─' * width}"]
-    out += [f"  {l}" for l in lines]
-    out.append("═" * width)
-    return "\n".join(out)
+from server.engine.display.formatting import box as _box
 
 
 class GameSession:
@@ -127,8 +122,9 @@ class GameSession:
         # Pending recruit (used by NavigationHandler)
         self._pending_recruit: str | None = None
 
-        # Clock subscription
+        # Clock subscriptions
         self._weather_cb = None
+        self._tick_cb = None
 
         # Utility skill state
         self._arcane_light_until: int = 0
@@ -243,28 +239,43 @@ class GameSession:
     # ─────────────────────────────────────────────────────────────────────────
 
     def _subscribe_clock(self) -> None:
-        """Subscribe to weather broadcasts."""
-        if self.clock and not self._weather_cb:
+        """Subscribe to weather broadcasts and game-minute ticks."""
+        if not self.clock:
+            return
+
+        # Weather callback — only sends narrative messages
+        if not self._weather_cb:
             async def _on_weather(msg: str) -> None:
                 if self._state in (State.NAVIGATION, State.CAMPFIRE, State.COMBAT):
                     room = self.world.get_room(self.current_room_id)
                     if room and room.room_type != "underground":
                         await self.send(f"\n  {msg}\n")
-                    if self.player:
-                        temp_label = "Comfortable"
-                        if self.clock and room:
-                            temp_label = self.clock.temperature_label(room.room_type, room.base_temp_f)
-                        drain_survival_tick(self.player, self.party, self.clock, temp_label)
-                        if self._state != State.COMBAT:
-                            sitting_stamina_tick(self.player, self.party, self.clock, self._sitting)
             self._weather_cb = _on_weather
             self.clock.subscribe(self._weather_cb)
 
+        # Tick callback — handles survival drain and sitting recovery every game-minute
+        if not self._tick_cb:
+            async def _on_tick() -> None:
+                if self._state in (State.NAVIGATION, State.CAMPFIRE, State.COMBAT) and self.player:
+                    room = self.world.get_room(self.current_room_id)
+                    temp_label = "Comfortable"
+                    if room:
+                        temp_label = self.clock.temperature_label(room.room_type, room.base_temp_f)
+                    drain_survival_tick(self.player, self.party, self.clock, temp_label)
+                    if self._state != State.COMBAT:
+                        sitting_stamina_tick(self.player, self.party, self.clock, self._sitting)
+            self._tick_cb = _on_tick
+            self.clock.subscribe_tick(self._tick_cb)
+
     def _unsubscribe_clock(self) -> None:
-        """Unsubscribe from weather broadcasts."""
-        if self.clock and self._weather_cb:
-            self.clock.unsubscribe(self._weather_cb)
-            self._weather_cb = None
+        """Unsubscribe from weather broadcasts and game-minute ticks."""
+        if self.clock:
+            if self._weather_cb:
+                self.clock.unsubscribe(self._weather_cb)
+                self._weather_cb = None
+            if self._tick_cb:
+                self.clock.unsubscribe_tick(self._tick_cb)
+                self._tick_cb = None
 
     # ─────────────────────────────────────────────────────────────────────────
     # Persistence
@@ -963,7 +974,7 @@ class GameSession:
         eff_light = 1.0
         if room:
             eff_light = _effective_light_fn(
-                self.player, self.party, self._lit_sources, self.clock, room
+                self.player, self.party, self.player.lit_sources, self.clock, room
             )
 
         # Determine visibility label
