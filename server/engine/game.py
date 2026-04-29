@@ -17,8 +17,6 @@ Input arrives via `await self.handle_input(raw_text)`.
 """
 from __future__ import annotations
 
-from typing import Any
-
 from server.config import MODIFIER_BONUS_PER_LEVEL
 from server.engine.domain.character import Character, MODIFIER_CATALOGUE
 from server.engine.combat.session import CombatSession
@@ -35,7 +33,7 @@ from server.engine.systems.survival import (
 from server.engine.world.map import WorldMap
 from server.engine.world.clock import WorldClock
 from server.engine.states import State, HANDLER_REGISTRY
-from server.engine.systems.utility_skills import handle_use_skill, execute_utility_effect
+from server.engine.systems.utility_skills import handle_use_skill
 
 from server.engine.display.formatting import box as _box
 from server.engine.display.context_panel import send_context_update
@@ -262,7 +260,6 @@ class GameSession:
     # ─────────────────────────────────────────────────────────────────────────
 
     _handle_use_skill = handle_use_skill
-    _execute_utility_effect = execute_utility_effect
 
     # ─────────────────────────────────────────────────────────────────────────
     # Campfire handlers (delegated to by CampfireHandler)
