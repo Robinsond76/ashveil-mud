@@ -5,7 +5,7 @@
 ### 1. Install Dependencies (first time only)
 
 ```powershell
-pip install -r requirements.txt
+uv sync
 ```
 
 ### 2. Start the Server
@@ -13,7 +13,7 @@ pip install -r requirements.txt
 Run this from the project root:
 
 ```powershell
-uvicorn server.main:app --reload --port 8081
+uv run uvicorn server.main:app --reload --port 8081
 ```
 
 The server starts on **http://localhost:8081**.
@@ -340,7 +340,7 @@ All tests should pass. Test files are named `test_phase<NN>_<topic>.py`.
 
 | Problem | Fix |
 |---------|-----|
-| Server won't start | Run `pip install -r requirements.txt` first |
+| Server won't start | Run `uv sync` first |
 | Browser shows blank page | Make sure the server is running on port 8081 |
 | WebSocket disconnects | Check the uvicorn console for Python exceptions |
 | Can't move (stamina 0) | `SIT` until stamina recovers, then `STAND` |
